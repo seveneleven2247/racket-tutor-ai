@@ -1249,6 +1249,471 @@ def _bridge_key(day: int) -> str:
     return "capstone"
 
 
+TARGET_LANGUAGES = {
+    "racket": {
+        "id": "racket",
+        "name": "Racket",
+        "file_ext": "rkt",
+        "runner": "racket day01.rkt",
+        "docs": [
+            {"title": "Racket Documentation", "url": "https://docs.racket-lang.org/index.html"},
+            {"title": "The Racket Guide", "url": "https://docs.racket-lang.org/guide/index.html"},
+        ],
+    },
+    "python": {
+        "id": "python",
+        "name": "Python",
+        "file_ext": "py",
+        "runner": "python3 day01.py",
+        "docs": [
+            {"title": "Python Tutorial", "url": "https://docs.python.org/3/tutorial/"},
+            {"title": "Python Standard Library", "url": "https://docs.python.org/3/library/"},
+        ],
+    },
+    "c": {
+        "id": "c",
+        "name": "C",
+        "file_ext": "c",
+        "runner": "cc day01.c -o day01 && ./day01",
+        "docs": [
+            {"title": "C Reference", "url": "https://en.cppreference.com/w/c"},
+            {"title": "C Language", "url": "https://en.cppreference.com/w/c/language"},
+        ],
+    },
+    "java": {
+        "id": "java",
+        "name": "Java",
+        "file_ext": "java",
+        "runner": "javac Day01.java && java Day01",
+        "docs": [
+            {"title": "Dev.java Learn", "url": "https://dev.java/learn/"},
+            {"title": "Java API", "url": "https://docs.oracle.com/en/java/javase/"},
+        ],
+    },
+}
+
+
+LANGUAGE_BRIDGES = {
+    "python": {
+        "expressions": {
+            "concept": "表达式和脚本：从 C++ main/编译步骤转成 Python 解释执行",
+            "cpp": """int total = 1 + 2 + 3;
+std::cout << total << std::endl;""",
+            "target": """total = 1 + 2 + 3
+print(total)""",
+            "steps": ["去掉类型声明和分号。", "用缩进表示代码块，不用大括号。", "用 `print()` 输出，先用解释器快速试验。"],
+            "pitfalls": ["Python 变量是名字绑定，不是固定静态类型槽位。", "缩进是语法，不能随意对齐。"],
+            "drill": "把 5 个 C++ 算术表达式改成 Python，并用 `print()` 验证。",
+        },
+        "prefix": {
+            "concept": "表达式优先级：Python 仍是中缀，但函数调用更轻量",
+            "cpp": """int x = (2 + 3) * (10 - 4);
+int y = std::max(3, 9);""",
+            "target": """x = (2 + 3) * (10 - 4)
+y = max(3, 9)""",
+            "steps": ["保留熟悉的中缀算术。", "标准函数直接调用，例如 `max(a, b)`。", "用 REPL 检查每个子表达式。"],
+            "pitfalls": ["整数除法如果要取整，用 `//`，普通 `/` 返回浮点。", "不要写 C++ 的 `std::` 命名空间。"],
+            "drill": "把 `a + b * c - d` 写成 Python，并解释优先级。",
+        },
+        "types": {
+            "concept": "动态类型：从声明类型转成运行时值和 type hints",
+            "cpp": """int score = 95;
+std::string name = "Ada";
+bool passing = score >= 60;""",
+            "target": """score: int = 95
+name: str = "Ada"
+passing: bool = score >= 60""",
+            "steps": ["类型提示写在变量名后面，是辅助工具，不是运行时强制。", "字符串、数字、布尔值直接绑定。", "需要检查类型时用 `isinstance()`。"],
+            "pitfalls": ["type hints 不会自动阻止错误赋值。", "Python 的 `True/False` 首字母大写。"],
+            "drill": "写 `valid_score(score: int) -> bool`。",
+        },
+        "define_function": {
+            "concept": "函数定义：从返回类型和大括号转成 def、冒号、缩进",
+            "cpp": """double addTax(double amount) {
+    return amount * 1.13;
+}""",
+            "target": """def add_tax(amount: float) -> float:
+    return amount * 1.13""",
+            "steps": ["用 `def name(args):` 开头。", "参数和返回类型可写 type hints。", "函数体必须缩进。"],
+            "pitfalls": ["不要忘记冒号。", "Python 风格函数名用 snake_case。"],
+            "drill": "把 `int square(int x)` 改成 Python 函数。",
+        },
+        "conditionals": {
+            "concept": "条件：从 if/else if/else 转成 if/elif/else",
+            "cpp": """if (score >= 90) grade = "A";
+else if (score >= 80) grade = "B";
+else grade = "Practice";""",
+            "target": """if score >= 90:
+    grade = "A"
+elif score >= 80:
+    grade = "B"
+else:
+    grade = "Practice" """,
+            "steps": ["`else if` 改成 `elif`。", "条件后写冒号。", "分支内容靠缩进确定范围。"],
+            "pitfalls": ["不要写括号和大括号。", "`and/or/not` 不是 `&&/||/!`。"],
+            "drill": "把成绩判断函数改写为 Python `if/elif/else`。",
+        },
+        "let": {
+            "concept": "局部变量：Python 函数内赋值天然是局部绑定",
+            "cpp": """double tax = price * 0.13;
+double tip = price * 0.18;
+return price + tax + tip;""",
+            "target": """tax = price * 0.13
+tip = price * 0.18
+return price + tax + tip""",
+            "steps": ["函数体内直接创建局部名字。", "按数据流从上到下阅读。", "复杂中间值用清晰变量名。"],
+            "pitfalls": ["在函数内给外部变量赋值会创建局部变量，除非声明 `global/nonlocal`。", "不要滥用全局变量。"],
+            "drill": "写一个 Python 订单总价函数。",
+        },
+        "lists_recursion": {
+            "concept": "列表遍历：从 vector for 循环转成 for、列表推导或递归",
+            "cpp": """int acc = 0;
+for (int n : nums) acc += n;""",
+            "target": """total = 0
+for n in nums:
+    total += n
+
+# or
+total = sum(nums)""",
+            "steps": ["`for (T x : xs)` 改成 `for x in xs:`。", "优先使用内置函数 `sum/len/any/all`。", "转换列表时考虑 list comprehension。"],
+            "pitfalls": ["不要用索引循环处理所有列表。", "可变默认参数是 Python 常见陷阱。"],
+            "drill": "用 for 和列表推导各写一次筛选偶数。",
+        },
+        "strings": {
+            "concept": "字符串：从 std::string 转成 str、切片和方法",
+            "cpp": """s.size();
+s[0];
+s.substr(1, 3);""",
+            "target": """len(s)
+s[0]
+s[1:4]
+s.strip().lower()""",
+            "steps": ["长度用 `len(s)`。", "子串用切片 `[start:end]`。", "常用清洗用字符串方法链。"],
+            "pitfalls": ["切片 end 不包含。", "字符串不可变，方法返回新字符串。"],
+            "drill": "写一个文本分析函数：长度、首字符、是否有空格。",
+        },
+        "structs": {
+            "concept": "数据建模：从 struct/class 转成 dataclass",
+            "cpp": """struct Student {
+    std::string name;
+    int score;
+};""",
+            "target": """from dataclasses import dataclass
+
+@dataclass
+class Student:
+    name: str
+    score: int""",
+            "steps": ["简单数据对象优先用 `@dataclass`。", "字段写类型提示。", "方法放进 class，纯逻辑也可以写成独立函数。"],
+            "pitfalls": ["不要把所有东西都写成 class；Python 允许模块级函数。", "可变字段要用 `default_factory`。"],
+            "drill": "定义 `Book` dataclass，并写 `expensive(book)`。",
+        },
+        "higher_order": {
+            "concept": "高阶处理：从 STL algorithms 转成 comprehension、map/filter 或生成器",
+            "cpp": """std::copy_if(nums.begin(), nums.end(), out, pred);""",
+            "target": """evens = [n for n in nums if n % 2 == 0]
+squares = [n * n for n in nums]""",
+            "steps": ["筛选和转换优先用 comprehension。", "聚合用 `sum/max/min`。", "复杂逻辑先命名函数。"],
+            "pitfalls": ["过度嵌套 comprehension 会降低可读性。", "`map/filter` 返回迭代器，不是 list。"],
+            "drill": "把一个 C++ STL algorithm 练习改成 Python 列表推导。",
+        },
+        "capstone": {
+            "concept": "Python 项目：从 C++ 编译项目转成模块、包和测试",
+            "cpp": """src/
+include/
+tests/""",
+            "target": """racket_tutor/
+  model.py
+  logic.py
+tests/
+  test_logic.py""",
+            "steps": ["按模块分文件。", "核心逻辑写纯函数。", "用 `pytest` 或 `unittest` 测试。"],
+            "pitfalls": ["不要把脚本、I/O、核心逻辑全部混在顶层。", "注意虚拟环境和 requirements。"],
+            "drill": "规划一个 Python CLI 或文本分析项目。",
+        },
+    },
+    "c": {
+        "expressions": {
+            "concept": "从 C++ 到 C：更接近机器模型，少了 iostream 和 class",
+            "cpp": """int total = 1 + 2 + 3;
+std::cout << total << std::endl;""",
+            "target": """#include <stdio.h>
+
+int main(void) {
+    int total = 1 + 2 + 3;
+    printf("%d\\n", total);
+    return 0;
+}""",
+            "steps": ["使用 `stdio.h` 和 `printf`。", "`main` 返回 int。", "编译运行通常用 `cc file.c -o file`。"],
+            "pitfalls": ["C 没有 `std::cout`。", "字符串和数组需要更手动地管理。"],
+            "drill": "把 5 个 C++ 输出表达式改成 C `printf`。",
+        },
+        "define_function": {
+            "concept": "函数：语法接近 C++，但没有重载和引用默认语义",
+            "cpp": """int square(int x) {
+    return x * x;
+}""",
+            "target": """int square(int x) {
+    return x * x;
+}""",
+            "steps": ["保留返回类型、参数类型和 `return`。", "函数声明通常放在使用前或头文件里。", "没有函数重载，名字必须唯一。"],
+            "pitfalls": ["数组参数会退化为指针。", "没有 C++ 引用和模板。"],
+            "drill": "写 `double add_tax(double amount)`。",
+        },
+        "conditionals": {
+            "concept": "条件：语法相似，但布尔和字符串处理更底层",
+            "cpp": """if (score >= 90) grade = "A";""",
+            "target": """const char *grade;
+if (score >= 90) {
+    grade = "A";
+} else {
+    grade = "Practice";
+}""",
+            "steps": ["if/else 大体相同。", "字符串字面量用 `const char *` 指向。", "C99 后可用 `_Bool` 或 `stdbool.h`。"],
+            "pitfalls": ["不要用 `==` 比较字符串内容，用 `strcmp`。", "C 的 true/false 需要 `stdbool.h`。"],
+            "drill": "写 C 版成绩等级函数。",
+        },
+        "lists_recursion": {
+            "concept": "数组遍历：从 vector 转成数组 + 长度参数",
+            "cpp": """int sum(const std::vector<int>& nums);""",
+            "target": """int sum(const int nums[], size_t len) {
+    int total = 0;
+    for (size_t i = 0; i < len; i++) {
+        total += nums[i];
+    }
+    return total;
+}""",
+            "steps": ["数组函数必须传长度。", "用 `size_t` 表示索引/长度。", "需要动态大小时学习 `malloc/free`。"],
+            "pitfalls": ["C 数组不知道自己的长度。", "越界访问是未定义行为。"],
+            "drill": "实现 `count_even(const int nums[], size_t len)`。",
+        },
+        "strings": {
+            "concept": "字符串：从 std::string 转成以 NUL 结尾的 char 数组",
+            "cpp": """std::string s = "Ada";
+s.size();""",
+            "target": """#include <string.h>
+
+char s[] = "Ada";
+size_t n = strlen(s);""",
+            "steps": ["C 字符串是 `char*`/`char[]`。", "长度用 `strlen`。", "复制/拼接用 `strcpy/strncpy/snprintf` 等。"],
+            "pitfalls": ["必须留出结尾 `\\0`。", "缓冲区溢出是 C 的核心风险。"],
+            "drill": "写函数判断字符串是否包含空格。",
+        },
+        "structs": {
+            "concept": "struct：C 的核心聚合类型，没有成员函数",
+            "cpp": """struct Student { std::string name; int score; };""",
+            "target": """typedef struct {
+    const char *name;
+    int score;
+} Student;""",
+            "steps": ["字段放进 struct。", "行为写成接收指针/值的普通函数。", "用 typedef 简化类型名。"],
+            "pitfalls": ["struct 不自动管理资源。", "字符串字段的所有权要说清楚。"],
+            "drill": "定义 `Book` struct 和 `is_expensive` 函数。",
+        },
+        "capstone": {
+            "concept": "C 项目：头文件、源文件、Makefile 和内存边界",
+            "cpp": """class + vector + string""",
+            "target": """include/model.h
+src/model.c
+src/main.c
+Makefile""",
+            "steps": ["头文件放声明，`.c` 放实现。", "明确每块内存谁分配谁释放。", "用编译警告和 sanitizer 检查。"],
+            "pitfalls": ["忘记初始化和释放内存。", "头文件缺少 include guard。"],
+            "drill": "规划一个 C 文本统计工具，写出 `.h/.c` 文件边界。",
+        },
+    },
+    "java": {
+        "expressions": {
+            "concept": "从 C++ main 转成 Java class + static main",
+            "cpp": """int total = 1 + 2 + 3;
+std::cout << total << std::endl;""",
+            "target": """public class Day01 {
+    public static void main(String[] args) {
+        int total = 1 + 2 + 3;
+        System.out.println(total);
+    }
+}""",
+            "steps": ["代码放在 class 里。", "入口是 `public static void main(String[] args)`。", "输出用 `System.out.println`。"],
+            "pitfalls": ["文件名通常要和 public class 同名。", "Java 没有头文件。"],
+            "drill": "写一个 Java Day01，输出 10 个表达式结果。",
+        },
+        "define_function": {
+            "concept": "方法：从自由函数转成 class 里的 static 或实例方法",
+            "cpp": """double addTax(double amount) {
+    return amount * 1.13;
+}""",
+            "target": """static double addTax(double amount) {
+    return amount * 1.13;
+}""",
+            "steps": ["工具函数可先写 `static`。", "返回类型和参数类型保留。", "命名常用 lowerCamelCase。"],
+            "pitfalls": ["Java 没有顶层函数。", "基本类型和对象类型有区别。"],
+            "drill": "写 `static int square(int x)`。",
+        },
+        "conditionals": {
+            "concept": "条件：语法接近 C++，但字符串比较用 equals",
+            "cpp": """if (name == "Ada") { ... }""",
+            "target": """if (name.equals("Ada")) {
+    System.out.println("match");
+}""",
+            "steps": ["if/else 结构基本相同。", "字符串内容比较用 `.equals`。", "布尔运算符仍是 `&& || !`。"],
+            "pitfalls": ["不要用 `==` 比较 String 内容。", "空引用调用方法会 NPE。"],
+            "drill": "写 Java 成绩等级方法。",
+        },
+        "lists_recursion": {
+            "concept": "集合遍历：从 vector 转成 array 或 List<T>",
+            "cpp": """for (int n : nums) total += n;""",
+            "target": """int total = 0;
+for (int n : nums) {
+    total += n;
+}""",
+            "steps": ["数组和 `List<Integer>` 都支持 enhanced for。", "泛型用 `List<Integer>`。", "流式处理可用 Stream API。"],
+            "pitfalls": ["`List<int>` 不存在，要用 `List<Integer>`。", "装箱类型可能有 null。"],
+            "drill": "用 for 和 stream 各写一次筛选偶数。",
+        },
+        "structs": {
+            "concept": "数据建模：从 struct 转成 class 或 record",
+            "cpp": """struct Student { std::string name; int score; };""",
+            "target": """public record Student(String name, int score) {}""",
+            "steps": ["不可变数据优先用 record。", "需要行为和状态时用 class。", "字段访问由 accessor 方法生成。"],
+            "pitfalls": ["Java 对象是引用语义。", "record 适合数据，不适合复杂可变对象。"],
+            "drill": "定义 `Book` record，并写 `isExpensive(Book book)`。",
+        },
+        "higher_order": {
+            "concept": "高阶处理：从 STL algorithm 转成 Stream API",
+            "cpp": """copy_if(nums.begin(), nums.end(), out, pred);""",
+            "target": """List<Integer> evens = nums.stream()
+    .filter(n -> n % 2 == 0)
+    .toList();""",
+            "steps": ["用 `stream()` 建立管线。", "lambda 写成 `x -> expr`。", "终端操作如 `toList/sum/count` 产生结果。"],
+            "pitfalls": ["Stream 只能消费一次。", "不要为了简单循环强行使用 stream。"],
+            "drill": "用 stream 计算正数平方列表。",
+        },
+        "capstone": {
+            "concept": "Java 项目：包、类、测试和构建工具",
+            "cpp": """src/ include/ tests/""",
+            "target": """src/main/java/app/Main.java
+src/test/java/app/MainTest.java
+pom.xml or build.gradle""",
+            "steps": ["按 package 组织代码。", "用 Maven/Gradle 管理依赖和测试。", "核心逻辑与 I/O 分离。"],
+            "pitfalls": ["类太多会掩盖简单逻辑。", "注意 public class 文件名规则。"],
+            "drill": "规划一个 Java CLI 文本分析器。",
+        },
+    },
+}
+
+
+GENERIC_DOCS = {
+    "python": [
+        {"title": "Python Tutorial", "url": "https://docs.python.org/3/tutorial/"},
+        {"title": "Python Language Reference", "url": "https://docs.python.org/3/reference/"},
+    ],
+    "c": [
+        {"title": "C Reference", "url": "https://en.cppreference.com/w/c"},
+        {"title": "C Language", "url": "https://en.cppreference.com/w/c/language"},
+    ],
+    "java": [
+        {"title": "Dev.java Learn", "url": "https://dev.java/learn/"},
+        {"title": "Java API Documentation", "url": "https://docs.oracle.com/en/java/javase/"},
+    ],
+}
+
+
+def get_language_options() -> list[dict]:
+    return [
+        {"id": item["id"], "name": item["name"], "file_ext": item["file_ext"], "runner": item["runner"]}
+        for item in TARGET_LANGUAGES.values()
+    ]
+
+
+def normalize_target_language(target: str | None) -> str:
+    value = (target or "racket").strip().lower()
+    return value if value in TARGET_LANGUAGES else "racket"
+
+
+def _language_bridge(day: int, target: str) -> dict:
+    key = _bridge_key(day)
+    profile = LANGUAGE_BRIDGES.get(target, {})
+    template = profile.get(key) or profile.get("capstone")
+    if not template:
+        return {}
+    docs = template.get("docs") or GENERIC_DOCS[target]
+    return {
+        "concept": template["concept"],
+        "cpp": template["cpp"],
+        "racket": template["target"],
+        "target": template["target"],
+        "target_label": TARGET_LANGUAGES[target]["name"],
+        "translation_steps": template["steps"],
+        "pitfalls": template["pitfalls"],
+        "drill": template["drill"],
+        "docs": docs,
+    }
+
+
+def _language_focus(target: str, day: int) -> list[str]:
+    language = TARGET_LANGUAGES[target]["name"]
+    key = _bridge_key(day)
+    base = {
+        "expressions": ["运行环境", "输出", "表达式", "REPL/编译"],
+        "types": ["变量", "类型系统", "布尔值", "字符串"],
+        "define_function": ["函数", "参数", "返回值", "命名风格"],
+        "conditionals": ["if/else", "布尔逻辑", "比较", "分支设计"],
+        "lists_recursion": ["数组/列表", "遍历", "累加", "边界情况"],
+        "strings": ["字符串", "索引", "切片/库函数", "文本处理"],
+        "structs": ["数据建模", "字段", "构造", "访问"],
+        "higher_order": ["集合处理", "lambda", "筛选", "转换"],
+        "capstone": ["项目结构", "测试", "文档", "部署/运行"],
+    }.get(key, ["语法迁移", "代码风格", "测试", "项目组织"])
+    return [f"{language}: {item}" for item in base]
+
+
+def _language_lesson(index: int, item: dict, target: str) -> Lesson:
+    language = TARGET_LANGUAGES[target]["name"]
+    bridge = _language_bridge(index, target)
+    title = item["title"].replace("Racket", language).replace("racket", language.lower())
+    category = f"Day {index:02d} - C++ to {language}"
+    goal = f"基于 C++ 已有基础，学习 {language} 中与“{title}”对应的语法、运行方式和代码风格。"
+    cpp_bridge = f"今天从 C++ 的写法出发，对照 {language} 的惯用写法，重点避免把 {language} 写成 C++ 翻译腔。"
+    explanation = (
+        f"这一节把原来的主题迁移到 {language}：先确认 C++ 概念，再看 {language} 的语法、标准库和工程习惯。"
+        "你应该亲手运行示例，并把语法差异写进笔记。"
+    )
+    code = bridge.get("target", "")
+    practice = [
+        f"运行今日 {language} 示例代码：`{TARGET_LANGUAGES[target]['runner']}`。",
+        "把 C++ 示例逐行改写成目标语言，并解释每一处语法差异。",
+        f"查阅官方文档，补充 3 条 {language} 惯用写法。",
+    ]
+    assignment = (
+        f"提交一个 day{index:02d}.{TARGET_LANGUAGES[target]['file_ext']}，"
+        f"完成今日 C++ 到 {language} 的转换练习，并附 5 行学习反思。"
+    )
+    lesson = Lesson(
+        day=index,
+        category=category,
+        week=((index - 1) // 7) + 1,
+        title=title,
+        goal=goal,
+        cpp_bridge=cpp_bridge,
+        explanation=explanation,
+        syntax_bridge={
+            **bridge,
+            "today_angle": f"今天以“{title}”为主题，从 C++ 迁移到 {language}。",
+        },
+        official_docs=bridge.get("docs", GENERIC_DOCS[target]),
+        racket_focus=_language_focus(target, index),
+        code=code,
+        practice=practice,
+        checklist=_default_checklist(index, language),
+        assignment=assignment,
+        grading_rubric=_default_rubric(language),
+    )
+    data = asdict(lesson)
+    data["target_language"] = target
+    data["target_language_name"] = language
+    return data
+
+
 def _syntax_bridge(day: int, item: dict) -> dict:
     bridge = dict(BRIDGE_TEMPLATES[_bridge_key(day)])
     bridge["today_angle"] = (
@@ -1259,9 +1724,9 @@ def _syntax_bridge(day: int, item: dict) -> dict:
     return bridge
 
 
-def _default_checklist(day: int) -> list[str]:
+def _default_checklist(day: int, language: str = "Racket") -> list[str]:
     return [
-        f"阅读 Day {day:02d} 的目标、C++ 对照和 Racket 重点。",
+        f"阅读 Day {day:02d} 的目标、C++ 对照和 {language} 重点。",
         "打开官方文档链接，至少阅读对应小节的示例。",
         "手动敲一遍示例代码，不要只复制粘贴。",
         "在 REPL 中改 3 个参数，观察输出变化。",
@@ -1271,19 +1736,24 @@ def _default_checklist(day: int) -> list[str]:
     ]
 
 
-def _default_rubric() -> list[str]:
+def _default_rubric(language: str = "Racket") -> list[str]:
     return [
         "正确性：程序是否能运行，结果是否符合题目。",
-        "Racket 风格：是否使用表达式、递归/高阶函数、清晰命名。",
-        "C++ 迁移：是否避免把 Racket 写成命令式 C++。",
+        f"{language} 风格：是否使用该语言的惯用语法、命名和标准库。",
+        f"C++ 迁移：是否避免把 {language} 写成逐字翻译的 C++。",
         "测试：是否覆盖正常情况、边界情况和至少一个异常思路。",
         "解释能力：注释或 README 是否说明了设计选择。",
     ]
 
 
-def get_lessons() -> list[dict]:
+def get_lessons(target_language: str | None = None) -> list[dict]:
+    target = normalize_target_language(target_language)
+    if target != "racket":
+        return [_language_lesson(index, item, target) for index, item in enumerate(LESSON_BLUEPRINTS, start=1)]
+
     lessons: list[Lesson] = []
     for index, item in enumerate(LESSON_BLUEPRINTS, start=1):
+        syntax_bridge = _syntax_bridge(index, item)
         lesson = Lesson(
             day=index,
             category=item["category"],
@@ -1292,8 +1762,8 @@ def get_lessons() -> list[dict]:
             goal=item["goal"],
             cpp_bridge=item["cpp_bridge"],
             explanation=item["explanation"],
-            syntax_bridge=_syntax_bridge(index, item),
-            official_docs=_syntax_bridge(index, item)["docs"],
+            syntax_bridge=syntax_bridge,
+            official_docs=syntax_bridge["docs"],
             racket_focus=item["racket_focus"],
             code=item["code"],
             practice=item["practice"],
@@ -1302,11 +1772,15 @@ def get_lessons() -> list[dict]:
             grading_rubric=_default_rubric(),
         )
         lessons.append(lesson)
-    return [asdict(lesson) for lesson in lessons]
+    result = [asdict(lesson) for lesson in lessons]
+    for lesson in result:
+        lesson["target_language"] = "racket"
+        lesson["target_language_name"] = "Racket"
+    return result
 
 
-def get_lesson(day: int) -> dict | None:
-    lessons = get_lessons()
+def get_lesson(day: int, target_language: str | None = None) -> dict | None:
+    lessons = get_lessons(target_language)
     if 1 <= day <= len(lessons):
         return lessons[day - 1]
     return None

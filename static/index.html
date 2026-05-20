@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Racket Tutor AI</title>
+    <title>Code Tutor AI</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
@@ -12,8 +12,8 @@
         <div class="brand">
           <div class="brand-mark">λ</div>
           <div>
-            <h1>Racket Tutor AI</h1>
-            <p>C++ 基础转 Racket · 56 天</p>
+            <h1>Code Tutor AI</h1>
+            <p>C++ 基础转多语言 · 56 天</p>
           </div>
         </div>
 
@@ -29,6 +29,11 @@
 
         <div class="search-box">
           <input id="searchInput" type="search" placeholder="搜索 day、主题或 category" />
+        </div>
+
+        <div class="language-picker">
+          <label for="languageSelect">目标语言</label>
+          <select id="languageSelect"></select>
         </div>
 
         <div id="dayList" class="day-list" aria-label="56 day course list"></div>
@@ -80,7 +85,7 @@
             <section class="panel bridge-panel">
               <div class="section-heading">
                 <div>
-                  <p class="eyebrow">C++ Syntax → Racket Syntax</p>
+                  <p id="bridgeEyebrow" class="eyebrow">C++ Syntax → Target Syntax</p>
                   <h3 id="bridgeConcept">语法迁移</h3>
                 </div>
               </div>
@@ -91,8 +96,8 @@
                   <pre><code id="cppSyntaxBlock"></code></pre>
                 </div>
                 <div class="syntax-card">
-                  <div class="syntax-card-head">Racket 写法</div>
-                  <pre><code id="racketSyntaxBlock"></code></pre>
+                  <div id="targetSyntaxLabel" class="syntax-card-head">目标语言写法</div>
+                  <pre><code id="targetSyntaxBlock"></code></pre>
                 </div>
               </div>
               <div class="bridge-detail-grid">

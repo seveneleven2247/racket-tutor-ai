@@ -1,5 +1,7 @@
 const state = {
   lessons: [],
+  languages: [],
+  target: localStorage.getItem("racketTutor.targetLanguage") || "racket",
   activeDay: Number(localStorage.getItem("racketTutor.activeDay") || 1),
   query: "",
 };
@@ -11,6 +13,7 @@ function accessHeaders() {
 
 const els = {
   dayList: document.querySelector("#dayList"),
+  languageSelect: document.querySelector("#languageSelect"),
   searchInput: document.querySelector("#searchInput"),
   progressText: document.querySelector("#progressText"),
   progressFill: document.querySelector("#progressFill"),
@@ -25,10 +28,12 @@ const els = {
   checkMetric: document.querySelector("#checkMetric"),
   weekMetric: document.querySelector("#weekMetric"),
   cppBridge: document.querySelector("#cppBridge"),
+  bridgeEyebrow: document.querySelector("#bridgeEyebrow"),
   bridgeConcept: document.querySelector("#bridgeConcept"),
   bridgeAngle: document.querySelector("#bridgeAngle"),
   cppSyntaxBlock: document.querySelector("#cppSyntaxBlock"),
-  racketSyntaxBlock: document.querySelector("#racketSyntaxBlock"),
+  targetSyntaxLabel: document.querySelector("#targetSyntaxLabel"),
+  targetSyntaxBlock: document.querySelector("#targetSyntaxBlock"),
   translationSteps: document.querySelector("#translationSteps"),
   pitfallList: document.querySelector("#pitfallList"),
   bridgeDrill: document.querySelector("#bridgeDrill"),
@@ -54,7 +59,7 @@ function padDay(day) {
 }
 
 function checklistKey(day) {
-  return `racketTutor.checklist.${day}`;
+  return `racketTutor.checklist.${state.target}.${day}`;
 }
 
 function readChecklist(day) {
@@ -92,6 +97,7 @@ function renderDayList() {
       lesson.syntax_bridge?.today_angle || "",
       lesson.syntax_bridge?.docs?.map((doc) => doc.title).join(" ") || "",
       lesson.racket_focus.join(" "),
+      lesson.target_language_name || "",
     ]
       .join(" ")
       .toLowerCase()
@@ -133,6 +139,9 @@ function renderLesson() {
 
   localStorage.setItem("racketTutor.activeDay", String(lesson.day));
   els.weekLabel.textContent = `Week ${lesson.week}`;
+  document.title = `${lesson.target_language_name || "Racket"} Tutor AI`;
+  document.querySelector(".brand h1").textContent = `${lesson.target_language_name || "Code"} Tutor AI`;
+  document.querySelector(".brand p").textContent = `C++ 基础转 ${lesson.target_language_name || "目标语言"} · 56 天`;
   els.lessonTitle.textContent = lesson.title;
   els.categoryLabel.textContent = lesson.category;
   els.goalTitle.textContent = lesson.title;
@@ -179,11 +188,14 @@ function renderLesson() {
 function renderSyntaxBridge(lesson) {
   const bridge = lesson.syntax_bridge;
   if (!bridge) return;
+  const targetName = lesson.target_language_name || bridge.target_label || "Target";
 
+  els.bridgeEyebrow.textContent = `C++ Syntax → ${targetName} Syntax`;
   els.bridgeConcept.textContent = bridge.concept;
   els.bridgeAngle.textContent = bridge.today_angle;
   els.cppSyntaxBlock.textContent = bridge.cpp;
-  els.racketSyntaxBlock.textContent = bridge.racket;
+  els.targetSyntaxLabel.textContent = `${targetName} 写法`;
+  els.targetSyntaxBlock.textContent = bridge.target || bridge.racket;
   els.bridgeDrill.textContent = bridge.drill;
 
   els.translationSteps.innerHTML = "";
@@ -247,18 +259,33 @@ function selectDay(day) {
 }
 
 async function loadCourse() {
-  const response = await fetch("/api/course", { headers: accessHeaders() });
+  const response = await fetch(`/api/course?target=${encodeURIComponent(state.target)}`, { headers: accessHeaders() });
   if (response.status === 401) {
     window.location.href = "/";
     return;
   }
   if (!response.ok) throw new Error("课程数据加载失败");
   const data = await response.json();
+  state.languages = data.languages || state.languages;
+  state.target = data.target || state.target;
   state.lessons = data.lessons;
+  renderLanguageOptions();
   if (!state.lessons.some((lesson) => lesson.day === state.activeDay)) {
     state.activeDay = 1;
   }
   renderLesson();
+}
+
+function renderLanguageOptions() {
+  if (!els.languageSelect || !state.languages.length) return;
+  els.languageSelect.innerHTML = "";
+  for (const language of state.languages) {
+    const option = document.createElement("option");
+    option.value = language.id;
+    option.textContent = language.name;
+    option.selected = language.id === state.target;
+    els.languageSelect.appendChild(option);
+  }
 }
 
 async function loadSubmissions() {
@@ -280,7 +307,7 @@ async function loadSubmissions() {
     const div = document.createElement("div");
     div.className = "submission-item";
     div.innerHTML = `
-      <strong>Day ${padDay(item.day)} · ${item.title}</strong>
+      <strong>${item.targetLanguage || "Racket"} · Day ${padDay(item.day)} · ${item.title}</strong>
       <span>${item.studentName} · ${created}${item.filename ? ` · ${item.filename}` : ""}</span>
       <details>
         <summary>查看反馈</summary>
@@ -297,6 +324,7 @@ async function submitAssignment(event) {
   const lesson = activeLesson();
   const formData = new FormData(els.submissionForm);
   formData.set("day", lesson.day);
+  formData.set("target", state.target);
 
   els.submitButton.disabled = true;
   els.submitButton.textContent = "批改中";
@@ -329,6 +357,15 @@ async function submitAssignment(event) {
 els.searchInput.addEventListener("input", (event) => {
   state.query = event.target.value;
   renderDayList();
+});
+
+els.languageSelect.addEventListener("change", (event) => {
+  state.target = event.target.value;
+  localStorage.setItem("racketTutor.targetLanguage", state.target);
+  state.activeDay = 1;
+  loadCourse().catch((error) => {
+    els.lessonTitle.textContent = error.message;
+  });
 });
 
 els.prevDay.addEventListener("click", () => selectDay(state.activeDay - 1));

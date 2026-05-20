@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 from flask import Flask, jsonify, make_response, redirect, request, send_from_directory
 from werkzeug.utils import secure_filename
 
-from course_data import get_lesson, get_lessons
+from course_data import get_language_options, get_lesson, get_lessons, normalize_target_language
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -102,7 +102,8 @@ def local_feedback(lesson: dict, content: str) -> str:
     if not code:
         return "没有检测到作业内容。请上传 .rkt 文件或粘贴代码后再请求批改。"
 
-    if "#lang racket" not in code and "#lang typed/racket" not in code:
+    target_language = lesson.get("target_language", "racket")
+    if target_language == "racket" and "#lang racket" not in code and "#lang typed/racket" not in code:
         notes.append("建议在文件第一行加入 `#lang racket` 或对应语言声明。")
     if "(define" not in code and lesson["day"] >= 4:
         notes.append("今天之后的作业通常应该包含至少一个 `define`，用于练习命名和函数抽象。")
@@ -139,7 +140,7 @@ def ai_feedback(lesson: dict, content: str, student_note: str) -> str:
     docs = syntax_bridge.get("docs", lesson.get("official_docs", []))
     doc_lines = "\n".join(f"- {doc['title']}: {doc['url']}" for doc in docs)
     prompt = f"""
-你是一位严格但友好的 Racket 编程老师。学生有 C++ 基础，正在按照 56 天课程学习 Racket。
+你是一位严格但友好的编程老师。学生有 C++ 基础，正在按照 56 天课程学习 {lesson.get('target_language_name', 'Racket')}。
 
 今日课程：
 Day {lesson['day']}: {lesson['title']}
@@ -176,7 +177,7 @@ Racket 写法：
 请用中文批改。结构必须包含：
 1. 总体评分，满分 10 分。
 2. 正确性反馈。
-3. Racket 风格反馈，尤其指出是否还在用 C++ 思维。
+3. {lesson.get('target_language_name', 'Racket')} 风格反馈，尤其指出是否还在用 C++ 思维。
 4. 具体可改进点，至少 5 条。
 5. 推荐修改版本或关键片段。
 6. 结合上方官方文档链接，指出学生应该回看哪个文档主题。
@@ -232,13 +233,15 @@ def logout():
 @app.get("/api/course")
 @require_access
 def course():
-    return jsonify({"lessons": get_lessons()})
+    target = normalize_target_language(request.args.get("target"))
+    return jsonify({"languages": get_language_options(), "target": target, "lessons": get_lessons(target)})
 
 
 @app.get("/api/course/<int:day>")
 @require_access
 def lesson(day: int):
-    item = get_lesson(day)
+    target = normalize_target_language(request.args.get("target"))
+    item = get_lesson(day, target)
     if not item:
         return jsonify({"error": "lesson not found"}), 404
     return jsonify(item)
@@ -256,7 +259,8 @@ def submit_assignment():
     ensure_data_files()
 
     day = int(request.form.get("day", "1"))
-    lesson = get_lesson(day)
+    target = normalize_target_language(request.form.get("target", "racket"))
+    lesson = get_lesson(day, target)
     if not lesson:
         return jsonify({"error": "invalid day"}), 400
 
@@ -284,6 +288,8 @@ def submit_assignment():
     record = {
         "id": uuid.uuid4().hex,
         "day": day,
+        "target": target,
+        "targetLanguage": lesson.get("target_language_name", "Racket"),
         "category": lesson["category"],
         "title": lesson["title"],
         "studentName": student_name,

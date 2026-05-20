@@ -157,6 +157,7 @@ button {
 }
 
 .search-box input,
+.language-picker select,
 form input,
 form textarea {
   width: 100%;
@@ -169,10 +170,41 @@ form textarea {
 }
 
 .search-box input:focus,
+.language-picker select:focus,
 form input:focus,
 form textarea:focus {
   border-color: var(--green);
   box-shadow: 0 0 0 3px rgba(39, 116, 90, 0.14);
+}
+
+.language-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.language-picker label {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.language-picker select {
+  appearance: none;
+  background:
+    linear-gradient(45deg, transparent 50%, var(--green-dark) 50%),
+    linear-gradient(135deg, var(--green-dark) 50%, transparent 50%),
+    white;
+  background-position:
+    calc(100% - 18px) 50%,
+    calc(100% - 12px) 50%,
+    0 0;
+  background-size:
+    6px 6px,
+    6px 6px,
+    100% 100%;
+  background-repeat: no-repeat;
+  color: var(--ink);
 }
 
 .day-list {
