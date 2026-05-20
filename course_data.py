@@ -16,6 +16,7 @@ class Lesson:
     official_docs: list[dict[str, str]]
     racket_focus: list[str]
     code: str
+    line_notes: list[dict[str, str]]
     practice: list[str]
     checklist: list[str]
     assignment: str
@@ -1667,6 +1668,244 @@ def _language_focus(target: str, day: int) -> list[str]:
     return [f"{language}: {item}" for item in base]
 
 
+def _line_note_for_racket(line: str, day: int) -> dict[str, str]:
+    stripped = line.strip()
+    if not stripped:
+        return {
+            "line": "",
+            "plain": "空行，用来分隔代码块。",
+            "syntax": "Racket 不依赖空行运行；空行只影响可读性。",
+            "cpp": "类似 C++ 中为了分组而空一行。",
+        }
+    if stripped.startswith(";"):
+        return {
+            "line": line,
+            "plain": "这是注释，给人读，程序不会执行。",
+            "syntax": "Racket 单行注释从 `;` 开始，一直到行尾。",
+            "cpp": "类似 C++ 的 `// comment`。",
+        }
+    if stripped.startswith("#lang"):
+        return {
+            "line": line,
+            "plain": "声明这个文件使用哪一种 Racket 语言。",
+            "syntax": "`#lang racket` 通常放在文件第一行，告诉解释器后面的语法按 Racket 处理。",
+            "cpp": "有点像 C++ 文件开头的编译环境选择，但它比 `#include` 更像“语言模式”。",
+        }
+    if stripped.startswith("(define ("):
+        return {
+            "line": line,
+            "plain": "定义一个函数。",
+            "syntax": "`define` 后面的小括号里，第一个名字是函数名，后面是参数名。函数体写在下一行或后面。",
+            "cpp": "类似 `return_type name(args) { ... }`，但 Racket 不写返回类型。",
+        }
+    if stripped.startswith("(define "):
+        return {
+            "line": line,
+            "plain": "给一个值起名字。",
+            "syntax": "`(define name value)` 会把右边的值绑定到左边的名字。默认不要把它想成可反复修改的变量。",
+            "cpp": "类似 `const auto name = value;`，更接近命名一个值，而不是先声明再赋值。",
+        }
+    if stripped.startswith("(struct "):
+        return {
+            "line": line,
+            "plain": "定义一种数据结构。",
+            "syntax": "`struct` 后面是类型名，括号里是字段名；`#:transparent` 让打印和测试更清楚。",
+            "cpp": "类似 C++ 的 `struct Student { ... };`，但 Racket 会自动生成构造器和访问器。",
+        }
+    if stripped in {")", "]))", "])", ")))", "))"} or set(stripped) <= {")", "]"}:
+        return {
+            "line": line,
+            "plain": "关闭前面打开的表达式或分支。",
+            "syntax": "Racket 用括号表示结构；这一行通常不是新动作，而是结束嵌套层级。",
+            "cpp": "类似 C++ 的 `}`，表示一个代码块结束。",
+        }
+    if stripped.startswith("["):
+        return {
+            "line": line,
+            "plain": "这是 `cond`、`let` 或模式匹配里的一个小分支。",
+            "syntax": "方括号在这里主要提升可读性，和小括号一样表达结构；前半段通常是条件或绑定，后半段是结果。",
+            "cpp": "类似 `if (...) return ...;` 或局部变量初始化的一项。",
+        }
+    if stripped.startswith("(cond"):
+        return {
+            "line": line,
+            "plain": "开始多分支判断。",
+            "syntax": "`cond` 由多个分支组成，每个分支一般写成 `[条件 结果]`。",
+            "cpp": "类似 `if / else if / else` 链。",
+        }
+    if stripped.startswith("(if"):
+        return {
+            "line": line,
+            "plain": "开始一个二选一判断。",
+            "syntax": "`if` 后面依次是条件、为真时的结果、为假时的结果。",
+            "cpp": "类似三元表达式 `cond ? a : b`，因为 Racket 的 `if` 本身会产生值。",
+        }
+    if stripped.startswith("(let"):
+        return {
+            "line": line,
+            "plain": "开始一组局部绑定。",
+            "syntax": "`let` 先给中间结果命名，再在 body 中使用这些名字。",
+            "cpp": "类似在函数内部声明几个局部变量。",
+        }
+    if stripped.startswith("(lambda"):
+        return {
+            "line": line,
+            "plain": "创建一个匿名函数。",
+            "syntax": "`lambda` 后面的括号是参数列表，后面是函数体。",
+            "cpp": "类似 C++ lambda：`[](auto x) { return ...; }`。",
+        }
+    if stripped.startswith("(match"):
+        return {
+            "line": line,
+            "plain": "开始按数据形状进行匹配。",
+            "syntax": "`match` 会看值的结构，然后选择第一个匹配的分支。",
+            "cpp": "比 `switch` 更强，因为它能拆列表、结构体和嵌套数据。",
+        }
+    if stripped.startswith("(require"):
+        return {
+            "line": line,
+            "plain": "导入一个库或模块。",
+            "syntax": "`require` 把别的模块提供的名字带进当前文件。",
+            "cpp": "类似 `#include`，但 Racket 的模块边界更明确。",
+        }
+    if stripped.startswith("(provide"):
+        return {
+            "line": line,
+            "plain": "声明这个模块对外开放哪些名字。",
+            "syntax": "`provide` 后面的名字可以被其他文件 `require` 使用。",
+            "cpp": "类似把函数声明放进 `.h`，明确告诉别人能用什么。",
+        }
+    if stripped.startswith("(module+"):
+        return {
+            "line": line,
+            "plain": "定义一个附加子模块，常用于测试。",
+            "syntax": "`module+ test` 里的代码可以在测试时运行，不干扰主程序。",
+            "cpp": "类似把测试代码放到单独 test target。",
+        }
+    if stripped.startswith("("):
+        return {
+            "line": line,
+            "plain": "这是一次函数调用或特殊语法形式。",
+            "syntax": "Racket 的基本形状是 `(函数 参数1 参数2 ...)`。先看括号里的第一个位置，它决定这一整句在做什么。",
+            "cpp": "类似 `function(arg1, arg2)`，只是函数名放到最前面；`+`、`*` 也按这个规则写。",
+        }
+    return {
+        "line": line,
+        "plain": "这是上一行表达式的一部分。",
+        "syntax": "Racket 允许一个表达式跨多行；缩进帮助你看出它属于哪一层括号。",
+        "cpp": "类似 C++ 中函数调用参数太长时换行继续写。",
+    }
+
+
+def _racket_line_notes(code: str, day: int) -> list[dict[str, str]]:
+    return [_line_note_for_racket(line, day) for line in code.splitlines()]
+
+
+def _line_note_for_python(line: str) -> dict[str, str]:
+    stripped = line.strip()
+    if not stripped:
+        return {"line": "", "plain": "空行，用来分隔逻辑段。", "syntax": "Python 不靠空行运行；真正决定代码块的是缩进。", "cpp": "类似 C++ 中为了可读性空一行。"}
+    if stripped.startswith("#"):
+        return {"line": line, "plain": "这是注释。", "syntax": "Python 单行注释从 `#` 开始。", "cpp": "类似 C++ 的 `//`。"}
+    if stripped.startswith("import ") or stripped.startswith("from "):
+        return {"line": line, "plain": "导入库或库里的名字。", "syntax": "`import` 把模块带进当前文件，`from ... import ...` 只带入指定名字。", "cpp": "类似 `#include`，但 Python 导入的是模块对象。"}
+    if stripped.startswith("@"):
+        return {"line": line, "plain": "这是装饰器，会修改下一行定义的函数或类。", "syntax": "`@decorator` 写在定义前，常用于 dataclass、路由、测试等场景。", "cpp": "不像 C++ 属性那么简单，它会实际包装对象。"}
+    if stripped.startswith("class "):
+        return {"line": line, "plain": "定义一个类。", "syntax": "`class Name:` 后面的缩进块属于这个类。", "cpp": "类似 `class Name { ... };`，但用缩进代替大括号。"}
+    if stripped.startswith("def "):
+        return {"line": line, "plain": "定义一个函数。", "syntax": "`def name(args):` 以冒号结尾；下一层缩进就是函数体。类型提示可选。", "cpp": "类似 `return_type name(args) { ... }`，但 Python 不写大括号。"}
+    if stripped.startswith("if "):
+        return {"line": line, "plain": "开始条件分支。", "syntax": "`if 条件:` 后面缩进的行在条件为真时执行。", "cpp": "类似 `if (...) { ... }`。"}
+    if stripped.startswith("elif "):
+        return {"line": line, "plain": "继续判断另一个条件。", "syntax": "`elif` 是 Python 的 `else if`。", "cpp": "等价于 C++ 的 `else if (...)`。"}
+    if stripped.startswith("else"):
+        return {"line": line, "plain": "处理前面条件都不成立的情况。", "syntax": "`else:` 后面也必须缩进。", "cpp": "类似 C++ 的 `else { ... }`。"}
+    if stripped.startswith("for "):
+        return {"line": line, "plain": "遍历一个序列。", "syntax": "`for item in items:` 会逐个取出元素。", "cpp": "类似 range-based for：`for (auto item : items)`。"}
+    if stripped.startswith("return "):
+        return {"line": line, "plain": "返回函数结果。", "syntax": "`return` 会结束当前函数并交出后面的值。", "cpp": "和 C++ 的 `return value;` 很接近。"}
+    if "print(" in stripped:
+        return {"line": line, "plain": "把结果输出到终端。", "syntax": "`print(...)` 是内置函数，参数放在括号里。", "cpp": "类似 `std::cout << ...`。"}
+    if "=" in stripped:
+        return {"line": line, "plain": "把右边的值绑定到左边的名字。", "syntax": "Python 变量不需要声明类型；`name = value` 会让名字指向这个值。", "cpp": "更像 `auto name = value;`，但类型在运行时由值决定。"}
+    return {"line": line, "plain": "这是一个表达式或上一代码块的一部分。", "syntax": "看缩进判断它属于哪个函数、类或分支。", "cpp": "类似 C++ 中某个 `{}` 代码块内部的一行。"}
+
+
+def _line_note_for_c(line: str) -> dict[str, str]:
+    stripped = line.strip()
+    if not stripped:
+        return {"line": "", "plain": "空行，用来分隔代码段。", "syntax": "C 不依赖空行运行。", "cpp": "和 C++ 一样，只影响可读性。"}
+    if stripped.startswith("//") or stripped.startswith("/*"):
+        return {"line": line, "plain": "这是注释。", "syntax": "C 支持 `//` 单行注释和 `/* ... */` 块注释。", "cpp": "和 C++ 基本一样。"}
+    if stripped.startswith("#include"):
+        return {"line": line, "plain": "引入头文件。", "syntax": "预处理器会在编译前处理 `#include`，让你使用库函数声明。", "cpp": "类似 C++ `#include <iostream>`，但 C 常用 `stdio.h/string.h`。"}
+    if "main(" in stripped:
+        return {"line": line, "plain": "程序入口函数。", "syntax": "`int main(void)` 表示程序从这里开始执行，并返回一个整数状态码。", "cpp": "和 C++ 的 `int main()` 很接近。"}
+    if stripped == "{" or stripped.endswith("{"):
+        return {"line": line, "plain": "开始一个代码块。", "syntax": "大括号包住函数、if、for 等结构的主体。", "cpp": "和 C++ 的 `{` 完全类似。"}
+    if stripped == "}" or stripped == "};":
+        return {"line": line, "plain": "结束一个代码块或结构定义。", "syntax": "`}` 结束作用域；struct 定义后通常还要分号。", "cpp": "和 C++ 的 `}` / `};` 类似。"}
+    if stripped.startswith("typedef struct") or stripped.startswith("struct "):
+        return {"line": line, "plain": "定义结构体类型。", "syntax": "`struct` 把多个字段组合成一个数据类型。", "cpp": "类似 C++ struct，但没有成员函数和构造器。"}
+    if stripped.startswith("for "):
+        return {"line": line, "plain": "开始循环。", "syntax": "C 的 for 通常包含初始化、条件、更新三部分。", "cpp": "和经典 C++ for 循环相同。"}
+    if stripped.startswith("if "):
+        return {"line": line, "plain": "开始条件判断。", "syntax": "括号中是条件；非 0 通常表示真。", "cpp": "和 C++ 的 if 很接近。"}
+    if stripped.startswith("return"):
+        return {"line": line, "plain": "返回函数结果。", "syntax": "`return` 后面的值必须符合函数返回类型。", "cpp": "和 C++ 的 `return` 一样。"}
+    if "printf" in stripped:
+        return {"line": line, "plain": "格式化输出。", "syntax": "`printf` 第一个参数是格式字符串，`%d/%s/%f` 等占位符对应后面的值。", "cpp": "类似 `std::cout`，但你必须写清楚格式。"}
+    if stripped.endswith(";"):
+        return {"line": line, "plain": "一条 C 语句。", "syntax": "C 语句通常以分号结束；类型、指针和数组要写清楚。", "cpp": "和 C++ 的普通语句很接近。"}
+    return {"line": line, "plain": "这是声明、表达式或代码块的一部分。", "syntax": "结合上下文看它属于函数、struct 还是控制流。", "cpp": "和 C++ 的块结构阅读方式相同。"}
+
+
+def _line_note_for_java(line: str) -> dict[str, str]:
+    stripped = line.strip()
+    if not stripped:
+        return {"line": "", "plain": "空行，用来分隔代码段。", "syntax": "Java 不依赖空行运行。", "cpp": "类似 C++ 中为了可读性空行。"}
+    if stripped.startswith("//") or stripped.startswith("/*"):
+        return {"line": line, "plain": "这是注释。", "syntax": "Java 支持 `//` 和 `/* ... */` 注释。", "cpp": "和 C++ 注释一样。"}
+    if stripped.startswith("import "):
+        return {"line": line, "plain": "导入类或包里的名字。", "syntax": "`import` 让后面代码可以直接使用某些类名。", "cpp": "不像 `#include` 粘贴文本，更像声明要使用的包名。"}
+    if " class " in f" {stripped} " or stripped.startswith("public class"):
+        return {"line": line, "plain": "定义一个类。", "syntax": "Java 代码基本都写在 class 里；public class 名通常要和文件名相同。", "cpp": "类似 C++ class，但 Java 没有头文件。"}
+    if stripped.startswith("public record") or stripped.startswith("record "):
+        return {"line": line, "plain": "定义一个 record 数据类型。", "syntax": "record 适合不可变数据，Java 会自动生成构造器和访问方法。", "cpp": "类似简单 struct，但更自动、更不可变。"}
+    if "main(" in stripped:
+        return {"line": line, "plain": "Java 程序入口。", "syntax": "`public static void main(String[] args)` 是命令行程序的固定入口签名。", "cpp": "类似 C++ 的 `int main(int argc, char** argv)`。"}
+    if stripped == "{" or stripped.endswith("{"):
+        return {"line": line, "plain": "开始一个代码块。", "syntax": "大括号定义 class、method、if、for 等结构的范围。", "cpp": "和 C++ 的 `{` 一样。"}
+    if stripped == "}":
+        return {"line": line, "plain": "结束一个代码块。", "syntax": "这一行关闭最近打开的 `{`。", "cpp": "和 C++ 的 `}` 一样。"}
+    if stripped.startswith("if "):
+        return {"line": line, "plain": "开始条件判断。", "syntax": "括号中必须是 boolean 表达式。", "cpp": "类似 C++ if，但 Java 不把整数当 boolean。"}
+    if stripped.startswith("for "):
+        return {"line": line, "plain": "开始循环或增强 for 遍历。", "syntax": "`for (Type x : xs)` 会逐个取集合元素。", "cpp": "类似 C++ range-based for。"}
+    if "System.out.println" in stripped:
+        return {"line": line, "plain": "输出一行到终端。", "syntax": "`System.out.println(...)` 是 Java 最常见的控制台输出。", "cpp": "类似 `std::cout << value << std::endl;`。"}
+    if stripped.startswith("return"):
+        return {"line": line, "plain": "返回方法结果。", "syntax": "返回值类型要和方法声明一致；`void` 方法可以不返回值。", "cpp": "和 C++ `return` 很接近。"}
+    if stripped.endswith(";"):
+        return {"line": line, "plain": "一条 Java 语句。", "syntax": "Java 普通语句以分号结束，变量通常需要声明类型。", "cpp": "和 C++ 的声明/赋值语句相似。"}
+    return {"line": line, "plain": "这是类、方法或代码块的一部分。", "syntax": "结合大括号层级判断它属于哪个结构。", "cpp": "和 C++ 读作用域的方式类似。"}
+
+
+def _line_notes_for_language(code: str, target: str, day: int) -> list[dict[str, str]]:
+    if target == "racket":
+        return _racket_line_notes(code, day)
+    explainers = {
+        "python": _line_note_for_python,
+        "c": _line_note_for_c,
+        "java": _line_note_for_java,
+    }
+    explainer = explainers.get(target)
+    if not explainer:
+        return []
+    return [explainer(line) for line in code.splitlines()]
+
+
 def _language_lesson(index: int, item: dict, target: str) -> Lesson:
     language = TARGET_LANGUAGES[target]["name"]
     bridge = _language_bridge(index, target)
@@ -1703,6 +1942,7 @@ def _language_lesson(index: int, item: dict, target: str) -> Lesson:
         official_docs=bridge.get("docs", GENERIC_DOCS[target]),
         racket_focus=_language_focus(target, index),
         code=code,
+        line_notes=_line_notes_for_language(code, target, index),
         practice=practice,
         checklist=_default_checklist(index, language),
         assignment=assignment,
@@ -1766,6 +2006,7 @@ def get_lessons(target_language: str | None = None) -> list[dict]:
             official_docs=syntax_bridge["docs"],
             racket_focus=item["racket_focus"],
             code=item["code"],
+            line_notes=_racket_line_notes(item["code"], index),
             practice=item["practice"],
             checklist=_default_checklist(index),
             assignment=item["assignment"],

@@ -554,6 +554,83 @@ form textarea:focus {
   color: var(--code-ink);
 }
 
+.line-notes-panel[hidden] {
+  display: none;
+}
+
+.line-notes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.line-note {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr);
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: #fbfdfb;
+}
+
+.line-note-index {
+  display: grid;
+  place-items: center;
+  align-self: start;
+  min-height: 38px;
+  border-radius: 8px;
+  background: var(--surface-2);
+  color: var(--green-dark);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.line-note-body {
+  min-width: 0;
+}
+
+.line-note-body pre {
+  overflow: auto;
+  margin: 0;
+  border-radius: 8px;
+  padding: 10px;
+  background: var(--code-bg);
+  color: var(--code-ink);
+}
+
+.line-note-body p {
+  margin: 10px 0;
+  color: #27382f;
+  font-weight: 700;
+}
+
+.line-note-body dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.line-note-body dl div {
+  border-radius: 8px;
+  padding: 10px;
+  background: var(--surface-2);
+}
+
+.line-note-body dt {
+  margin-bottom: 4px;
+  color: var(--green-dark);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.line-note-body dd {
+  margin: 0;
+  color: #35443b;
+  font-size: 14px;
+}
+
 code {
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
   font-size: 14px;
@@ -784,6 +861,10 @@ textarea {
     grid-template-columns: 1fr 1fr 1fr;
   }
 
+  .line-note-body dl {
+    grid-template-columns: 1fr;
+  }
+
   .metric-strip div {
     min-height: 86px;
   }
@@ -817,5 +898,13 @@ textarea {
   .section-heading {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .line-note {
+    grid-template-columns: 1fr;
+  }
+
+  .line-note-index {
+    width: 54px;
   }
 }

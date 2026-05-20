@@ -41,6 +41,9 @@ const els = {
   explanation: document.querySelector("#explanation"),
   focusList: document.querySelector("#focusList"),
   codeBlock: document.querySelector("#codeBlock"),
+  lineNotesEyebrow: document.querySelector("#lineNotesEyebrow"),
+  lineNotesPanel: document.querySelector("#lineNotesPanel"),
+  lineNotesList: document.querySelector("#lineNotesList"),
   copyCode: document.querySelector("#copyCode"),
   practiceList: document.querySelector("#practiceList"),
   checklist: document.querySelector("#checklist"),
@@ -153,6 +156,7 @@ function renderLesson() {
   renderSyntaxBridge(lesson);
   els.explanation.textContent = lesson.explanation;
   els.codeBlock.textContent = lesson.code;
+  renderLineNotes(lesson);
   els.assignmentText.textContent = lesson.assignment;
 
   els.prevDay.disabled = lesson.day === 1;
@@ -221,6 +225,38 @@ function renderSyntaxBridge(lesson) {
     link.textContent = doc.title;
     els.docsList.appendChild(link);
   }
+}
+
+function renderLineNotes(lesson) {
+  const notes = lesson.line_notes || [];
+  const show = notes.length > 0;
+  els.lineNotesPanel.hidden = !show;
+  els.lineNotesList.innerHTML = "";
+  if (!show) return;
+  els.lineNotesEyebrow.textContent = `${lesson.target_language_name || "Code"} Line-by-Line Syntax`;
+
+  notes.forEach((note, index) => {
+    const row = document.createElement("article");
+    row.className = "line-note";
+    const codeText = note.line || "空行";
+    row.innerHTML = `
+      <div class="line-note-index">L${index + 1}</div>
+      <div class="line-note-body">
+        <pre><code></code></pre>
+        <p></p>
+        <dl>
+          <div><dt>语法</dt><dd></dd></div>
+          <div><dt>C++ 类比</dt><dd></dd></div>
+        </dl>
+      </div>
+    `;
+    row.querySelector("code").textContent = codeText;
+    row.querySelector("p").textContent = note.plain;
+    const descriptions = row.querySelectorAll("dd");
+    descriptions[0].textContent = note.syntax;
+    descriptions[1].textContent = note.cpp;
+    els.lineNotesList.appendChild(row);
+  });
 }
 
 function renderChecklist(lesson) {
