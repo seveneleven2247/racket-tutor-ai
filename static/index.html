@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -13,13 +13,13 @@
           <div class="brand-mark">λ</div>
           <div>
             <h1>Code Tutor AI</h1>
-            <p>C++ 基础转多语言 · 56 天</p>
+            <p>C++ foundation to multiple languages · 56 days</p>
           </div>
         </div>
 
         <div class="progress-block">
           <div class="progress-row">
-            <span>总进度</span>
+            <span>Total progress</span>
             <strong id="progressText">0 / 336</strong>
           </div>
           <div class="progress-track">
@@ -28,11 +28,11 @@
         </div>
 
         <div class="search-box">
-          <input id="searchInput" type="search" placeholder="搜索 day、主题或 category" />
+          <input id="searchInput" type="search" placeholder="Search day, topic, or category" />
         </div>
 
         <div class="language-picker">
-          <label for="languageSelect">目标语言</label>
+          <label for="languageSelect">Target language</label>
           <select id="languageSelect"></select>
         </div>
 
@@ -43,11 +43,11 @@
         <header class="topbar">
           <div>
             <p id="weekLabel" class="eyebrow">Week 1</p>
-            <h2 id="lessonTitle">加载中</h2>
+            <h2 id="lessonTitle">Loading</h2>
           </div>
           <div class="topbar-actions">
-            <button id="prevDay" class="icon-button" type="button" aria-label="上一天">‹</button>
-            <button id="nextDay" class="icon-button" type="button" aria-label="下一天">›</button>
+            <button id="prevDay" class="icon-button" type="button" aria-label="Previous day">‹</button>
+            <button id="nextDay" class="icon-button" type="button" aria-label="Next day">›</button>
           </div>
         </header>
 
@@ -77,7 +77,7 @@
 
             <section class="panel">
               <div class="section-heading">
-                <h3>C++ 到 Racket 的转换点</h3>
+                <h3>C++ Bridge</h3>
               </div>
               <p id="cppBridge" class="body-text"></p>
             </section>
@@ -86,43 +86,43 @@
               <div class="section-heading">
                 <div>
                   <p id="bridgeEyebrow" class="eyebrow">C++ Syntax → Target Syntax</p>
-                  <h3 id="bridgeConcept">语法迁移</h3>
+                  <h3 id="bridgeConcept">Syntax Bridge</h3>
                 </div>
               </div>
               <p id="bridgeAngle" class="body-text"></p>
               <div class="syntax-grid">
                 <div class="syntax-card">
-                  <div class="syntax-card-head">C++ 写法</div>
+                  <div class="syntax-card-head">C++ Syntax</div>
                   <pre><code id="cppSyntaxBlock"></code></pre>
                 </div>
                 <div class="syntax-card">
-                  <div id="targetSyntaxLabel" class="syntax-card-head">目标语言写法</div>
+                  <div id="targetSyntaxLabel" class="syntax-card-head">Target Syntax</div>
                   <pre><code id="targetSyntaxBlock"></code></pre>
                 </div>
               </div>
               <div class="bridge-detail-grid">
                 <div>
-                  <h4>迁移步骤</h4>
+                  <h4>Translation Steps</h4>
                   <ol id="translationSteps" class="number-list"></ol>
                 </div>
                 <div>
-                  <h4>常见误区</h4>
+                  <h4>Common Pitfalls</h4>
                   <ul id="pitfallList" class="rubric-list"></ul>
                 </div>
               </div>
               <div class="drill-box">
-                <strong>今日转换练习</strong>
+                <strong>Today's Translation Drill</strong>
                 <p id="bridgeDrill"></p>
               </div>
               <div>
-                <h4>官方文档</h4>
+                <h4>Official Documentation</h4>
                 <div id="docsList" class="docs-list"></div>
               </div>
             </section>
 
             <section class="panel">
               <div class="section-heading">
-                <h3>详细讲解</h3>
+                <h3>Detailed Explanation</h3>
               </div>
               <p id="explanation" class="body-text"></p>
               <div id="focusList" class="tag-list"></div>
@@ -130,8 +130,8 @@
 
             <section class="panel code-panel">
               <div class="section-heading">
-                <h3>今日示例代码</h3>
-                <button id="copyCode" class="secondary-button" type="button">复制代码</button>
+                <h3>Today's Sample Code</h3>
+                <button id="copyCode" class="secondary-button" type="button">Copy Code</button>
               </div>
               <pre><code id="codeBlock"></code></pre>
             </section>
@@ -140,7 +140,7 @@
               <div class="section-heading">
                 <div>
                   <p id="lineNotesEyebrow" class="eyebrow">Line-by-Line Syntax</p>
-                  <h3>逐行语法解释</h3>
+                  <h3>Line-by-Line Syntax Notes</h3>
                 </div>
               </div>
               <div id="lineNotesList" class="line-notes-list"></div>
@@ -158,14 +158,14 @@
             <section class="panel sticky-panel">
               <div class="section-heading">
                 <h3>Daily Checklist</h3>
-                <button id="resetChecklist" class="secondary-button" type="button">重置</button>
+                <button id="resetChecklist" class="secondary-button" type="button">Reset</button>
               </div>
               <div id="checklist" class="checklist"></div>
             </section>
 
             <section class="panel">
               <div class="section-heading">
-                <h3>今日作业</h3>
+                <h3>Today's Assignment</h3>
               </div>
               <p id="assignmentText" class="body-text"></p>
               <ul id="rubricList" class="rubric-list"></ul>
@@ -173,34 +173,34 @@
 
             <section class="panel submission-panel">
               <div class="section-heading">
-                <h3>上传作业并批改</h3>
+                <h3>Upload Homework for Review</h3>
               </div>
               <form id="submissionForm">
                 <label>
-                  <span>名字</span>
-                  <input id="studentName" name="studentName" type="text" placeholder="可选" />
+                  <span>Name</span>
+                  <input id="studentName" name="studentName" type="text" placeholder="Optional" />
                 </label>
                 <label>
-                  <span>作业文件</span>
-                  <input id="fileInput" name="file" type="file" accept=".rkt,.rktl,.txt,.md,.cpp,.cc,.cxx,.h,.hpp,.py,.json" />
+                  <span>Homework file</span>
+                  <input id="fileInput" name="file" type="file" accept=".rkt,.rktl,.txt,.md,.cpp,.cc,.cxx,.c,.h,.hpp,.py,.java,.json" />
                 </label>
                 <label>
-                  <span>或粘贴代码</span>
+                  <span>Or paste code</span>
                   <textarea id="codeInput" name="code" rows="9" placeholder="#lang racket&#10;&#10;(define ... )"></textarea>
                 </label>
                 <label>
-                  <span>想让 AI 重点看的地方</span>
-                  <textarea id="studentNote" name="studentNote" rows="3" placeholder="例如：我不确定递归写得对不对"></textarea>
+                  <span>What should AI focus on?</span>
+                  <textarea id="studentNote" name="studentNote" rows="3" placeholder="Example: I am unsure whether my recursion is correct."></textarea>
                 </label>
-                <button id="submitButton" class="primary-button" type="submit">提交并批改</button>
+                <button id="submitButton" class="primary-button" type="submit">Submit and Review</button>
               </form>
               <div id="feedbackBox" class="feedback-box" hidden></div>
             </section>
 
             <section class="panel">
               <div class="section-heading">
-                <h3>批改记录</h3>
-                <button id="refreshSubmissions" class="secondary-button" type="button">刷新</button>
+                <h3>Review History</h3>
+                <button id="refreshSubmissions" class="secondary-button" type="button">Refresh</button>
               </div>
               <div id="submissionList" class="submission-list"></div>
             </section>

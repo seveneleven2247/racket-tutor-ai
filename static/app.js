@@ -144,7 +144,7 @@ function renderLesson() {
   els.weekLabel.textContent = `Week ${lesson.week}`;
   document.title = `${lesson.target_language_name || "Racket"} Tutor AI`;
   document.querySelector(".brand h1").textContent = `${lesson.target_language_name || "Code"} Tutor AI`;
-  document.querySelector(".brand p").textContent = `C++ 基础转 ${lesson.target_language_name || "目标语言"} · 56 天`;
+  document.querySelector(".brand p").textContent = `C++ foundation to ${lesson.target_language_name || "target language"} · 56 days`;
   els.lessonTitle.textContent = lesson.title;
   els.categoryLabel.textContent = lesson.category;
   els.goalTitle.textContent = lesson.title;
@@ -198,7 +198,7 @@ function renderSyntaxBridge(lesson) {
   els.bridgeConcept.textContent = bridge.concept;
   els.bridgeAngle.textContent = bridge.today_angle;
   els.cppSyntaxBlock.textContent = bridge.cpp;
-  els.targetSyntaxLabel.textContent = `${targetName} 写法`;
+  els.targetSyntaxLabel.textContent = `${targetName} Syntax`;
   els.targetSyntaxBlock.textContent = bridge.target || bridge.racket;
   els.bridgeDrill.textContent = bridge.drill;
 
@@ -238,15 +238,15 @@ function renderLineNotes(lesson) {
   notes.forEach((note, index) => {
     const row = document.createElement("article");
     row.className = "line-note";
-    const codeText = note.line || "空行";
+    const codeText = note.line || "Blank line";
     row.innerHTML = `
       <div class="line-note-index">L${index + 1}</div>
       <div class="line-note-body">
         <pre><code></code></pre>
         <p></p>
         <dl>
-          <div><dt>语法</dt><dd></dd></div>
-          <div><dt>C++ 类比</dt><dd></dd></div>
+          <div><dt>Syntax</dt><dd></dd></div>
+          <div><dt>C++ Comparison</dt><dd></dd></div>
         </dl>
       </div>
     `;
@@ -300,7 +300,7 @@ async function loadCourse() {
     window.location.href = "/";
     return;
   }
-  if (!response.ok) throw new Error("课程数据加载失败");
+  if (!response.ok) throw new Error("Course data failed to load");
   const data = await response.json();
   state.languages = data.languages || state.languages;
   state.target = data.target || state.target;
@@ -333,7 +333,7 @@ async function loadSubmissions() {
   if (!data.submissions.length) {
     const empty = document.createElement("p");
     empty.className = "body-text";
-    empty.textContent = "还没有提交记录。";
+    empty.textContent = "No submissions yet.";
     els.submissionList.appendChild(empty);
     return;
   }
@@ -346,7 +346,7 @@ async function loadSubmissions() {
       <strong>${item.targetLanguage || "Racket"} · Day ${padDay(item.day)} · ${item.title}</strong>
       <span>${item.studentName} · ${created}${item.filename ? ` · ${item.filename}` : ""}</span>
       <details>
-        <summary>查看反馈</summary>
+        <summary>View feedback</summary>
         <pre></pre>
       </details>
     `;
@@ -363,10 +363,10 @@ async function submitAssignment(event) {
   formData.set("target", state.target);
 
   els.submitButton.disabled = true;
-  els.submitButton.textContent = "批改中";
+  els.submitButton.textContent = "Reviewing";
   els.feedbackBox.hidden = false;
   els.feedbackBox.classList.remove("error");
-  els.feedbackBox.textContent = "正在读取作业并生成反馈...";
+  els.feedbackBox.textContent = "Reading the assignment and generating feedback...";
 
   try {
     const response = await fetch("/api/submit", {
@@ -376,7 +376,7 @@ async function submitAssignment(event) {
     });
     const data = await response.json();
     if (!response.ok) {
-      throw new Error(data.error || "提交失败");
+      throw new Error(data.error || "Submission failed");
     }
     els.feedbackBox.textContent = data.submission.feedback;
     els.submissionForm.reset();
@@ -386,7 +386,7 @@ async function submitAssignment(event) {
     els.feedbackBox.textContent = error.message;
   } finally {
     els.submitButton.disabled = false;
-    els.submitButton.textContent = "提交并批改";
+    els.submitButton.textContent = "Submit and Review";
   }
 }
 
@@ -409,9 +409,9 @@ els.nextDay.addEventListener("click", () => selectDay(state.activeDay + 1));
 
 els.copyCode.addEventListener("click", async () => {
   await navigator.clipboard.writeText(activeLesson().code);
-  els.copyCode.textContent = "已复制";
+  els.copyCode.textContent = "Copied";
   setTimeout(() => {
-    els.copyCode.textContent = "复制代码";
+    els.copyCode.textContent = "Copy Code";
   }, 1200);
 });
 

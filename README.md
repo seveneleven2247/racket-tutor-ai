@@ -1,17 +1,17 @@
-# Racket Tutor AI
+# Code Tutor AI
 
-一个面向有 C++ 基础学习者的 56 天 Racket 学习网站。
+A 56-day programming-learning website for students who already know C++ and want to learn Racket, Python, C, or Java through C++ comparisons.
 
-功能：
+Features:
 
-- 56 天每日课程计划，每天一个独立 category
-- 每天详细讲解、C++ 对照、Racket 示例、练习和 checklist
-- 本地保存每日 checklist 进度
-- 上传作业文件或粘贴代码
-- AI 批改作业，指出正确性、风格、Racket 思维和下一步改进
-- 没有 `OPENAI_API_KEY` 时，自动使用本地规则反馈，方便离线体验
+- 56 daily course categories for each target language
+- C++ syntax bridges, concise explanations, sample code, practice tasks, and daily checklists
+- Browser-local checklist progress
+- Homework upload or pasted-code submission
+- AI homework review for correctness, style, C++ transfer habits, and next-step improvements
+- Local rule-based feedback when `OPENAI_API_KEY` is not configured
 
-## 运行
+## Run Locally
 
 ```bash
 cd ~/Public/racket-tutor-ai
@@ -22,93 +22,94 @@ cp .env.example .env
 python app.py --port 5055
 ```
 
-浏览器打开：
+Open:
 
 ```text
 http://127.0.0.1:5055
 ```
 
-## 配置 AI 批改
+## Configure AI Review
 
-编辑 `.env`：
+Edit `.env`:
 
 ```bash
-OPENAI_API_KEY=你的 OpenAI API key
+OPENAI_API_KEY=your_openai_api_key
 OPENAI_MODEL=gpt-5.4-mini
+ACCESS_CODE=share123
 ```
 
-然后重启：
+Restart the Flask app after changing `.env`:
 
 ```bash
 python app.py --port 5055
 ```
 
-## 公开访问
+Do not commit `.env`; it is intentionally ignored by git.
 
-### 临时分享
+## Public Sharing
 
-如果只想临时给别人打开，可以用隧道工具：
+### Temporary Tunnel
+
+For a temporary public URL, run:
 
 ```bash
 cloudflared tunnel --url http://127.0.0.1:5055
 ```
 
-它会打印一个 `https://...trycloudflare.com` 地址，可以直接分享。
-
-当前这次运行生成的临时地址：
+The currently shared tunnel URL is:
 
 ```text
 https://municipal-packets-ticket-believes.trycloudflare.com
 ```
 
-当前本机测试访问码：
+Current access code:
 
 ```text
 share123
 ```
 
-这个地址只有在本机 Flask 服务和 cloudflared 进程都保持运行时有效。
+This URL only works while both the local Flask app and the `cloudflared` process are running.
 
-### 局域网分享
+### Local Network Sharing
 
 ```bash
 python app.py --host 0.0.0.0 --port 5055
 ```
 
-然后用同一 Wi-Fi 下的其他设备访问：
+Then open this from another device on the same Wi-Fi:
 
 ```text
-http://你的电脑局域网IP:5055
+http://your-computer-lan-ip:5055
 ```
 
-### 部署到真正公网
+### Real Public Deployment
 
-推荐 Render、Railway、Fly.io 或 VPS。这个项目已经包含：
+Render, Railway, Fly.io, or a VPS can host this project. The repo includes:
 
 ```text
 Procfile
 render.yaml
 ```
 
-云平台环境变量建议：
+Recommended environment variables:
 
 ```bash
-OPENAI_API_KEY=你的 OpenAI API key
+OPENAI_API_KEY=your_openai_api_key
 OPENAI_MODEL=gpt-5.4-mini
-FLASK_SECRET_KEY=随机长字符串
-ACCESS_CODE=你想设置的访问码
+FLASK_SECRET_KEY=a_long_random_secret
+ACCESS_CODE=your_access_code
 ```
 
-`ACCESS_CODE` 建议一定设置。公开网站会开放作业上传和 AI 批改，如果不加访问码，陌生人可能上传文件或消耗你的 API key。
+Set `ACCESS_CODE` on any public deployment. The site allows file uploads and AI review, so an unprotected public site can let strangers upload files or spend your API budget.
 
-## 目录
+## Project Files
 
 ```text
-app.py              Flask 后端
-course_data.py      56 天课程生成逻辑
-static/index.html   前端页面
-static/styles.css   样式
-static/app.js       前端交互
-data/uploads/       上传作业保存目录
-data/submissions.json 自动生成的提交记录
+app.py              Flask backend
+course_data.py      56-day course generator
+static/index.html   Main frontend page
+static/styles.css   Styles
+static/app.js       Frontend behavior
+data/uploads/       Uploaded homework files
+data/submissions.json generated submission records
 ```

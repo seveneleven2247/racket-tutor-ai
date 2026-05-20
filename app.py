@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import uuid
 from datetime import datetime, timezone
 from functools import wraps
@@ -27,11 +28,15 @@ ALLOWED_EXTENSIONS = {
     "cpp",
     "cc",
     "cxx",
+    "c",
     "h",
     "hpp",
     "py",
+    "java",
     "json",
 }
+
+HAN_RE = re.compile(r"[\u3400-\u9fff]")
 
 load_dotenv(BASE_DIR / ".env")
 
@@ -82,6 +87,25 @@ def write_submissions(submissions: list[dict]) -> None:
     SUBMISSIONS_FILE.write_text(json.dumps(submissions, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
+def english_safe_submission(record: dict) -> dict:
+    cleaned = dict(record)
+    for field in ("title", "category", "studentNote", "contentPreview", "feedback"):
+        value = cleaned.get(field)
+        if isinstance(value, str) and HAN_RE.search(value):
+            if field == "feedback":
+                cleaned[field] = (
+                    "This is an older feedback record created before the English-only site update. "
+                    "Submit the assignment again to receive English feedback."
+                )
+            elif field == "contentPreview":
+                cleaned[field] = "Older submission preview hidden by the English-only site setting."
+            elif field == "studentNote":
+                cleaned[field] = ""
+            else:
+                cleaned[field] = "Legacy submission"
+    return cleaned
+
+
 def allowed_file(filename: str) -> bool:
     if "." not in filename:
         return False
@@ -100,30 +124,36 @@ def local_feedback(lesson: dict, content: str) -> str:
     notes: list[str] = []
 
     if not code:
-        return "没有检测到作业内容。请上传 .rkt 文件或粘贴代码后再请求批改。"
+        return "No assignment content was detected. Upload a file or paste code before requesting feedback."
 
     target_language = lesson.get("target_language", "racket")
+    target_language_name = lesson.get("target_language_name", "Racket")
     if target_language == "racket" and "#lang racket" not in code and "#lang typed/racket" not in code:
-        notes.append("建议在文件第一行加入 `#lang racket` 或对应语言声明。")
-    if "(define" not in code and lesson["day"] >= 4:
-        notes.append("今天之后的作业通常应该包含至少一个 `define`，用于练习命名和函数抽象。")
-    if "check-" not in code and lesson["day"] >= 19:
-        notes.append("从 Day 19 开始建议加入 rackunit 测试，例如 `check-equal?`。")
-    if "for (" in code or "#include" in code:
-        notes.append("看起来混入了 C++ 写法。尝试用递归、map/filter/fold 或表达式风格重写。")
-    if lesson["day"] >= 9 and "(list" not in code and "cons" not in code and "empty?" not in code:
-        notes.append("今天已经进入列表主题，建议在作业里体现 list/cons/empty? 等核心操作。")
+        notes.append("For Racket, put `#lang racket` or `#lang typed/racket` on the first line.")
+    if target_language == "racket" and "(define" not in code and lesson["day"] >= 4:
+        notes.append("After Day 4, most Racket assignments should include at least one `define` for naming or abstraction practice.")
+    if target_language == "racket" and "check-" not in code and lesson["day"] >= 19:
+        notes.append("From Day 19 onward, add rackunit tests such as `check-equal?` when possible.")
+    if target_language == "python" and "def " not in code and lesson["day"] >= 4:
+        notes.append("For Python function days, include at least one `def` so the work practices function design.")
+    if target_language == "c" and "#include" not in code:
+        notes.append("For C, include the relevant headers, such as `#include <stdio.h>` for formatted output.")
+    if target_language == "java" and "class " not in code and "record " not in code:
+        notes.append("For Java, place the code inside a class or record so it matches normal Java structure.")
+    if target_language != "c" and ("#include" in code or "std::" in code):
+        notes.append("The submission still contains C++ syntax. Rewrite that part using the target language's normal idioms.")
     if len(lines) < 8:
-        notes.append("代码量偏少。建议补充更多例子、测试或解释注释，证明你理解了今日主题。")
+        notes.append("The submission is short. Add more examples, tests, or concise explanation comments to show the concept clearly.")
     if not notes:
-        notes.append("基础结构不错。下一步可以提升命名、测试覆盖和边界情况处理。")
+        notes.append("The basic structure looks reasonable. Next, improve naming, test coverage, and edge-case handling.")
 
     return (
-        "本地规则反馈：\n"
-        f"- 今日主题：{lesson['category']} - {lesson['title']}\n"
-        f"- 检测到非空代码行：{len(lines)} 行\n"
+        "Local rule-based feedback:\n"
+        f"- Lesson: {lesson['category']} - {lesson['title']}\n"
+        f"- Target language: {target_language_name}\n"
+        f"- Non-empty code lines detected: {len(lines)}\n"
         + "\n".join(f"- {note}" for note in notes)
-        + "\n\n配置 OPENAI_API_KEY 后，可以获得更细的 AI 批改，包括逐段解释和改进建议。"
+        + "\n\nSet OPENAI_API_KEY to receive deeper AI feedback with paragraph-level review and improvement suggestions."
     )
 
 
@@ -139,51 +169,53 @@ def ai_feedback(lesson: dict, content: str, student_note: str) -> str:
     syntax_bridge = lesson.get("syntax_bridge", {})
     docs = syntax_bridge.get("docs", lesson.get("official_docs", []))
     doc_lines = "\n".join(f"- {doc['title']}: {doc['url']}" for doc in docs)
+    target_language_name = lesson.get("target_language_name", "Racket")
+    target_code = syntax_bridge.get("target") or syntax_bridge.get("racket", "")
     prompt = f"""
-你是一位严格但友好的编程老师。学生有 C++ 基础，正在按照 56 天课程学习 {lesson.get('target_language_name', 'Racket')}。
+You are a strict but friendly programming teacher. The student knows C++ and is following a 56-day course to learn {target_language_name}.
 
-今日课程：
+Today's lesson:
 Day {lesson['day']}: {lesson['title']}
 Category: {lesson['category']}
-目标：{lesson['goal']}
-C++ 对照：{lesson['cpp_bridge']}
-今日作业：{lesson['assignment']}
-评分标准：{'; '.join(lesson['grading_rubric'])}
+Goal: {lesson['goal']}
+C++ bridge: {lesson['cpp_bridge']}
+Assignment: {lesson['assignment']}
+Rubric: {'; '.join(lesson['grading_rubric'])}
 
-今天的 C++ 到 Racket 语法迁移重点：
-概念：{syntax_bridge.get('concept', '无')}
-迁移角度：{syntax_bridge.get('today_angle', '无')}
-C++ 写法：
+Today's C++ to {target_language_name} syntax bridge:
+Concept: {syntax_bridge.get('concept', 'None')}
+Migration angle: {syntax_bridge.get('today_angle', 'None')}
+C++ syntax:
 ```cpp
 {syntax_bridge.get('cpp', '')}
 ```
-Racket 写法：
-```racket
-{syntax_bridge.get('racket', '')}
+{target_language_name} syntax:
+```text
+{target_code}
 ```
-迁移步骤：{'; '.join(syntax_bridge.get('translation_steps', []))}
-常见误区：{'; '.join(syntax_bridge.get('pitfalls', []))}
-官方文档：
+Translation steps: {'; '.join(syntax_bridge.get('translation_steps', []))}
+Common pitfalls: {'; '.join(syntax_bridge.get('pitfalls', []))}
+Official documentation:
 {doc_lines}
 
-学生备注：
-{student_note or '无'}
+Student note:
+{student_note or 'None'}
 
-学生提交：
-```racket
+Student submission:
+```text
 {content[:12000]}
 ```
 
-请用中文批改。结构必须包含：
-1. 总体评分，满分 10 分。
-2. 正确性反馈。
-3. {lesson.get('target_language_name', 'Racket')} 风格反馈，尤其指出是否还在用 C++ 思维。
-4. 具体可改进点，至少 5 条。
-5. 推荐修改版本或关键片段。
-6. 结合上方官方文档链接，指出学生应该回看哪个文档主题。
-7. 请挑学生代码中 3-6 行关键 syntax 做逐行解释：这行做什么、语法点是什么、C++ 可以怎么类比。句子要短、通俗、准确。
-8. 明天学习前必须补齐的 checklist。
-不要编造未看到的运行结果；如果需要运行测试，请明确告诉学生怎么运行。
+Review in English. Use this exact structure:
+1. Overall score out of 10.
+2. Correctness feedback.
+3. {target_language_name} style feedback, especially whether the code still follows C++ habits.
+4. At least 5 concrete improvement points.
+5. A recommended revised version or key revised snippet.
+6. Which official documentation topic above the student should revisit.
+7. Pick 3-6 important lines from the student's code and explain them line by line: what the line does, what syntax point it uses, and the closest C++ comparison. Keep the sentences short, plain, and accurate.
+8. A checklist the student must complete before tomorrow's lesson.
+Do not invent runtime results you did not observe. If tests need to be run, explain exactly how the student should run them.
 """
     response = client.responses.create(
         model=model,
@@ -251,7 +283,7 @@ def lesson(day: int):
 @app.get("/api/submissions")
 @require_access
 def submissions():
-    return jsonify({"submissions": list(reversed(read_submissions()))})
+    return jsonify({"submissions": [english_safe_submission(item) for item in reversed(read_submissions())]})
 
 
 @app.post("/api/submit")

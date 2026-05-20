@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -12,7 +12,7 @@
         <div class="brand-mark">λ</div>
         <div>
           <h1>Racket Tutor AI</h1>
-          <p>请输入访问码</p>
+          <p>Enter the access code</p>
         </div>
       </div>
       <form id="accessForm" class="access-form">
@@ -20,7 +20,7 @@
           <span>Access Code</span>
           <input id="accessCode" type="password" autocomplete="current-password" autofocus />
         </label>
-        <button class="primary-button" type="submit">进入网站</button>
+        <button class="primary-button" type="submit">Enter Site</button>
       </form>
       <p id="accessMessage" class="access-message"></p>
     </main>
@@ -28,7 +28,7 @@
       const form = document.querySelector("#accessForm");
       const message = document.querySelector("#accessMessage");
       async function submitAccessCode(code) {
-        message.textContent = "正在验证...";
+        message.textContent = "Verifying...";
         const response = await fetch("/api/access", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -39,7 +39,7 @@
           window.location.href = "/";
           return;
         }
-        message.textContent = "访问码不正确。";
+        message.textContent = "The access code is incorrect.";
       }
 
       const params = new URLSearchParams(window.location.search);
