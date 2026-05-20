@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Racket Tutor AI · Access</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="access-page">
+    <main class="access-card">
+      <div class="brand">
+        <div class="brand-mark">λ</div>
+        <div>
+          <h1>Racket Tutor AI</h1>
+          <p>请输入访问码</p>
+        </div>
+      </div>
+      <form id="accessForm" class="access-form">
+        <label>
+          <span>Access Code</span>
+          <input id="accessCode" type="password" autocomplete="current-password" autofocus />
+        </label>
+        <button class="primary-button" type="submit">进入网站</button>
+      </form>
+      <p id="accessMessage" class="access-message"></p>
+    </main>
+    <script>
+      const form = document.querySelector("#accessForm");
+      const message = document.querySelector("#accessMessage");
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        message.textContent = "正在验证...";
+        const response = await fetch("/api/access", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: document.querySelector("#accessCode").value }),
+        });
+        if (response.ok) {
+          window.location.href = "/";
+          return;
+        }
+        message.textContent = "访问码不正确。";
+      });
+    </script>
+  </body>
+</html>

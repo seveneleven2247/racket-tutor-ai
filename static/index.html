@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Racket Tutor AI</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">λ</div>
+          <div>
+            <h1>Racket Tutor AI</h1>
+            <p>C++ 基础转 Racket · 56 天</p>
+          </div>
+        </div>
+
+        <div class="progress-block">
+          <div class="progress-row">
+            <span>总进度</span>
+            <strong id="progressText">0 / 336</strong>
+          </div>
+          <div class="progress-track">
+            <div id="progressFill" class="progress-fill"></div>
+          </div>
+        </div>
+
+        <div class="search-box">
+          <input id="searchInput" type="search" placeholder="搜索 day、主题或 category" />
+        </div>
+
+        <div id="dayList" class="day-list" aria-label="56 day course list"></div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div>
+            <p id="weekLabel" class="eyebrow">Week 1</p>
+            <h2 id="lessonTitle">加载中</h2>
+          </div>
+          <div class="topbar-actions">
+            <button id="prevDay" class="icon-button" type="button" aria-label="上一天">‹</button>
+            <button id="nextDay" class="icon-button" type="button" aria-label="下一天">›</button>
+          </div>
+        </header>
+
+        <section class="lesson-layout">
+          <article class="lesson-main">
+            <section class="panel lesson-hero">
+              <div>
+                <p id="categoryLabel" class="category-label"></p>
+                <h3 id="goalTitle"></h3>
+                <p id="goalText" class="lead"></p>
+              </div>
+              <div class="metric-strip">
+                <div>
+                  <span>Day</span>
+                  <strong id="dayMetric">01</strong>
+                </div>
+                <div>
+                  <span>Checklist</span>
+                  <strong id="checkMetric">0/6</strong>
+                </div>
+                <div>
+                  <span>Week</span>
+                  <strong id="weekMetric">1</strong>
+                </div>
+              </div>
+            </section>
+
+            <section class="panel">
+              <div class="section-heading">
+                <h3>C++ 到 Racket 的转换点</h3>
+              </div>
+              <p id="cppBridge" class="body-text"></p>
+            </section>
+
+            <section class="panel bridge-panel">
+              <div class="section-heading">
+                <div>
+                  <p class="eyebrow">C++ Syntax → Racket Syntax</p>
+                  <h3 id="bridgeConcept">语法迁移</h3>
+                </div>
+              </div>
+              <p id="bridgeAngle" class="body-text"></p>
+              <div class="syntax-grid">
+                <div class="syntax-card">
+                  <div class="syntax-card-head">C++ 写法</div>
+                  <pre><code id="cppSyntaxBlock"></code></pre>
+                </div>
+                <div class="syntax-card">
+                  <div class="syntax-card-head">Racket 写法</div>
+                  <pre><code id="racketSyntaxBlock"></code></pre>
+                </div>
+              </div>
+              <div class="bridge-detail-grid">
+                <div>
+                  <h4>迁移步骤</h4>
+                  <ol id="translationSteps" class="number-list"></ol>
+                </div>
+                <div>
+                  <h4>常见误区</h4>
+                  <ul id="pitfallList" class="rubric-list"></ul>
+                </div>
+              </div>
+              <div class="drill-box">
+                <strong>今日转换练习</strong>
+                <p id="bridgeDrill"></p>
+              </div>
+              <div>
+                <h4>官方文档</h4>
+                <div id="docsList" class="docs-list"></div>
+              </div>
+            </section>
+
+            <section class="panel">
+              <div class="section-heading">
+                <h3>详细讲解</h3>
+              </div>
+              <p id="explanation" class="body-text"></p>
+              <div id="focusList" class="tag-list"></div>
+            </section>
+
+            <section class="panel code-panel">
+              <div class="section-heading">
+                <h3>今日示例代码</h3>
+                <button id="copyCode" class="secondary-button" type="button">复制代码</button>
+              </div>
+              <pre><code id="codeBlock"></code></pre>
+            </section>
+
+            <section class="panel">
+              <div class="section-heading">
+                <h3>Practice</h3>
+              </div>
+              <ol id="practiceList" class="number-list"></ol>
+            </section>
+          </article>
+
+          <aside class="work-panel">
+            <section class="panel sticky-panel">
+              <div class="section-heading">
+                <h3>Daily Checklist</h3>
+                <button id="resetChecklist" class="secondary-button" type="button">重置</button>
+              </div>
+              <div id="checklist" class="checklist"></div>
+            </section>
+
+            <section class="panel">
+              <div class="section-heading">
+                <h3>今日作业</h3>
+              </div>
+              <p id="assignmentText" class="body-text"></p>
+              <ul id="rubricList" class="rubric-list"></ul>
+            </section>
+
+            <section class="panel submission-panel">
+              <div class="section-heading">
+                <h3>上传作业并批改</h3>
+              </div>
+              <form id="submissionForm">
+                <label>
+                  <span>名字</span>
+                  <input id="studentName" name="studentName" type="text" placeholder="可选" />
+                </label>
+                <label>
+                  <span>作业文件</span>
+                  <input id="fileInput" name="file" type="file" accept=".rkt,.rktl,.txt,.md,.cpp,.cc,.cxx,.h,.hpp,.py,.json" />
+                </label>
+                <label>
+                  <span>或粘贴代码</span>
+                  <textarea id="codeInput" name="code" rows="9" placeholder="#lang racket&#10;&#10;(define ... )"></textarea>
+                </label>
+                <label>
+                  <span>想让 AI 重点看的地方</span>
+                  <textarea id="studentNote" name="studentNote" rows="3" placeholder="例如：我不确定递归写得对不对"></textarea>
+                </label>
+                <button id="submitButton" class="primary-button" type="submit">提交并批改</button>
+              </form>
+              <div id="feedbackBox" class="feedback-box" hidden></div>
+            </section>
+
+            <section class="panel">
+              <div class="section-heading">
+                <h3>批改记录</h3>
+                <button id="refreshSubmissions" class="secondary-button" type="button">刷新</button>
+              </div>
+              <div id="submissionList" class="submission-list"></div>
+            </section>
+          </aside>
+        </section>
+      </main>
+    </div>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

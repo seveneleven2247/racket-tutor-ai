@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: racket-tutor-ai
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT
+    envVars:
+      - key: FLASK_SECRET_KEY
+        generateValue: true
+      - key: ACCESS_CODE
+        generateValue: true
+      - key: OPENAI_MODEL
+        value: gpt-5.4-mini
