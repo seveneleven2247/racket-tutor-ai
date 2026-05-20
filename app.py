@@ -48,7 +48,12 @@ def has_access() -> bool:
     access_code = configured_access_code()
     if not access_code:
         return True
-    return request.cookies.get("racket_tutor_access") == access_code
+    submitted = (
+        request.cookies.get("racket_tutor_access")
+        or request.headers.get("X-Access-Code", "")
+        or request.args.get("access", "")
+    )
+    return submitted == access_code
 
 
 def require_access(handler):

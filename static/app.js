@@ -4,6 +4,11 @@ const state = {
   query: "",
 };
 
+function accessHeaders() {
+  const code = localStorage.getItem("racketTutor.accessCode");
+  return code ? { "X-Access-Code": code } : {};
+}
+
 const els = {
   dayList: document.querySelector("#dayList"),
   searchInput: document.querySelector("#searchInput"),
@@ -242,7 +247,11 @@ function selectDay(day) {
 }
 
 async function loadCourse() {
-  const response = await fetch("/api/course");
+  const response = await fetch("/api/course", { headers: accessHeaders() });
+  if (response.status === 401) {
+    window.location.href = "/";
+    return;
+  }
   if (!response.ok) throw new Error("课程数据加载失败");
   const data = await response.json();
   state.lessons = data.lessons;
@@ -253,7 +262,7 @@ async function loadCourse() {
 }
 
 async function loadSubmissions() {
-  const response = await fetch("/api/submissions");
+  const response = await fetch("/api/submissions", { headers: accessHeaders() });
   if (!response.ok) return;
   const data = await response.json();
   els.submissionList.innerHTML = "";
@@ -298,6 +307,7 @@ async function submitAssignment(event) {
   try {
     const response = await fetch("/api/submit", {
       method: "POST",
+      headers: accessHeaders(),
       body: formData,
     });
     const data = await response.json();

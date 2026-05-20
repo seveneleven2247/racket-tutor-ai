@@ -310,6 +310,15 @@ form textarea:focus {
   min-width: 0;
 }
 
+.work-panel {
+  position: sticky;
+  top: 92px;
+  align-self: start;
+  max-height: calc(100vh - 116px);
+  overflow: auto;
+  padding-right: 4px;
+}
+
 .panel {
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -530,15 +539,19 @@ code {
 }
 
 .sticky-panel {
-  position: sticky;
-  top: 92px;
+  position: static;
   z-index: 2;
+  display: flex;
+  flex-direction: column;
+  max-height: min(520px, calc(100vh - 140px));
 }
 
 .checklist {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  overflow: auto;
+  padding-right: 4px;
 }
 
 .check-item {
@@ -691,6 +704,14 @@ textarea {
 
   .sticky-panel {
     position: static;
+    max-height: none;
+  }
+
+  .work-panel {
+    position: static;
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
   }
 }
 

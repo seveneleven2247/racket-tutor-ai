@@ -27,19 +27,31 @@
     <script>
       const form = document.querySelector("#accessForm");
       const message = document.querySelector("#accessMessage");
-      form.addEventListener("submit", async (event) => {
-        event.preventDefault();
+      async function submitAccessCode(code) {
         message.textContent = "正在验证...";
         const response = await fetch("/api/access", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ code: document.querySelector("#accessCode").value }),
+          body: JSON.stringify({ code }),
         });
         if (response.ok) {
+          localStorage.setItem("racketTutor.accessCode", code);
           window.location.href = "/";
           return;
         }
         message.textContent = "访问码不正确。";
+      }
+
+      const params = new URLSearchParams(window.location.search);
+      const accessFromUrl = params.get("access");
+      if (accessFromUrl) {
+        document.querySelector("#accessCode").value = accessFromUrl;
+        submitAccessCode(accessFromUrl);
+      }
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        submitAccessCode(document.querySelector("#accessCode").value.trim());
       });
     </script>
   </body>
