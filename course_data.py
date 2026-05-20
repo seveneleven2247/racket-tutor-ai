@@ -24,6 +24,7 @@ class Lesson:
 
 
 TARGET_LANGUAGES = {
+    "cpp": {"id": "cpp", "name": "C++", "file_ext": "cpp", "runner": "c++ day01.cpp -std=c++17 -o day01 && ./day01"},
     "racket": {"id": "racket", "name": "Racket", "file_ext": "rkt", "runner": "racket day01.rkt"},
     "python": {"id": "python", "name": "Python", "file_ext": "py", "runner": "python3 day01.py"},
     "c": {"id": "c", "name": "C", "file_ext": "c", "runner": "cc day01.c -o day01 && ./day01"},
@@ -32,6 +33,10 @@ TARGET_LANGUAGES = {
 
 
 DOCS = {
+    "cpp": [
+        {"title": "C++ Reference", "url": "https://en.cppreference.com/w/cpp"},
+        {"title": "C++ Language", "url": "https://en.cppreference.com/w/cpp/language"},
+    ],
     "racket": [
         {"title": "Racket Documentation", "url": "https://docs.racket-lang.org/index.html"},
         {"title": "The Racket Guide", "url": "https://docs.racket-lang.org/guide/index.html"},
@@ -962,6 +967,28 @@ def _focus(title: str, kind: str, target: str) -> list[str]:
 
 def _syntax_bridge(title: str, kind: str, target: str) -> dict:
     language = TARGET_LANGUAGES[target]["name"]
+    if target == "cpp":
+        return {
+            "concept": f"C++ foundation: {title}.",
+            "cpp": _cpp(kind),
+            "racket": _code(kind, target),
+            "target": _code(kind, target),
+            "target_label": language,
+            "translation_steps": [
+                "Read the C++ example from top to bottom and identify the output, input, and processing lines.",
+                "Mark the syntax pieces: header, main function, declarations, statements, blocks, and semicolons.",
+                "Run the smallest version first, then change one value and predict the new result.",
+                "Write one short note per important line so later languages have a clear C++ baseline.",
+            ],
+            "pitfalls": [
+                "Do not skip main, headers, or semicolons until you can explain why they are there.",
+                "Do not memorize syntax alone; connect each line to a concrete program action.",
+                "Keep examples small enough that compiler errors point to one concept at a time.",
+            ],
+            "drill": f"Type the C++ snippet, run it, then explain every non-blank line in plain English.",
+            "today_angle": f"Prerequisite C++ topic: {title}. Build the baseline before moving to another language.",
+            "docs": _docs_for(target),
+        }
     return {
         "concept": f"{title}: translate the C++ pattern into {language}.",
         "cpp": _cpp(kind),
@@ -987,11 +1014,19 @@ def _syntax_bridge(title: str, kind: str, target: str) -> dict:
 
 def _goal(title: str, target: str) -> str:
     language = TARGET_LANGUAGES[target]["name"]
+    if target == "cpp":
+        return f"Build the C++ foundation for {title.lower()} before starting another target language."
     return f"Learn {title.lower()} in {language} by comparing it directly with the C++ version you already understand."
 
 
 def _explanation(title: str, kind: str, target: str) -> str:
     language = TARGET_LANGUAGES[target]["name"]
+    if target == "cpp":
+        return (
+            f"{_summary(kind)} This prerequisite track teaches the C++ version first. "
+            "Focus on what each line does, where the syntax boundaries are, and how the compiler reads the program. "
+            "Once this baseline is comfortable, the other language tracks can compare against it directly."
+        )
     return (
         f"{_summary(kind)} In this lesson, read the C++ snippet first and name the exact idea. "
         f"Then study the {language} code line by line. Keep the explanation short: what the line does, "
@@ -1156,7 +1191,9 @@ def _lesson(day: int, target: str) -> dict:
         title=title,
         goal=_goal(title, target),
         cpp_bridge=(
-            f"Use the C++ snippet as the familiar baseline. Then compare how {language} expresses "
+            "This is the prerequisite C++ baseline for later language comparison."
+            if target == "cpp"
+            else f"Use the C++ snippet as the familiar baseline. Then compare how {language} expresses "
             "the same idea through its own syntax, naming, and standard library."
         ),
         explanation=_explanation(title, kind, target),

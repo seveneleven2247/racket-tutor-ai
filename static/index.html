@@ -13,7 +13,7 @@
           <div class="brand-mark">λ</div>
           <div>
             <h1>Code Tutor AI</h1>
-            <p>C++ foundation to multiple languages · 56 days</p>
+            <p id="brandSubtitle">C++ foundation to multiple languages · 56 days</p>
           </div>
         </div>
 
@@ -34,12 +34,33 @@
         <div class="language-picker">
           <label for="languageSelect">Target language</label>
           <select id="languageSelect"></select>
+          <button id="resetPrerequisite" class="text-button" type="button">Change C++ prerequisite answer</button>
+        </div>
+
+        <div id="cppTrackNotice" class="track-notice" hidden>
+          <strong>C++ Foundations</strong>
+          <span>Finish or switch when you are ready for another language.</span>
+          <button id="markCppKnown" class="secondary-button" type="button">I know C++ now</button>
         </div>
 
         <div id="dayList" class="day-list" aria-label="56 day course list"></div>
       </aside>
 
       <main class="main">
+        <section id="onboardingPanel" class="onboarding-panel" hidden>
+          <div class="onboarding-inner">
+            <p class="eyebrow">Prerequisite Check</p>
+            <h2>Have you learned C++ before?</h2>
+            <p>
+              This course uses C++ as the comparison language. If C++ is new to you, start with the C++ Foundations track first.
+            </p>
+            <div class="onboarding-actions">
+              <button id="startTargetTrack" class="primary-button" type="button">Yes, I know C++</button>
+              <button id="startCppTrack" class="secondary-button" type="button">No, teach me C++ first</button>
+            </div>
+          </div>
+        </section>
+
         <header class="topbar">
           <div>
             <p id="weekLabel" class="eyebrow">Week 1</p>

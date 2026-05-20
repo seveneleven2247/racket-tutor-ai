@@ -138,9 +138,11 @@ def local_feedback(lesson: dict, content: str) -> str:
         notes.append("For Python function days, include at least one `def` so the work practices function design.")
     if target_language == "c" and "#include" not in code:
         notes.append("For C, include the relevant headers, such as `#include <stdio.h>` for formatted output.")
+    if target_language == "cpp" and "main(" not in code and lesson["day"] <= 12:
+        notes.append("For early C++ foundation lessons, include a small `main` function so the program can run from the command line.")
     if target_language == "java" and "class " not in code and "record " not in code:
         notes.append("For Java, place the code inside a class or record so it matches normal Java structure.")
-    if target_language != "c" and ("#include" in code or "std::" in code):
+    if target_language not in {"c", "cpp"} and ("#include" in code or "std::" in code):
         notes.append("The submission still contains C++ syntax. Rewrite that part using the target language's normal idioms.")
     if len(lines) < 8:
         notes.append("The submission is short. Add more examples, tests, or concise explanation comments to show the concept clearly.")

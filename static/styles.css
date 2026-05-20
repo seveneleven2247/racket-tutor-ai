@@ -207,6 +207,39 @@ form textarea:focus {
   color: var(--ink);
 }
 
+.text-button {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--green-dark);
+  font-size: 13px;
+  font-weight: 800;
+  text-align: left;
+}
+
+.track-notice {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border: 1px solid #c8ddd2;
+  border-radius: 8px;
+  padding: 12px;
+  background: #f4faf6;
+}
+
+.track-notice[hidden] {
+  display: none;
+}
+
+.track-notice strong {
+  color: var(--green-dark);
+}
+
+.track-notice span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
 .day-list {
   overflow: auto;
   display: flex;
@@ -281,6 +314,45 @@ form textarea:focus {
 
 .main {
   min-width: 0;
+}
+
+.onboarding-panel {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 28px;
+}
+
+.onboarding-panel[hidden] {
+  display: none;
+}
+
+.onboarding-inner {
+  width: min(720px, 100%);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 28px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.onboarding-inner h2 {
+  margin: 4px 0 12px;
+  font-size: clamp(28px, 4vw, 46px);
+  line-height: 1.08;
+}
+
+.onboarding-inner p:not(.eyebrow) {
+  margin: 0;
+  color: var(--muted);
+  font-size: 18px;
+}
+
+.onboarding-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
 }
 
 .topbar {

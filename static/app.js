@@ -2,6 +2,7 @@ const state = {
   lessons: [],
   languages: [],
   target: localStorage.getItem("racketTutor.targetLanguage") || "racket",
+  cppStatus: localStorage.getItem("racketTutor.cppStatus") || "",
   activeDay: Number(localStorage.getItem("racketTutor.activeDay") || 1),
   query: "",
 };
@@ -13,7 +14,17 @@ function accessHeaders() {
 
 const els = {
   dayList: document.querySelector("#dayList"),
+  onboardingPanel: document.querySelector("#onboardingPanel"),
+  startTargetTrack: document.querySelector("#startTargetTrack"),
+  startCppTrack: document.querySelector("#startCppTrack"),
+  brandSubtitle: document.querySelector("#brandSubtitle"),
+  languagePicker: document.querySelector(".language-picker"),
   languageSelect: document.querySelector("#languageSelect"),
+  resetPrerequisite: document.querySelector("#resetPrerequisite"),
+  cppTrackNotice: document.querySelector("#cppTrackNotice"),
+  markCppKnown: document.querySelector("#markCppKnown"),
+  progressBlock: document.querySelector(".progress-block"),
+  searchBox: document.querySelector(".search-box"),
   searchInput: document.querySelector("#searchInput"),
   progressText: document.querySelector("#progressText"),
   progressFill: document.querySelector("#progressFill"),
@@ -87,6 +98,56 @@ function activeLesson() {
   return state.lessons.find((lesson) => lesson.day === state.activeDay) || state.lessons[0];
 }
 
+function isCppFoundationMode() {
+  return state.cppStatus === "needs_cpp";
+}
+
+function setMainContentHidden(hidden) {
+  document.querySelector(".topbar").hidden = hidden;
+  document.querySelector(".lesson-layout").hidden = hidden;
+}
+
+function renderOnboarding() {
+  const needsChoice = !state.cppStatus;
+  if (els.onboardingPanel) {
+    els.onboardingPanel.hidden = !needsChoice;
+  }
+  setMainContentHidden(needsChoice);
+  for (const item of [els.progressBlock, els.searchBox, els.dayList]) {
+    if (item) item.hidden = needsChoice;
+  }
+  if (els.languagePicker) {
+    els.languagePicker.hidden = needsChoice || isCppFoundationMode();
+  }
+  if (els.cppTrackNotice) {
+    els.cppTrackNotice.hidden = needsChoice || !isCppFoundationMode();
+  }
+}
+
+function setCppStatus(status) {
+  state.cppStatus = status;
+  localStorage.setItem("racketTutor.cppStatus", status);
+  state.activeDay = 1;
+  localStorage.setItem("racketTutor.activeDay", "1");
+
+  if (status === "needs_cpp") {
+    state.target = "cpp";
+  } else if (state.target === "cpp") {
+    state.target = "racket";
+  }
+  localStorage.setItem("racketTutor.targetLanguage", state.target);
+  renderOnboarding();
+  loadCourse().catch((error) => {
+    els.lessonTitle.textContent = error.message;
+  });
+}
+
+function resetPrerequisiteChoice() {
+  state.cppStatus = "";
+  localStorage.removeItem("racketTutor.cppStatus");
+  renderOnboarding();
+}
+
 function renderDayList() {
   const query = state.query.trim().toLowerCase();
   const lessons = state.lessons.filter((lesson) => {
@@ -144,7 +205,11 @@ function renderLesson() {
   els.weekLabel.textContent = `Week ${lesson.week}`;
   document.title = `${lesson.target_language_name || "Racket"} Tutor AI`;
   document.querySelector(".brand h1").textContent = `${lesson.target_language_name || "Code"} Tutor AI`;
-  document.querySelector(".brand p").textContent = `C++ foundation to ${lesson.target_language_name || "target language"} · 56 days`;
+  if (els.brandSubtitle) {
+    els.brandSubtitle.textContent = isCppFoundationMode()
+      ? "C++ Foundations · prerequisite track · 56 days"
+      : `C++ foundation to ${lesson.target_language_name || "target language"} · 56 days`;
+  }
   els.lessonTitle.textContent = lesson.title;
   els.categoryLabel.textContent = lesson.category;
   els.goalTitle.textContent = lesson.title;
@@ -295,6 +360,14 @@ function selectDay(day) {
 }
 
 async function loadCourse() {
+  if (!state.cppStatus) {
+    renderOnboarding();
+    return;
+  }
+  if (isCppFoundationMode()) {
+    state.target = "cpp";
+    localStorage.setItem("racketTutor.targetLanguage", state.target);
+  }
   const response = await fetch(`/api/course?target=${encodeURIComponent(state.target)}`, { headers: accessHeaders() });
   if (response.status === 401) {
     window.location.href = "/";
@@ -305,6 +378,7 @@ async function loadCourse() {
   state.languages = data.languages || state.languages;
   state.target = data.target || state.target;
   state.lessons = data.lessons;
+  renderOnboarding();
   renderLanguageOptions();
   if (!state.lessons.some((lesson) => lesson.day === state.activeDay)) {
     state.activeDay = 1;
@@ -316,6 +390,7 @@ function renderLanguageOptions() {
   if (!els.languageSelect || !state.languages.length) return;
   els.languageSelect.innerHTML = "";
   for (const language of state.languages) {
+    if (language.id === "cpp") continue;
     const option = document.createElement("option");
     option.value = language.id;
     option.textContent = language.name;
@@ -397,12 +472,19 @@ els.searchInput.addEventListener("input", (event) => {
 
 els.languageSelect.addEventListener("change", (event) => {
   state.target = event.target.value;
+  state.cppStatus = "knows_cpp";
+  localStorage.setItem("racketTutor.cppStatus", state.cppStatus);
   localStorage.setItem("racketTutor.targetLanguage", state.target);
   state.activeDay = 1;
   loadCourse().catch((error) => {
     els.lessonTitle.textContent = error.message;
   });
 });
+
+els.startTargetTrack.addEventListener("click", () => setCppStatus("knows_cpp"));
+els.startCppTrack.addEventListener("click", () => setCppStatus("needs_cpp"));
+els.resetPrerequisite.addEventListener("click", resetPrerequisiteChoice);
+els.markCppKnown.addEventListener("click", () => setCppStatus("knows_cpp"));
 
 els.prevDay.addEventListener("click", () => selectDay(state.activeDay - 1));
 els.nextDay.addEventListener("click", () => selectDay(state.activeDay + 1));
@@ -423,7 +505,10 @@ els.resetChecklist.addEventListener("click", () => {
 els.submissionForm.addEventListener("submit", submitAssignment);
 els.refreshSubmissions.addEventListener("click", loadSubmissions);
 
-loadCourse().catch((error) => {
-  els.lessonTitle.textContent = error.message;
-});
+renderOnboarding();
+if (state.cppStatus) {
+  loadCourse().catch((error) => {
+    els.lessonTitle.textContent = error.message;
+  });
+}
 loadSubmissions();
