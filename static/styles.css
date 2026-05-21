@@ -240,6 +240,29 @@ form textarea:focus {
   font-size: 13px;
 }
 
+.user-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid #c8ddd2;
+  border-radius: 8px;
+  padding: 12px;
+  background: #f4faf6;
+}
+
+.user-panel[hidden] {
+  display: none;
+}
+
+.user-panel strong {
+  color: var(--green-dark);
+}
+
+.user-panel span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
 .day-list {
   overflow: auto;
   display: flex;
@@ -355,9 +378,38 @@ form textarea:focus {
   margin-top: 24px;
 }
 
+.auth-tabs {
+  display: inline-flex;
+  gap: 4px;
+  margin-top: 22px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 4px;
+  background: #f4faf6;
+}
+
+.auth-tab {
+  border: 0;
+  border-radius: 6px;
+  padding: 8px 14px;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 900;
+}
+
+.auth-tab.active {
+  background: var(--green);
+  color: white;
+}
+
+.auth-form {
+  margin-top: 18px;
+  max-width: 420px;
+}
+
 .language-experience-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 10px;
   margin-top: 22px;
 }
@@ -380,6 +432,12 @@ form textarea:focus {
   border-color: var(--green);
   background: #edf7f1;
   color: var(--green-dark);
+}
+
+.language-experience-card.none-card:has(input:checked) {
+  border-color: var(--yellow);
+  background: #fff8e8;
+  color: #725015;
 }
 
 .language-experience-card input {

@@ -31,6 +31,12 @@
           <input id="searchInput" type="search" placeholder="Search day, topic, or category" />
         </div>
 
+        <div id="userPanel" class="user-panel" hidden>
+          <strong id="userNameLabel"></strong>
+          <span>Your progress is saved to this account.</span>
+          <button id="logoutButton" class="text-button" type="button">Log out</button>
+        </div>
+
         <div class="language-picker">
           <label for="languageSelect">Target language</label>
           <select id="languageSelect"></select>
@@ -47,6 +53,32 @@
       </aside>
 
       <main class="main">
+        <section id="authPanel" class="onboarding-panel" hidden>
+          <div class="onboarding-inner">
+            <p class="eyebrow">Account</p>
+            <h2>Save your learning data</h2>
+            <p>
+              Register or log in so your language choices, current day, checklist progress, and submissions stay tied to your own account.
+            </p>
+            <div class="auth-tabs" role="tablist" aria-label="Account action">
+              <button id="showRegister" class="auth-tab active" type="button">Register</button>
+              <button id="showLogin" class="auth-tab" type="button">Log in</button>
+            </div>
+            <form id="authForm" class="auth-form">
+              <label>
+                <span>Name</span>
+                <input id="authName" type="text" autocomplete="username" required />
+              </label>
+              <label>
+                <span>Password</span>
+                <input id="authPassword" type="password" autocomplete="new-password" required minlength="6" />
+              </label>
+              <button id="authSubmit" class="primary-button" type="submit">Create Account</button>
+            </form>
+            <p id="authMessage" class="access-message"></p>
+          </div>
+        </section>
+
         <section id="onboardingPanel" class="onboarding-panel" hidden>
           <div class="onboarding-inner">
             <p class="eyebrow">Language Experience Check</p>
@@ -74,6 +106,10 @@
               <label class="language-experience-card">
                 <input type="checkbox" value="racket" data-language-experience />
                 <span>Racket</span>
+              </label>
+              <label class="language-experience-card none-card">
+                <input type="checkbox" value="none" id="noneExperience" />
+                <span>None</span>
               </label>
             </div>
             <div class="onboarding-actions">

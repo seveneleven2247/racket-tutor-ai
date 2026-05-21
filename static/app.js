@@ -1,6 +1,9 @@
 const state = {
   lessons: [],
   languages: [],
+  user: null,
+  authMode: "register",
+  profileLoaded: false,
   target: localStorage.getItem("racketTutor.targetLanguage") || "racket",
   knownLanguages: readKnownLanguages(),
   activeDay: Number(localStorage.getItem("racketTutor.activeDay") || 1),
@@ -14,9 +17,21 @@ function accessHeaders() {
 
 const els = {
   dayList: document.querySelector("#dayList"),
+  authPanel: document.querySelector("#authPanel"),
+  authForm: document.querySelector("#authForm"),
+  authName: document.querySelector("#authName"),
+  authPassword: document.querySelector("#authPassword"),
+  authSubmit: document.querySelector("#authSubmit"),
+  authMessage: document.querySelector("#authMessage"),
+  showRegister: document.querySelector("#showRegister"),
+  showLogin: document.querySelector("#showLogin"),
+  userPanel: document.querySelector("#userPanel"),
+  userNameLabel: document.querySelector("#userNameLabel"),
+  logoutButton: document.querySelector("#logoutButton"),
   onboardingPanel: document.querySelector("#onboardingPanel"),
   continueFromExperience: document.querySelector("#continueFromExperience"),
   languageExperienceInputs: document.querySelectorAll("[data-language-experience]"),
+  noneExperience: document.querySelector("#noneExperience"),
   brandSubtitle: document.querySelector("#brandSubtitle"),
   languagePicker: document.querySelector(".language-picker"),
   languageSelect: document.querySelector("#languageSelect"),
@@ -85,10 +100,60 @@ function readKnownLanguages() {
 }
 
 function writeKnownLanguages(values) {
-  const unique = [...new Set(values)];
+  const unique = [...new Set(values.filter((value) => value !== "none"))];
   state.knownLanguages = unique;
   localStorage.setItem("racketTutor.knownLanguages", JSON.stringify(unique));
   localStorage.setItem("racketTutor.cppStatus", unique.includes("cpp") ? "knows_cpp" : "needs_cpp");
+}
+
+function profilePayload() {
+  return {
+    knownLanguages: state.knownLanguages,
+    targetLanguage: state.target,
+    activeDay: state.activeDay,
+    checklists: collectChecklistState(),
+  };
+}
+
+function collectChecklistState() {
+  const checklists = {};
+  for (let index = 0; index < localStorage.length; index += 1) {
+    const key = localStorage.key(index);
+    const prefix = "racketTutor.checklist.";
+    if (!key || !key.startsWith(prefix)) continue;
+    checklists[key.slice(prefix.length)] = JSON.parse(localStorage.getItem(key) || "[]");
+  }
+  return checklists;
+}
+
+let profileSaveTimer = null;
+
+function scheduleProfileSave() {
+  if (!state.user || !state.profileLoaded) return;
+  clearTimeout(profileSaveTimer);
+  profileSaveTimer = setTimeout(saveProfile, 350);
+}
+
+async function saveProfile() {
+  if (!state.user) return;
+  await fetch("/api/profile", {
+    method: "POST",
+    headers: { ...accessHeaders(), "Content-Type": "application/json" },
+    body: JSON.stringify(profilePayload()),
+  });
+}
+
+function applyProfile(profile) {
+  if (!profile) return;
+  writeKnownLanguages(profile.knownLanguages || []);
+  state.target = profile.targetLanguage || state.target;
+  state.activeDay = Number(profile.activeDay || 1);
+  localStorage.setItem("racketTutor.targetLanguage", state.target);
+  localStorage.setItem("racketTutor.activeDay", String(state.activeDay));
+  for (const [key, value] of Object.entries(profile.checklists || {})) {
+    localStorage.setItem(`racketTutor.checklist.${key}`, JSON.stringify(value));
+  }
+  state.profileLoaded = true;
 }
 
 function padDay(day) {
@@ -111,6 +176,7 @@ function readChecklist(day) {
 
 function writeChecklist(day, values) {
   localStorage.setItem(checklistKey(day), JSON.stringify(values));
+  scheduleProfileSave();
 }
 
 function checkedCount(day) {
@@ -129,28 +195,42 @@ function hasExperienceProfile() {
   return localStorage.getItem("racketTutor.knownLanguages") !== null || localStorage.getItem("racketTutor.cppStatus") !== null;
 }
 
+function isAuthenticated() {
+  return Boolean(state.user);
+}
+
 function setMainContentHidden(hidden) {
   document.querySelector(".topbar").hidden = hidden;
   document.querySelector(".lesson-layout").hidden = hidden;
 }
 
 function renderOnboarding() {
+  const needsAuth = !isAuthenticated();
   const needsChoice = !hasExperienceProfile();
+  if (els.authPanel) {
+    els.authPanel.hidden = !needsAuth;
+  }
   for (const input of els.languageExperienceInputs || []) {
     input.checked = state.knownLanguages.includes(input.value);
   }
-  if (els.onboardingPanel) {
-    els.onboardingPanel.hidden = !needsChoice;
+  if (els.noneExperience) {
+    els.noneExperience.checked = state.knownLanguages.length === 0 && hasExperienceProfile();
   }
-  setMainContentHidden(needsChoice);
-  for (const item of [els.progressBlock, els.searchBox, els.dayList]) {
-    if (item) item.hidden = needsChoice;
+  if (els.onboardingPanel) {
+    els.onboardingPanel.hidden = needsAuth || !needsChoice;
+  }
+  setMainContentHidden(needsAuth || needsChoice);
+  for (const item of [els.progressBlock, els.searchBox, els.dayList, els.userPanel]) {
+    if (item) item.hidden = needsAuth || needsChoice;
   }
   if (els.languagePicker) {
-    els.languagePicker.hidden = needsChoice || isCppFoundationMode();
+    els.languagePicker.hidden = needsAuth || needsChoice || isCppFoundationMode();
   }
   if (els.cppTrackNotice) {
-    els.cppTrackNotice.hidden = needsChoice || !isCppFoundationMode();
+    els.cppTrackNotice.hidden = needsAuth || needsChoice || !isCppFoundationMode();
+  }
+  if (els.userNameLabel && state.user) {
+    els.userNameLabel.textContent = state.user.name;
   }
 }
 
@@ -172,6 +252,7 @@ function setCppStatus(status) {
   }
   localStorage.setItem("racketTutor.targetLanguage", state.target);
   renderOnboarding();
+  scheduleProfileSave();
   loadCourse().catch((error) => {
     els.lessonTitle.textContent = error.message;
   });
@@ -182,6 +263,7 @@ function resetPrerequisiteChoice() {
   localStorage.removeItem("racketTutor.knownLanguages");
   localStorage.removeItem("racketTutor.cppStatus");
   renderOnboarding();
+  scheduleProfileSave();
 }
 
 function chooseDefaultTarget() {
@@ -198,9 +280,89 @@ function continueFromLanguageExperience() {
   state.target = selected.includes("cpp") ? chooseDefaultTarget() : "cpp";
   localStorage.setItem("racketTutor.targetLanguage", state.target);
   renderOnboarding();
+  scheduleProfileSave();
   loadCourse().catch((error) => {
     els.lessonTitle.textContent = error.message;
   });
+}
+
+function setAuthMode(mode) {
+  state.authMode = mode;
+  const register = mode === "register";
+  els.showRegister.classList.toggle("active", register);
+  els.showLogin.classList.toggle("active", !register);
+  els.authSubmit.textContent = register ? "Create Account" : "Log In";
+  els.authPassword.autocomplete = register ? "new-password" : "current-password";
+  els.authMessage.textContent = "";
+}
+
+async function loadSession() {
+  const response = await fetch("/api/me", { headers: accessHeaders() });
+  if (!response.ok) {
+    renderOnboarding();
+    return;
+  }
+  const data = await response.json();
+  state.user = data.user;
+  if (state.user) {
+    applyProfile(data.profile);
+  }
+  renderOnboarding();
+  if (state.user && hasExperienceProfile()) {
+    await loadCourse();
+  }
+  await loadSubmissions();
+}
+
+async function submitAuth(event) {
+  event.preventDefault();
+  els.authSubmit.disabled = true;
+  els.authMessage.textContent = state.authMode === "register" ? "Creating account..." : "Logging in...";
+  try {
+    const response = await fetch(`/api/${state.authMode}`, {
+      method: "POST",
+      headers: { ...accessHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: els.authName.value,
+        password: els.authPassword.value,
+        profile: profilePayload(),
+      }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Account request failed");
+    state.user = data.user;
+    applyProfile(data.profile);
+    els.authForm.reset();
+    els.authMessage.textContent = "";
+    renderOnboarding();
+    if (hasExperienceProfile()) {
+      await loadCourse();
+    }
+    await loadSubmissions();
+  } catch (error) {
+    els.authMessage.textContent = error.message;
+  } finally {
+    els.authSubmit.disabled = false;
+  }
+}
+
+async function logout() {
+  await fetch("/api/logout", { method: "POST", headers: accessHeaders() });
+  state.user = null;
+  state.profileLoaded = false;
+  state.knownLanguages = [];
+  state.target = "racket";
+  state.activeDay = 1;
+  localStorage.removeItem("racketTutor.knownLanguages");
+  localStorage.removeItem("racketTutor.cppStatus");
+  localStorage.removeItem("racketTutor.targetLanguage");
+  localStorage.removeItem("racketTutor.activeDay");
+  for (const key of Object.keys(localStorage)) {
+    if (key.startsWith("racketTutor.checklist.")) {
+      localStorage.removeItem(key);
+    }
+  }
+  renderOnboarding();
 }
 
 function renderDayList() {
@@ -532,10 +694,32 @@ els.languageSelect.addEventListener("change", (event) => {
   }
   localStorage.setItem("racketTutor.targetLanguage", state.target);
   state.activeDay = 1;
+  localStorage.setItem("racketTutor.activeDay", "1");
+  scheduleProfileSave();
   loadCourse().catch((error) => {
     els.lessonTitle.textContent = error.message;
   });
 });
+
+els.authForm.addEventListener("submit", submitAuth);
+els.showRegister.addEventListener("click", () => setAuthMode("register"));
+els.showLogin.addEventListener("click", () => setAuthMode("login"));
+els.logoutButton.addEventListener("click", logout);
+
+els.noneExperience.addEventListener("change", () => {
+  if (!els.noneExperience.checked) return;
+  for (const input of els.languageExperienceInputs) {
+    input.checked = false;
+  }
+});
+
+for (const input of els.languageExperienceInputs) {
+  input.addEventListener("change", () => {
+    if (input.checked && els.noneExperience) {
+      els.noneExperience.checked = false;
+    }
+  });
+}
 
 els.continueFromExperience.addEventListener("click", continueFromLanguageExperience);
 els.resetPrerequisite.addEventListener("click", resetPrerequisiteChoice);
@@ -561,9 +745,7 @@ els.submissionForm.addEventListener("submit", submitAssignment);
 els.refreshSubmissions.addEventListener("click", loadSubmissions);
 
 renderOnboarding();
-if (hasExperienceProfile()) {
-  loadCourse().catch((error) => {
-    els.lessonTitle.textContent = error.message;
-  });
-}
-loadSubmissions();
+setAuthMode("register");
+loadSession().catch((error) => {
+  els.authMessage.textContent = error.message;
+});
