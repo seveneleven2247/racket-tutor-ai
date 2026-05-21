@@ -8,6 +8,7 @@ const state = {
   knownLanguages: readKnownLanguages(),
   activeDay: Number(localStorage.getItem("racketTutor.activeDay") || 1),
   query: "",
+  unlockedSampleCode: null,
 };
 
 function accessHeaders() {
@@ -66,6 +67,7 @@ const els = {
   docsList: document.querySelector("#docsList"),
   explanation: document.querySelector("#explanation"),
   focusList: document.querySelector("#focusList"),
+  codePanel: document.querySelector("#codePanel"),
   codeBlock: document.querySelector("#codeBlock"),
   lineNotesEyebrow: document.querySelector("#lineNotesEyebrow"),
   lineNotesPanel: document.querySelector("#lineNotesPanel"),
@@ -437,7 +439,8 @@ function renderLesson() {
   els.cppBridge.textContent = lesson.cpp_bridge;
   renderSyntaxBridge(lesson);
   els.explanation.textContent = lesson.explanation;
-  els.codeBlock.textContent = lesson.code;
+  els.codePanel.hidden = state.unlockedSampleCode?.day !== lesson.day || state.unlockedSampleCode?.target !== state.target;
+  els.codeBlock.textContent = els.codePanel.hidden ? "" : state.unlockedSampleCode.code;
   renderLineNotes(lesson);
   els.assignmentText.textContent = lesson.assignment;
 
@@ -572,6 +575,7 @@ function renderChecklist(lesson) {
 
 function selectDay(day) {
   state.activeDay = Math.max(1, Math.min(day, state.lessons.length));
+  state.unlockedSampleCode = null;
   renderLesson();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -671,6 +675,14 @@ async function submitAssignment(event) {
       throw new Error(data.error || "Submission failed");
     }
     els.feedbackBox.textContent = data.submission.feedback;
+    if (data.sampleCode) {
+      state.unlockedSampleCode = {
+        day: data.submission.day,
+        target: data.submission.target,
+        code: data.sampleCode,
+      };
+      renderLesson();
+    }
     els.submissionForm.reset();
     await loadSubmissions();
   } catch (error) {
@@ -689,6 +701,7 @@ els.searchInput.addEventListener("input", (event) => {
 
 els.languageSelect.addEventListener("change", (event) => {
   state.target = event.target.value;
+  state.unlockedSampleCode = null;
   if (!state.knownLanguages.includes("cpp")) {
     writeKnownLanguages([...state.knownLanguages, "cpp"]);
   }
@@ -729,7 +742,8 @@ els.prevDay.addEventListener("click", () => selectDay(state.activeDay - 1));
 els.nextDay.addEventListener("click", () => selectDay(state.activeDay + 1));
 
 els.copyCode.addEventListener("click", async () => {
-  await navigator.clipboard.writeText(activeLesson().code);
+  if (els.codePanel.hidden || !state.unlockedSampleCode) return;
+  await navigator.clipboard.writeText(state.unlockedSampleCode.code);
   els.copyCode.textContent = "Copied";
   setTimeout(() => {
     els.copyCode.textContent = "Copy Code";

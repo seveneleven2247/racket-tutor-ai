@@ -5,6 +5,7 @@ __pycache__/
 .DS_Store
 
 data/server.log
+server.log
 data/submissions.json
 data/users.json
 data/uploads/*

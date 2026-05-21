@@ -52,6 +52,10 @@ def configured_access_code() -> str:
     return os.getenv("ACCESS_CODE", "").strip()
 
 
+def openai_feedback_enabled() -> bool:
+    return bool(os.getenv("OPENAI_API_KEY", "").strip())
+
+
 def has_access() -> bool:
     access_code = configured_access_code()
     if not access_code:
@@ -258,7 +262,7 @@ def local_feedback(lesson: dict, content: str) -> str:
         f"- Target language: {target_language_name}\n"
         f"- Non-empty code lines detected: {len(lines)}\n"
         + "\n".join(f"- {note}" for note in notes)
-        + "\n\nSet OPENAI_API_KEY to receive deeper AI feedback with paragraph-level review and improvement suggestions."
+        + "\n\nOPENAI_API_KEY is not configured on the server. Add a real key to .env to receive deeper AI feedback with paragraph-level review and improvement suggestions."
     )
 
 
@@ -389,8 +393,12 @@ def logout():
 def me():
     user = current_user()
     if not user:
-        return jsonify({"user": None, "profile": None})
-    return jsonify({"user": public_user(user), "profile": sanitize_profile(user.get("profile", {}))})
+        return jsonify({"user": None, "profile": None, "openaiFeedbackEnabled": openai_feedback_enabled()})
+    return jsonify({
+        "user": public_user(user),
+        "profile": sanitize_profile(user.get("profile", {})),
+        "openaiFeedbackEnabled": openai_feedback_enabled(),
+    })
 
 
 @app.post("/api/register")
@@ -529,7 +537,7 @@ def submit_assignment():
     records.append(record)
     write_submissions(records)
 
-    return jsonify({"submission": record})
+    return jsonify({"submission": record, "sampleCode": lesson["code"]})
 
 
 if __name__ == "__main__":
