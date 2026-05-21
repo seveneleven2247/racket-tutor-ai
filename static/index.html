@@ -36,6 +36,7 @@
         <div id="userPanel" class="user-panel" hidden>
           <strong id="userNameLabel"></strong>
           <span>Your progress is saved to this account.</span>
+          <button id="tutorialButton" class="secondary-button account-button" type="button">How to Use</button>
           <button id="changePasswordButton" class="secondary-button account-button" type="button">Change Password</button>
           <a class="secondary-button account-button admin-link" href="/feedback-admin?access=share123">Feedback Checking</a>
           <button id="logoutButton" class="secondary-button logout-button" type="button">Log Out</button>
@@ -351,6 +352,45 @@
           <button id="savePasswordButton" class="primary-button" type="submit">Update Password</button>
         </form>
         <p id="passwordStatus" class="access-message"></p>
+      </section>
+    </div>
+
+    <div id="tutorialModal" class="modal-backdrop" hidden>
+      <section class="modal-panel tutorial-panel" role="dialog" aria-modal="true" aria-labelledby="tutorialTitle">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Quick Start</p>
+            <h3 id="tutorialTitle">How to use CodeBridge</h3>
+          </div>
+          <button id="closeTutorialModal" class="icon-button modal-close" type="button" aria-label="Close tutorial">×</button>
+        </div>
+        <ol class="tutorial-list">
+          <li>
+            <strong>Choose your foundation.</strong>
+            <span>Select the one programming language you already know. Choose None if you want to start with C++ Foundations.</span>
+          </li>
+          <li>
+            <strong>Pick a target language.</strong>
+            <span>Use Target language to switch between Racket, Python, Java, C, and C++ tracks.</span>
+          </li>
+          <li>
+            <strong>Study one day at a time.</strong>
+            <span>Read the syntax bridge, detailed explanation, line-by-line notes, and official documentation links.</span>
+          </li>
+          <li>
+            <strong>Complete HW Q1, HW Q2, and HW Q3.</strong>
+            <span>Each homework question asks for a separate program with exact numbers and required output.</span>
+          </li>
+          <li>
+            <strong>Submit your homework.</strong>
+            <span>Upload a file or paste code in Upload Homework for Review, then check feedback and Review History.</span>
+          </li>
+          <li>
+            <strong>Use account tools.</strong>
+            <span>Change Password updates your own login. Feedback sends website issues. Feedback Checking is for administrators.</span>
+          </li>
+        </ol>
+        <button id="finishTutorial" class="primary-button" type="button">Start Learning</button>
       </section>
     </div>
 

@@ -35,6 +35,7 @@ const els = {
   showLogin: document.querySelector("#showLogin"),
   userPanel: document.querySelector("#userPanel"),
   userNameLabel: document.querySelector("#userNameLabel"),
+  tutorialButton: document.querySelector("#tutorialButton"),
   changePasswordButton: document.querySelector("#changePasswordButton"),
   logoutButton: document.querySelector("#logoutButton"),
   onboardingPanel: document.querySelector("#onboardingPanel"),
@@ -111,6 +112,9 @@ const els = {
   confirmPassword: document.querySelector("#confirmPassword"),
   savePasswordButton: document.querySelector("#savePasswordButton"),
   passwordStatus: document.querySelector("#passwordStatus"),
+  tutorialModal: document.querySelector("#tutorialModal"),
+  closeTutorialModal: document.querySelector("#closeTutorialModal"),
+  finishTutorial: document.querySelector("#finishTutorial"),
 };
 
 function readKnownLanguages() {
@@ -414,6 +418,7 @@ async function loadSession() {
 
 async function submitAuth(event) {
   event.preventDefault();
+  const wasRegistering = state.authMode === "register";
   els.authSubmit.disabled = true;
   els.authMessage.textContent = state.authMode === "register" ? "Creating account..." : "Logging in...";
   try {
@@ -437,6 +442,10 @@ async function submitAuth(event) {
       await loadCourse();
     }
     await loadSubmissions();
+    if (wasRegistering) {
+      localStorage.removeItem("codeBridge.tutorialSeen");
+      openTutorialModal();
+    }
   } catch (error) {
     els.authMessage.textContent = error.message;
   } finally {
@@ -948,6 +957,18 @@ async function submitPasswordChange(event) {
   }
 }
 
+function openTutorialModal() {
+  if (!els.tutorialModal) return;
+  els.tutorialModal.hidden = false;
+  requestAnimationFrame(() => els.finishTutorial?.focus());
+}
+
+function closeTutorialModal() {
+  if (!els.tutorialModal) return;
+  els.tutorialModal.hidden = true;
+  localStorage.setItem("codeBridge.tutorialSeen", "true");
+}
+
 els.searchInput.addEventListener("input", (event) => {
   state.query = event.target.value;
   renderDayList();
@@ -968,6 +989,7 @@ els.languageSelect.addEventListener("change", (event) => {
 els.authForm.addEventListener("submit", submitAuth);
 els.showRegister.addEventListener("click", () => setAuthMode("register"));
 els.showLogin.addEventListener("click", () => setAuthMode("login"));
+els.tutorialButton?.addEventListener("click", openTutorialModal);
 els.changePasswordButton?.addEventListener("click", openPasswordModal);
 els.logoutButton.addEventListener("click", logout);
 
@@ -1015,12 +1037,20 @@ els.passwordModal?.addEventListener("click", (event) => {
   if (event.target === els.passwordModal) closePasswordModal();
 });
 els.passwordForm?.addEventListener("submit", submitPasswordChange);
+els.closeTutorialModal?.addEventListener("click", closeTutorialModal);
+els.finishTutorial?.addEventListener("click", closeTutorialModal);
+els.tutorialModal?.addEventListener("click", (event) => {
+  if (event.target === els.tutorialModal) closeTutorialModal();
+});
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !els.feedbackModal?.hidden) {
     closeFeedbackModal();
   }
   if (event.key === "Escape" && !els.passwordModal?.hidden) {
     closePasswordModal();
+  }
+  if (event.key === "Escape" && !els.tutorialModal?.hidden) {
+    closeTutorialModal();
   }
 });
 

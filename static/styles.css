@@ -1058,6 +1058,59 @@ textarea {
   box-shadow: var(--shadow);
 }
 
+.tutorial-panel {
+  width: min(680px, 100%);
+}
+
+.tutorial-list {
+  display: grid;
+  gap: 12px;
+  margin: 0 0 18px;
+  padding: 0;
+  list-style: none;
+}
+
+.tutorial-list li {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: #fbfdfb;
+  counter-increment: tutorial-step;
+}
+
+.tutorial-list li::before {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: var(--surface-2);
+  color: var(--green-dark);
+  content: counter(tutorial-step);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.tutorial-list strong,
+.tutorial-list span {
+  display: block;
+}
+
+.tutorial-list strong {
+  color: var(--ink);
+  line-height: 1.35;
+}
+
+.tutorial-list span {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
 .modal-panel select,
 .admin-toolbar select,
 .feedback-admin-form select {
