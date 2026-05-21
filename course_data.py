@@ -1039,16 +1039,16 @@ def _practice(day: int, title: str, target: str) -> list[str]:
     ext = TARGET_LANGUAGES[target]["file_ext"]
     return [
         (
-            f"HW Q1: Build a small {language} program in day{day:02d}_q1.{ext} that demonstrates '{title}'. "
-            "It must run successfully, show clear input/output when the topic uses them, and keep the example focused on today's syntax."
+            f"HW Q1: Write Program 1 in day{day:02d}_q1.{ext}. Make a small, original {language} program that demonstrates '{title}'. "
+            "This must be a complete standalone program with its own output, not a section inside another answer."
         ),
         (
-            "HW Q2: Rewrite the C++ bridge example in the target language without copying C++ punctuation or habits. "
-            "Add short comments beside at least three important lines explaining the closest C++ comparison."
+            f"HW Q2: Write Program 2 in day{day:02d}_q2.{ext}. Create a different program that solves a new example using the same topic. "
+            "Use different values, names, and structure from HW Q1, and add at least three short C++ comparison comments."
         ),
         (
-            "HW Q3: Create a second test case or variation by changing values, inputs, branches, or loop counts. "
-            "Before the output, write a brief prediction of what should happen, then make the program print the actual result."
+            f"HW Q3: Write Program 3 in day{day:02d}_q3.{ext}. Create a third different program that combines today's topic with one earlier idea. "
+            "Before the final output, include a brief prediction in a comment and then print the actual result."
         ),
     ]
 
@@ -1060,8 +1060,8 @@ def _checklist(day: int, title: str, target: str) -> list[str]:
         f"Compare the C++ snippet with the {language} snippet.",
         "Type the sample by hand and run it.",
         "Mark the input, processing, and output lines if they exist.",
-        "Complete the practice tasks.",
-        "Submit code plus five short C++ comparison notes.",
+        "Complete three separate homework programs: HW Q1, HW Q2, and HW Q3.",
+        "Submit all three programs plus concise C++ comparison notes.",
     ]
 
 
@@ -1071,7 +1071,7 @@ def _rubric(target: str) -> list[str]:
         "Correctness: the code runs and matches the assignment.",
         f"{language} syntax: the code uses normal {language} structure and naming.",
         "C++ transfer: the notes clearly explain what changed from C++.",
-        "Completeness: the required example, changes, and short explanation are included.",
+        "Completeness: all three separate homework programs are included.",
         "Clarity: line-by-line comments are concise and accurate.",
     ]
 
@@ -1079,8 +1079,9 @@ def _rubric(target: str) -> list[str]:
 def _assignment(day: int, title: str, target: str) -> str:
     ext = TARGET_LANGUAGES[target]["file_ext"]
     return (
-        f"Submit one file named day{day:02d}_homework.{ext} or paste the full code. Include HW Q1, HW Q2, and HW Q3 in order. "
-        f"Each answer must demonstrate '{title}', run successfully, and include concise notes comparing the target-language syntax with C++."
+        f"Submit three different programs: day{day:02d}_q1.{ext}, day{day:02d}_q2.{ext}, and day{day:02d}_q3.{ext}. "
+        "If you paste code instead of uploading files, paste all three programs in order with clear labels: HW Q1, HW Q2, HW Q3. "
+        f"Each program must demonstrate '{title}', run successfully by itself, and include concise notes comparing the target-language syntax with C++."
     )
 
 
