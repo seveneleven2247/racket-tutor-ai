@@ -34,7 +34,7 @@
         <div class="language-picker">
           <label for="languageSelect">Target language</label>
           <select id="languageSelect"></select>
-          <button id="resetPrerequisite" class="text-button" type="button">Change C++ prerequisite answer</button>
+          <button id="resetPrerequisite" class="text-button" type="button">Change language experience</button>
         </div>
 
         <div id="cppTrackNotice" class="track-notice" hidden>
@@ -49,14 +49,35 @@
       <main class="main">
         <section id="onboardingPanel" class="onboarding-panel" hidden>
           <div class="onboarding-inner">
-            <p class="eyebrow">Prerequisite Check</p>
-            <h2>Have you learned C++ before?</h2>
+            <p class="eyebrow">Language Experience Check</p>
+            <h2>Which languages can you already use?</h2>
             <p>
-              This course uses C++ as the comparison language. If C++ is new to you, start with the C++ Foundations track first.
+              Select every language you can already write basic programs in. If C++ is not selected, the course starts with C++ Foundations first.
             </p>
+            <div class="language-experience-grid" aria-label="Known programming languages">
+              <label class="language-experience-card">
+                <input type="checkbox" value="cpp" data-language-experience />
+                <span>C++</span>
+              </label>
+              <label class="language-experience-card">
+                <input type="checkbox" value="python" data-language-experience />
+                <span>Python</span>
+              </label>
+              <label class="language-experience-card">
+                <input type="checkbox" value="java" data-language-experience />
+                <span>Java</span>
+              </label>
+              <label class="language-experience-card">
+                <input type="checkbox" value="c" data-language-experience />
+                <span>C</span>
+              </label>
+              <label class="language-experience-card">
+                <input type="checkbox" value="racket" data-language-experience />
+                <span>Racket</span>
+              </label>
+            </div>
             <div class="onboarding-actions">
-              <button id="startTargetTrack" class="primary-button" type="button">Yes, I know C++</button>
-              <button id="startCppTrack" class="secondary-button" type="button">No, teach me C++ first</button>
+              <button id="continueFromExperience" class="primary-button" type="button">Continue</button>
             </div>
           </div>
         </section>

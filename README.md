@@ -59,7 +59,7 @@ cloudflared tunnel --url http://127.0.0.1:5055
 The currently shared tunnel URL is:
 
 ```text
-https://municipal-packets-ticket-believes.trycloudflare.com
+https://possess-flu-treasure-lopez.trycloudflare.com
 ```
 
 Current access code:

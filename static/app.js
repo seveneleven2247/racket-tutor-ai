@@ -2,7 +2,7 @@ const state = {
   lessons: [],
   languages: [],
   target: localStorage.getItem("racketTutor.targetLanguage") || "racket",
-  cppStatus: localStorage.getItem("racketTutor.cppStatus") || "",
+  knownLanguages: readKnownLanguages(),
   activeDay: Number(localStorage.getItem("racketTutor.activeDay") || 1),
   query: "",
 };
@@ -15,8 +15,8 @@ function accessHeaders() {
 const els = {
   dayList: document.querySelector("#dayList"),
   onboardingPanel: document.querySelector("#onboardingPanel"),
-  startTargetTrack: document.querySelector("#startTargetTrack"),
-  startCppTrack: document.querySelector("#startCppTrack"),
+  continueFromExperience: document.querySelector("#continueFromExperience"),
+  languageExperienceInputs: document.querySelectorAll("[data-language-experience]"),
   brandSubtitle: document.querySelector("#brandSubtitle"),
   languagePicker: document.querySelector(".language-picker"),
   languageSelect: document.querySelector("#languageSelect"),
@@ -68,6 +68,29 @@ const els = {
   submissionList: document.querySelector("#submissionList"),
 };
 
+function readKnownLanguages() {
+  const raw = localStorage.getItem("racketTutor.knownLanguages");
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  const legacyStatus = localStorage.getItem("racketTutor.cppStatus");
+  if (legacyStatus === "knows_cpp") return ["cpp"];
+  if (legacyStatus === "needs_cpp") return [];
+  return [];
+}
+
+function writeKnownLanguages(values) {
+  const unique = [...new Set(values)];
+  state.knownLanguages = unique;
+  localStorage.setItem("racketTutor.knownLanguages", JSON.stringify(unique));
+  localStorage.setItem("racketTutor.cppStatus", unique.includes("cpp") ? "knows_cpp" : "needs_cpp");
+}
+
 function padDay(day) {
   return String(day).padStart(2, "0");
 }
@@ -99,7 +122,11 @@ function activeLesson() {
 }
 
 function isCppFoundationMode() {
-  return state.cppStatus === "needs_cpp";
+  return state.knownLanguages.length > 0 && !state.knownLanguages.includes("cpp");
+}
+
+function hasExperienceProfile() {
+  return localStorage.getItem("racketTutor.knownLanguages") !== null || localStorage.getItem("racketTutor.cppStatus") !== null;
 }
 
 function setMainContentHidden(hidden) {
@@ -108,7 +135,10 @@ function setMainContentHidden(hidden) {
 }
 
 function renderOnboarding() {
-  const needsChoice = !state.cppStatus;
+  const needsChoice = !hasExperienceProfile();
+  for (const input of els.languageExperienceInputs || []) {
+    input.checked = state.knownLanguages.includes(input.value);
+  }
   if (els.onboardingPanel) {
     els.onboardingPanel.hidden = !needsChoice;
   }
@@ -125,12 +155,17 @@ function renderOnboarding() {
 }
 
 function setCppStatus(status) {
-  state.cppStatus = status;
-  localStorage.setItem("racketTutor.cppStatus", status);
+  const current = new Set(state.knownLanguages);
+  if (status === "knows_cpp") {
+    current.add("cpp");
+  } else {
+    current.delete("cpp");
+  }
+  writeKnownLanguages([...current]);
   state.activeDay = 1;
   localStorage.setItem("racketTutor.activeDay", "1");
 
-  if (status === "needs_cpp") {
+  if (!state.knownLanguages.includes("cpp")) {
     state.target = "cpp";
   } else if (state.target === "cpp") {
     state.target = "racket";
@@ -143,9 +178,29 @@ function setCppStatus(status) {
 }
 
 function resetPrerequisiteChoice() {
-  state.cppStatus = "";
+  state.knownLanguages = [];
+  localStorage.removeItem("racketTutor.knownLanguages");
   localStorage.removeItem("racketTutor.cppStatus");
   renderOnboarding();
+}
+
+function chooseDefaultTarget() {
+  const known = new Set(state.knownLanguages);
+  const candidates = ["racket", "python", "java", "c"];
+  return candidates.find((id) => !known.has(id)) || "racket";
+}
+
+function continueFromLanguageExperience() {
+  const selected = [...els.languageExperienceInputs].filter((input) => input.checked).map((input) => input.value);
+  writeKnownLanguages(selected);
+  state.activeDay = 1;
+  localStorage.setItem("racketTutor.activeDay", "1");
+  state.target = selected.includes("cpp") ? chooseDefaultTarget() : "cpp";
+  localStorage.setItem("racketTutor.targetLanguage", state.target);
+  renderOnboarding();
+  loadCourse().catch((error) => {
+    els.lessonTitle.textContent = error.message;
+  });
 }
 
 function renderDayList() {
@@ -360,7 +415,7 @@ function selectDay(day) {
 }
 
 async function loadCourse() {
-  if (!state.cppStatus) {
+  if (!hasExperienceProfile()) {
     renderOnboarding();
     return;
   }
@@ -472,8 +527,9 @@ els.searchInput.addEventListener("input", (event) => {
 
 els.languageSelect.addEventListener("change", (event) => {
   state.target = event.target.value;
-  state.cppStatus = "knows_cpp";
-  localStorage.setItem("racketTutor.cppStatus", state.cppStatus);
+  if (!state.knownLanguages.includes("cpp")) {
+    writeKnownLanguages([...state.knownLanguages, "cpp"]);
+  }
   localStorage.setItem("racketTutor.targetLanguage", state.target);
   state.activeDay = 1;
   loadCourse().catch((error) => {
@@ -481,8 +537,7 @@ els.languageSelect.addEventListener("change", (event) => {
   });
 });
 
-els.startTargetTrack.addEventListener("click", () => setCppStatus("knows_cpp"));
-els.startCppTrack.addEventListener("click", () => setCppStatus("needs_cpp"));
+els.continueFromExperience.addEventListener("click", continueFromLanguageExperience);
 els.resetPrerequisite.addEventListener("click", resetPrerequisiteChoice);
 els.markCppKnown.addEventListener("click", () => setCppStatus("knows_cpp"));
 
@@ -506,7 +561,7 @@ els.submissionForm.addEventListener("submit", submitAssignment);
 els.refreshSubmissions.addEventListener("click", loadSubmissions);
 
 renderOnboarding();
-if (state.cppStatus) {
+if (hasExperienceProfile()) {
   loadCourse().catch((error) => {
     els.lessonTitle.textContent = error.message;
   });
