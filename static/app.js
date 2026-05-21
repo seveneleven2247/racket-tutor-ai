@@ -215,7 +215,7 @@ function hasSubmitted(day, target = state.target) {
 }
 
 function isLessonUnlocked(day) {
-  return day <= 1 || hasSubmitted(day - 1);
+  return day >= 1;
 }
 
 function readChecklist(day) {
@@ -519,8 +519,8 @@ function renderLesson() {
     const finalDay = lesson.day === state.lessons.length;
     els.unlockNotice.classList.toggle("complete", submittedToday);
     els.unlockNotice.innerHTML = submittedToday
-      ? `<strong>Homework submitted.</strong><span>${finalDay ? "You finished the final lesson for this track." : `Day ${padDay(lesson.day + 1)} is unlocked.`}</span>`
-      : `<strong>Submit today's homework to unlock the next lesson.</strong><span>Upload or paste all three programs for HW Q1, HW Q2, and HW Q3 before moving on.</span>`;
+      ? `<strong>Homework submitted.</strong><span>${finalDay ? "You finished the final lesson for this track." : `You can keep moving through the open course.`}</span>`
+      : `<strong>All lessons are unlocked.</strong><span>You can study any day now. Submit HW Q1, HW Q2, and HW Q3 when you want feedback and history.</span>`;
   }
   els.cppBridge.textContent = lesson.cpp_bridge;
   renderSyntaxBridge(lesson);
@@ -531,8 +531,8 @@ function renderLesson() {
   els.assignmentText.textContent = lesson.assignment;
 
   els.prevDay.disabled = lesson.day === 1;
-  els.nextDay.disabled = lesson.day === state.lessons.length || !hasSubmitted(lesson.day);
-  els.nextDay.title = hasSubmitted(lesson.day) ? "" : "Submit today's homework before opening tomorrow's lesson.";
+  els.nextDay.disabled = lesson.day === state.lessons.length;
+  els.nextDay.title = "";
 
   els.focusList.innerHTML = "";
   for (const focus of lesson.racket_focus) {
