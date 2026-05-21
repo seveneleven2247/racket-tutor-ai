@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from dataclasses import asdict, dataclass
 
 
@@ -1048,28 +1049,226 @@ def _explanation(title: str, kind: str, target: str, base: str = "cpp") -> str:
     )
 
 
-def _practice(day: int, title: str, target: str, base: str = "cpp") -> list[str]:
+def _concrete_homework_prompts(kind: str, day: int) -> list[str]:
+    base_kind = _base_kind(kind)
+    a = day + 12
+    b = day * 2 + 7
+    c = (day % 5) + 3
+    d = (day % 4) + 2
+    price = 8 + day
+    quantity = (day % 3) + 3
+    subtotal = price * quantity
+    discount = (day % 4) + 5
+    after_discount = subtotal - discount
+    tax_rate = 13
+    tax = round(after_discount * tax_rate / 100, 2)
+    final_total = round(after_discount + tax, 2)
+    score = 55 + day
+    bonus = (day % 6) + 4
+    final_score = score + bonus
+    width = (day % 4) + 4
+    height = (day % 3) + 3
+    area = width * height
+    values = [day + 3, day + 8, day + 1, day + 12, day + 5]
+    value_list = ", ".join(str(value) for value in values)
+    value_sum = sum(values)
+    value_avg = round(value_sum / len(values), 2)
+    rows = (day % 3) + 3
+    cols = (day % 4) + 4
+    cells = rows * cols
+    name = f"Student{day:02d}"
+
+    prompts = {
+        "output": [
+            f"Print three lines exactly: `Course Day {day}`, `Sum {a} + {b} = {a + b}`, and `Product {c} * {d} = {c * d}`. Do not use input; hard-code the numbers and show both formulas.",
+            f"Print a mini receipt using price {price} and quantity {quantity}. Calculate {price} * {quantity} = {subtotal}, then print `Subtotal: {subtotal}`.",
+            f"Print a score report. Start with score {score}, add bonus {bonus}, calculate {score} + {bonus} = {final_score}, and print the final score on its own line.",
+        ],
+        "input": [
+            f"Ask the user for one integer. In your test run, enter {a}. Add {b}, calculate {a} + {b} = {a + b}, and print the result.",
+            f"Ask for price and quantity. In your test run, enter price {price} and quantity {quantity}. Calculate subtotal {price} * {quantity} = {subtotal} and print it.",
+            f"Ask for width and height. In your test run, enter {width} and {height}. Calculate area {width} * {height} = {area} and print `Area: {area}`.",
+        ],
+        "math": [
+            f"Create variables subtotal = {subtotal}, discount = {discount}, and taxRate = {tax_rate}. Calculate afterDiscount = {subtotal} - {discount} = {after_discount}, tax = afterDiscount * {tax_rate}/100 = {tax}, and finalTotal = {final_total}. Print all three results.",
+            f"Calculate the average of {values[0]}, {values[1]}, and {values[2]}. Show the formula ({values[0]} + {values[1]} + {values[2]}) / 3 and print the decimal average.",
+            f"Calculate a rectangle perimeter with width {width} and height {height}. Use 2 * ({width} + {height}) = {2 * (width + height)} and print the perimeter.",
+        ],
+        "variable": [
+            f"Declare and initialize integer variables apples = {a}, oranges = {b}, and boxes = {c}. Calculate totalFruit = apples + oranges = {a + b} and fruitPerBox = totalFruit / boxes.",
+            f"Declare price = {price}, quantity = {quantity}, and discount = {discount}. Calculate subtotal = {subtotal} and totalAfterDiscount = {after_discount}.",
+            f"Declare name = `{name}`, score = {score}, bonus = {bonus}, and finalScore = {final_score}. Print one sentence containing all four values.",
+        ],
+        "if_statement": [
+            f"Set score = {final_score}. If score is at least 60, print `Pass`. Since {final_score} >= 60 is true, your output should show `Pass`.",
+            f"Set temperature = {18 + day}. If temperature is greater than 25, print `Hot day`; otherwise print nothing. Add a comment predicting whether the message appears.",
+            f"Set inventory = {quantity}. If inventory is less than 5, print `Restock needed`. Explain in one comment why {quantity} triggers or does not trigger the message.",
+        ],
+        "else_if": [
+            f"Set score = {final_score}. Use else-if rules: 90+ gives A, 80-89 gives B, 70-79 gives C, 60-69 gives D, below 60 gives F. Print the grade for {final_score}.",
+            f"Set orderTotal = {subtotal}. If it is 100 or more, discount is 20; else if 50 or more, discount is 10; otherwise discount is 0. Calculate and print final amount.",
+            f"Set monthNumber = {(day % 12) + 1}. Use else-if to print Winter for 12/1/2, Spring for 3/4/5, Summer for 6/7/8, and Fall for 9/10/11.",
+        ],
+        "error_check": [
+            f"Read an age. In your test run, enter {day - 3}. If age is below 0 or above 120, print `Invalid age`; otherwise print `Valid age`.",
+            f"Read quantity. In your test run, enter {quantity}. If quantity is 0 or negative, print an error; otherwise calculate {price} * quantity and print total.",
+            f"Read a denominator. In your test run, enter {c}. If it is 0, print `Cannot divide`; otherwise calculate {b} / denominator and print the quotient.",
+        ],
+        "while_loop": [
+            f"Start count = 1 and total = 0. While count is at most {c}, add count to total. Print each count and print final total {sum(range(1, c + 1))}.",
+            f"Start balance = {subtotal}. While balance is greater than 0, subtract {price} each loop and print the new balance until it reaches 0 or below.",
+            f"Start number = {a}. While number is greater than 0, subtract {c} and print each value. Stop when number is 0 or negative.",
+        ],
+        "do_while": [
+            f"Make a loop that runs at least once. Start attempts = 0, add 1 each time, and stop after {d} attempts. Print `Attempt 1` through `Attempt {d}`.",
+            f"Create a menu loop with choices 1, 2, and 0. Simulate choices 1, 2, 0. Choice 1 adds {a}, choice 2 adds {b}, and choice 0 quits. Print final total {a + b}.",
+            f"Start value = {price}. In a do-while style loop, print value, subtract {c}, and continue while value is positive.",
+        ],
+        "random_number": [
+            f"Generate or simulate a random number from 1 to 10. For testing, force the value to {c}. If the guess is {c}, print `Correct`; otherwise print the distance from {c}.",
+            f"Generate or simulate two dice values. For testing, use {d} and {c}. Calculate sum {d} + {c} = {d + c} and print whether the sum is at least 7.",
+            f"Generate or simulate a random discount from 5 to 15. For testing, use {discount}. Apply it to subtotal {subtotal} and print {subtotal} - {discount} = {after_discount}.",
+        ],
+        "for_loop": [
+            f"Use a for loop to print the multiplication table for {c}: {c} * 1 through {c} * 10. Each line must show the full formula and result.",
+            f"Use a for loop from 1 to {b}. Add only even numbers to total and print the final even total.",
+            f"Use a for loop to calculate factorial {d}! by multiplying 1 through {d}. Print each intermediate product and the final answer.",
+        ],
+        "nested_for": [
+            f"Use nested loops to print a rectangle with {height} rows and {width} columns of `*`. Also calculate and print total characters {height} * {width} = {area}.",
+            f"Use nested loops to print a {c} by {c} multiplication grid. Each cell should contain row * column.",
+            f"Use nested loops for {rows} students and {cols} quizzes. Print labels like `Student 1 Quiz 1` and count total entries {cells}.",
+        ],
+        "function_intro": [
+            f"Explain a function by writing a small program that calls a built-in or simple helper to calculate {a} + {b} = {a + b}. Print the input values and result.",
+            f"Write a program with one reusable calculation idea: area = width * height. Use width {width} and height {height}, then print area {area}.",
+            f"Show why functions avoid repeated work: calculate tax for totals {subtotal} and {subtotal + 20} using tax rate {tax_rate}%. Print both tax values.",
+        ],
+        "create_function": [
+            f"Create a function `addBonus` that takes score {score} and bonus {bonus}, returns {final_score}, and prints the returned value.",
+            f"Create a function `rectangleArea` that takes width {width} and height {height}, returns {area}, and prints the formula.",
+            f"Create a function `finalPrice` that takes subtotal {subtotal} and discount {discount}, returns {after_discount}, and prints the result.",
+        ],
+        "call_function": [
+            f"Write a function that multiplies two numbers, then call it with {a} and {c}. Print returned result {a * c}.",
+            f"Write a function that converts minutes to seconds. Call it with {b} minutes and print {b} * 60 = {b * 60}.",
+            f"Write a function that finds the larger of {a} and {b}. Call it, store the returned value, and print the larger number.",
+        ],
+        "arrays_intro": [
+            f"Create a collection containing {value_list}. Print the first value {values[0]}, the last value {values[-1]}, and the number of values {len(values)}.",
+            f"Create a collection of quiz scores {value_list}. Add the first two values: {values[0]} + {values[1]} = {values[0] + values[1]}, then print the result.",
+            f"Create a collection of prices {price}, {price + 2}, and {price + 5}. Print each price with its index or position.",
+        ],
+        "array_kinds": [
+            f"Create one fixed-size or plain array/list with values {value_list}. Print all values and explain in a comment whether its size should change.",
+            f"Create a resizable collection with starting values {values[0]}, {values[1]}, {values[2]}. Add {values[3]} and print the new size.",
+            f"Create a two-item collection of names and a numeric collection of scores {score} and {final_score}. Print each name with one score.",
+        ],
+        "array_declare": [
+            f"Declare and initialize an array/list with {value_list}. Calculate sum {value_sum} by accessing each element or looping over it.",
+            f"Declare an array/list of 4 prices: {price}, {price + 3}, {price + 6}, {price + 9}. Calculate and print their average.",
+            f"Declare an array/list of 3 quantities: {quantity}, {quantity + 1}, {quantity + 2}. Multiply each by price {price} and print each subtotal.",
+        ],
+        "strings": [
+            f"Create firstName = `Code` and lastName = `Bridge{day}`. Join them with a space and print `Code Bridge{day}`.",
+            f"Create item = `apple` and count = {quantity}. Print `apple x {quantity}` and also print the length of `apple`.",
+            f"Create text = `Day{day}Score{final_score}`. Print the first character, last character, and total length.",
+        ],
+        "char_arrays": [
+            f"Create a character array/list for `CODE{day}`. Print each character on its own line and count total characters.",
+            f"Create characters `A`, `B`, `C`, and `{c}` as text. Combine them into one string and print it.",
+            f"Store the word `LEVEL` as characters. Count how many characters match the first character `L` and print the count.",
+        ],
+        "classes": [
+            f"Create a `Rectangle` data type or class with width {width} and height {height}. Add or write logic to calculate area {area}.",
+            f"Create a `Student` data type or class with name `{name}` and score {score}. Print `{name}: {score}`.",
+            f"Create a `BankAccount` data type or class with starting balance {subtotal}. Deposit {price}, withdraw {discount}, and print final balance {subtotal + price - discount}.",
+        ],
+        "switch_statement": [
+            f"Set menuChoice = {(day % 4) + 1}. Use switch/case or the closest target-language equivalent: 1 adds {a}, 2 subtracts {c}, 3 multiplies by {d}, 4 quits. Print the selected result.",
+            f"Set gradeLetter based on score {final_score}: A, B, C, D, or F. Use switch/case where available, or an equivalent exact-match branch, to print a message for the grade.",
+            f"Set dayNumber = {(day % 7) + 1}. Use switch/case or equivalent to print Monday through Sunday, then print whether it is a school day.",
+        ],
+        "multi_arrays": [
+            f"Create a 2D grid with {rows} rows and {cols} columns. Fill each cell with row + column and print the grid.",
+            f"Create a 2D score table for {rows} students and {cols} quizzes. Fill each score with 70 + row + quiz and print each student total.",
+            f"Create a {height} by {width} grid of numbers. Count and print total cells {area}.",
+        ],
+        "vectors": [
+            f"Create a resizable vector/list with {values[0]}, {values[1]}, and {values[2]}. Add {values[3]}, remove or ignore the first value, and print the final contents.",
+            f"Create a vector/list of prices {price}, {price + 4}, and {price + 8}. Add tax rate {tax_rate}% to each and print each final price.",
+            f"Create an empty vector/list, add numbers 1 through {c}, then calculate and print their sum {sum(range(1, c + 1))}.",
+        ],
+        "objects_classes": [
+            f"Create two `Student` objects/records: `{name}` with score {score}, and `StudentB` with score {final_score}. Print the higher score.",
+            f"Create a `Product` object/record with price {price} and quantity {quantity}. Add a method/function or external helper to calculate subtotal {subtotal}.",
+            f"Create a `Point` object/record with x = {width} and y = {height}. Calculate distance squared = x*x + y*y = {width * width + height * height}.",
+        ],
+        "recursion": [
+            f"Write a recursive function to calculate the sum from 1 to {c}. The result should be {sum(range(1, c + 1))}. Print each recursive step or final result.",
+            f"Write a recursive function to calculate factorial {d}! = {math.factorial(d)}. Print the final value.",
+            f"Write a recursive countdown from {c} to 0. Print every number and then print `Done`.",
+        ],
+        "search_float": [
+            f"Search the list {value_list} for target {values[3]}. Print its index/position if found; otherwise print `Not found`.",
+            f"Use floating-point values {price}.5, {price + 2}.25, and {price + 4}.75. Calculate and print their average.",
+            f"Search scores {value_list} for the first value greater than {score}. Print the value if it exists; otherwise print `No score above {score}`.",
+        ],
+        "combined_if": [
+            f"Set age = {18 + day} and score = {final_score}. Print `Eligible` only if age is at least 18 and score is at least 70.",
+            f"Set subtotal = {subtotal} and memberYears = {day % 5}. Give a discount only if subtotal is at least 50 or memberYears is at least 3. Print discount amount.",
+            f"Set temperature = {18 + day} and raining = {day % 2 == 0}. Print `Practice outside` only if temperature is between 18 and 28 and it is not raining.",
+        ],
+        "nested_if": [
+            f"Set score = {final_score} and attendance = {80 + (day % 20)}. First check score >= 60; inside that branch, check attendance >= 85 to print `Full pass` or `Academic pass only`.",
+            f"Set balance = {subtotal} and withdrawal = {price}. First check withdrawal > 0; inside that, check balance >= withdrawal and print the new balance.",
+            f"Set age = {14 + (day % 8)} and permission = {day % 2 == 0}. If age is under 18, check permission before printing whether the student can join.",
+        ],
+        "for_arrays": [
+            f"Loop through array/list {value_list}. Add every value to total and print sum {value_sum}.",
+            f"Loop through prices {price}, {price + 2}, {price + 4}, {price + 6}. For each price, multiply by quantity {quantity} and print the subtotal.",
+            f"Loop through scores {value_list}. Count how many scores are at least {values[2]} and print the count.",
+        ],
+        "nested_for_multi": [
+            f"Use nested loops to process a {rows} by {cols} table. Put row * column in each cell and print the table.",
+            f"Use nested loops for {rows} students and {cols} assignments. Each grade is 70 + student + assignment; print each student average.",
+            f"Use nested loops to count border cells in a {height} by {width} rectangle. Print total cells {area} and border count.",
+        ],
+        "while_validation": [
+            f"Keep asking for a quantity until it is between 1 and 10. Simulate inputs -1, 0, and {quantity}. Accept {quantity}, then calculate {quantity} * {price} = {quantity * price}.",
+            f"Keep asking for a password length until it is at least 8. Simulate lengths 4, 7, and {8 + (day % 5)}. Print the accepted length.",
+            f"Keep asking for a denominator until it is not 0. Simulate 0, 0, and {c}. Calculate {b} / {c} and print the result.",
+        ],
+        "do_while_menu": [
+            f"Build a menu that runs at least once. Simulate choices 1, 1, 2, 0. Choice 1 adds {price}, choice 2 subtracts {discount}. Print final total {price + price - discount}.",
+            f"Build a calculator menu. Simulate choice 1 to add {a} + {b}, choice 2 to multiply {c} * {d}, then choice 0 to quit. Print both results.",
+            f"Build a point menu. Simulate adding points {c}, {d}, and then quitting. Print total points {c + d}.",
+        ],
+    }
+    return prompts.get(
+        base_kind,
+        [
+            f"Use the numbers {a}, {b}, and {c}. Calculate {a} + {b} - {c} = {a + b - c}, then print the formula and result.",
+            f"Use price {price}, quantity {quantity}, and discount {discount}. Calculate {price} * {quantity} - {discount} = {after_discount}, then print the result.",
+            f"Use values {value_list}. Calculate their sum {value_sum} and average {value_avg}, then print both.",
+        ],
+    )
+
+
+def _practice(day: int, title: str, kind: str, target: str, base: str = "cpp") -> list[str]:
     language = TARGET_LANGUAGES[target]["name"]
     base_language = TARGET_LANGUAGES[base]["name"]
     ext = TARGET_LANGUAGES[target]["file_ext"]
-    comparison_request = (
-        f"add at least three short {base_language} comparison comments"
+    comparison_note = (
+        f"Include one short comment comparing the main syntax with {base_language}."
         if target != base
-        else f"add at least three short comments explaining important {language} lines"
+        else f"Include one short comment explaining the most important {language} syntax line."
     )
+    prompts = _concrete_homework_prompts(kind, day)
     return [
-        (
-            f"HW Q1: Write Program 1 in day{day:02d}_q1.{ext}. Make a small, original {language} program that demonstrates '{title}'. "
-            "This must be a complete standalone program with its own output, not a section inside another answer."
-        ),
-        (
-            f"HW Q2: Write Program 2 in day{day:02d}_q2.{ext}. Create a different program that solves a new example using the same topic. "
-            f"Use different values, names, and structure from HW Q1, and {comparison_request}."
-        ),
-        (
-            f"HW Q3: Write Program 3 in day{day:02d}_q3.{ext}. Create a third different program that combines today's topic with one earlier idea. "
-            "Before the final output, include a brief prediction in a comment and then print the actual result."
-        ),
+        f"HW Q1: Write Program 1 in day{day:02d}_q1.{ext}. {prompts[0]} {comparison_note}",
+        f"HW Q2: Write Program 2 in day{day:02d}_q2.{ext}. {prompts[1]} {comparison_note}",
+        f"HW Q3: Write Program 3 in day{day:02d}_q3.{ext}. {prompts[2]} Before the final output, include a brief prediction in a comment and then print the actual result. {comparison_note}",
     ]
 
 
@@ -1091,7 +1290,7 @@ def _checklist(day: int, title: str, target: str, base: str = "cpp") -> list[str
         compare_or_explain,
         "Type the sample by hand and run it.",
         "Mark the input, processing, and output lines if they exist.",
-        "Complete three separate homework programs: HW Q1, HW Q2, and HW Q3.",
+        "Complete the three concrete homework programs: HW Q1, HW Q2, and HW Q3.",
         f"Submit all three programs plus {notes_request}.",
     ]
 
@@ -1124,7 +1323,7 @@ def _assignment(day: int, title: str, target: str, base: str = "cpp") -> str:
     return (
         f"Submit three different programs: day{day:02d}_q1.{ext}, day{day:02d}_q2.{ext}, and day{day:02d}_q3.{ext}. "
         "If you paste code instead of uploading files, paste all three programs in order with clear labels: HW Q1, HW Q2, HW Q3. "
-        f"Each program must demonstrate '{title}', run successfully by itself, and {notes_request}."
+        f"Each program must solve its exact numbered homework prompt for '{title}', run successfully by itself, print the requested results, and {notes_request}."
     )
 
 
@@ -1471,7 +1670,7 @@ def _lesson(day: int, target: str, base: str = "cpp") -> dict:
         racket_focus=_focus(title, kind, target, base),
         code=code,
         line_notes=_line_notes(code, target, base),
-        practice=_practice(day, title, target, base),
+        practice=_practice(day, title, kind, target, base),
         checklist=_checklist(day, title, target, base),
         assignment=_assignment(day, title, target, base),
         grading_rubric=_rubric(target, base),
