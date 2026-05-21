@@ -500,8 +500,8 @@ function renderLesson() {
 
   localStorage.setItem("racketTutor.activeDay", String(lesson.day));
   els.weekLabel.textContent = `Week ${lesson.week}`;
-  document.title = `${lesson.target_language_name || "Racket"} Tutor AI`;
-  document.querySelector(".brand h1").textContent = `${lesson.target_language_name || "Code"} Tutor AI`;
+  document.title = "CodeBridge";
+  document.querySelector(".brand h1").textContent = "CodeBridge";
   if (els.brandSubtitle) {
     els.brandSubtitle.textContent = isCppFoundationMode()
       ? "C++ Foundations · prerequisite track · 56 days"

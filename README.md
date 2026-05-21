@@ -1,6 +1,6 @@
-# Code Tutor AI
+# CodeBridge
 
-A 56-day programming-learning website for students who already know C++ and want to learn Racket, Python, C, or Java through C++ comparisons.
+A 56-day programming-learning website that uses one known language as a bridge to teach C++, C, Java, Python, and Racket.
 
 Features:
 
