@@ -938,6 +938,11 @@ def normalize_target_language(target: str | None) -> str:
     return value if value in TARGET_LANGUAGES else "racket"
 
 
+def normalize_base_language(base: str | None) -> str:
+    value = (base or "cpp").strip().lower()
+    return value if value in TARGET_LANGUAGES else "cpp"
+
+
 def _docs_for(target: str) -> list[dict[str, str]]:
     return DOCS[target]
 
@@ -954,89 +959,104 @@ def _cpp(kind: str) -> str:
     return SNIPPETS[_base_kind(kind)]["cpp"]
 
 
-def _focus(title: str, kind: str, target: str) -> list[str]:
+def _focus(title: str, kind: str, target: str, base: str = "cpp") -> list[str]:
     language = TARGET_LANGUAGES[target]["name"]
+    base_language = TARGET_LANGUAGES[base]["name"]
     base = _base_kind(kind).replace("_", " ")
     return [
         f"{language} syntax",
-        f"C++ comparison: {base}",
+        f"{base_language} comparison: {base}",
         "line-by-line explanation",
         "small runnable example",
     ]
 
 
-def _syntax_bridge(title: str, kind: str, target: str) -> dict:
+def _syntax_bridge(title: str, kind: str, target: str, base: str = "cpp") -> dict:
     language = TARGET_LANGUAGES[target]["name"]
-    if target == "cpp":
+    base_language = TARGET_LANGUAGES[base]["name"]
+    base_code = _code(kind, base)
+    if target == base:
         return {
-            "concept": f"C++ foundation: {title}.",
-            "cpp": _cpp(kind),
+            "concept": f"{base_language} foundation: {title}.",
+            "cpp": base_code,
+            "base": base_code,
+            "base_label": base_language,
             "racket": _code(kind, target),
             "target": _code(kind, target),
             "target_label": language,
             "translation_steps": [
-                "Read the C++ example from top to bottom and identify the output, input, and processing lines.",
+                f"Read the {base_language} example from top to bottom and identify the output, input, and processing lines.",
                 "Mark the syntax pieces: header, main function, declarations, statements, blocks, and semicolons.",
                 "Run the smallest version first, then change one value and predict the new result.",
-                "Write one short note per important line so later languages have a clear C++ baseline.",
+                f"Write one short note per important line so later languages have a clear {base_language} baseline.",
             ],
             "pitfalls": [
                 "Do not skip main, headers, or semicolons until you can explain why they are there.",
                 "Do not memorize syntax alone; connect each line to a concrete program action.",
                 "Keep examples small enough that compiler errors point to one concept at a time.",
             ],
-            "drill": f"Type the C++ snippet, run it, then explain every non-blank line in plain English.",
-            "today_angle": f"Prerequisite C++ topic: {title}. Build the baseline before moving to another language.",
+            "drill": f"Type the {base_language} snippet, run it, then explain every non-blank line in plain English.",
+            "today_angle": f"Prerequisite {base_language} topic: {title}. Build the baseline before moving to another language.",
             "docs": _docs_for(target),
         }
     return {
-        "concept": f"{title}: translate the C++ pattern into {language}.",
-        "cpp": _cpp(kind),
+        "concept": f"{title}: translate the {base_language} pattern into {language}.",
+        "cpp": base_code,
+        "base": base_code,
+        "base_label": base_language,
         "racket": _code(kind, target),
         "target": _code(kind, target),
         "target_label": language,
         "translation_steps": [
-            "First identify what the C++ code is doing, not just which symbols it uses.",
+            f"First identify what the {base_language} code is doing, not just which symbols it uses.",
             f"Write the same idea using normal {language} syntax and naming.",
             "Run the smallest version, then change one value and predict the output.",
-            "Add one short note per important line explaining the C++ comparison.",
+            f"Add one short note per important line explaining the {base_language} comparison.",
         ],
         "pitfalls": [
-            "Do not copy C++ punctuation when the target language has a different block style.",
+            f"Do not copy {base_language} punctuation when the target language has a different block style.",
             f"Use the standard {language} library or idiom instead of forcing a literal translation.",
             "Keep input, calculation, and output separated when the example grows.",
         ],
-        "drill": f"Rewrite the C++ snippet in {language}, then explain every non-blank line.",
-        "today_angle": f"Day topic: {title}. Start from C++, then write the target-language version.",
+        "drill": f"Rewrite the {base_language} snippet in {language}, then explain every non-blank line.",
+        "today_angle": f"Day topic: {title}. Start from {base_language}, then write the target-language version.",
         "docs": _docs_for(target),
     }
 
 
-def _goal(title: str, target: str) -> str:
+def _goal(title: str, target: str, base: str = "cpp") -> str:
     language = TARGET_LANGUAGES[target]["name"]
-    if target == "cpp":
-        return f"Build the C++ foundation for {title.lower()} before starting another target language."
-    return f"Learn {title.lower()} in {language} by comparing it directly with the C++ version you already understand."
+    base_language = TARGET_LANGUAGES[base]["name"]
+    if target == base:
+        return f"Build the {base_language} foundation for {title.lower()} before starting another target language."
+    return f"Learn {title.lower()} in {language} by comparing it directly with the {base_language} version you already understand."
 
 
-def _explanation(title: str, kind: str, target: str) -> str:
+def _explanation(title: str, kind: str, target: str, base: str = "cpp") -> str:
     language = TARGET_LANGUAGES[target]["name"]
-    if target == "cpp":
+    base_language = TARGET_LANGUAGES[base]["name"]
+    if target == base:
         return (
-            f"{_summary(kind)} This prerequisite track teaches the C++ version first. "
+            f"{_summary(kind)} This prerequisite track teaches the {base_language} version first. "
             "Focus on what each line does, where the syntax boundaries are, and how the compiler reads the program. "
             "Once this baseline is comfortable, the other language tracks can compare against it directly."
         )
     return (
-        f"{_summary(kind)} In this lesson, read the C++ snippet first and name the exact idea. "
+        f"{_summary(kind)} In this lesson, read the {base_language} snippet first and name the exact idea. "
         f"Then study the {language} code line by line. Keep the explanation short: what the line does, "
-        "what syntax it uses, and which C++ habit it matches or replaces."
+        f"what syntax it uses, and which {base_language} habit it matches or replaces."
     )
 
 
-def _practice(day: int, title: str, target: str) -> list[str]:
+def _practice(day: int, title: str, target: str, base: str = "cpp") -> list[str]:
     language = TARGET_LANGUAGES[target]["name"]
+    base_language = TARGET_LANGUAGES[base]["name"]
     ext = TARGET_LANGUAGES[target]["file_ext"]
+    comparison_request = (
+        f"add at least three short {base_language} comparison comments"
+        if target != base
+        else f"add at least three short comments explaining important {language} lines"
+    )
     return [
         (
             f"HW Q1: Write Program 1 in day{day:02d}_q1.{ext}. Make a small, original {language} program that demonstrates '{title}'. "
@@ -1044,7 +1064,7 @@ def _practice(day: int, title: str, target: str) -> list[str]:
         ),
         (
             f"HW Q2: Write Program 2 in day{day:02d}_q2.{ext}. Create a different program that solves a new example using the same topic. "
-            "Use different values, names, and structure from HW Q1, and add at least three short C++ comparison comments."
+            f"Use different values, names, and structure from HW Q1, and {comparison_request}."
         ),
         (
             f"HW Q3: Write Program 3 in day{day:02d}_q3.{ext}. Create a third different program that combines today's topic with one earlier idea. "
@@ -1053,36 +1073,268 @@ def _practice(day: int, title: str, target: str) -> list[str]:
     ]
 
 
-def _checklist(day: int, title: str, target: str) -> list[str]:
+def _checklist(day: int, title: str, target: str, base: str = "cpp") -> list[str]:
     language = TARGET_LANGUAGES[target]["name"]
+    base_language = TARGET_LANGUAGES[base]["name"]
+    compare_or_explain = (
+        f"Compare the {base_language} snippet with the {language} snippet."
+        if target != base
+        else f"Read the {language} snippet and explain every important line."
+    )
+    notes_request = (
+        f"concise {base_language} comparison notes"
+        if target != base
+        else f"concise {language} line-by-line notes"
+    )
     return [
         f"Read Day {day:02d}: {title}.",
-        f"Compare the C++ snippet with the {language} snippet.",
+        compare_or_explain,
         "Type the sample by hand and run it.",
         "Mark the input, processing, and output lines if they exist.",
         "Complete three separate homework programs: HW Q1, HW Q2, and HW Q3.",
-        "Submit all three programs plus concise C++ comparison notes.",
+        f"Submit all three programs plus {notes_request}.",
     ]
 
 
-def _rubric(target: str) -> list[str]:
+def _rubric(target: str, base: str = "cpp") -> list[str]:
     language = TARGET_LANGUAGES[target]["name"]
+    base_language = TARGET_LANGUAGES[base]["name"]
+    transfer_or_baseline = (
+        f"{base_language} transfer: the notes clearly explain what changed from {base_language}."
+        if target != base
+        else f"{language} baseline: the notes clearly explain what each important line does."
+    )
     return [
         "Correctness: the code runs and matches the assignment.",
         f"{language} syntax: the code uses normal {language} structure and naming.",
-        "C++ transfer: the notes clearly explain what changed from C++.",
+        transfer_or_baseline,
         "Completeness: all three separate homework programs are included.",
         "Clarity: line-by-line comments are concise and accurate.",
     ]
 
 
-def _assignment(day: int, title: str, target: str) -> str:
+def _assignment(day: int, title: str, target: str, base: str = "cpp") -> str:
     ext = TARGET_LANGUAGES[target]["file_ext"]
+    base_language = TARGET_LANGUAGES[base]["name"]
+    notes_request = (
+        f"include concise notes comparing the target-language syntax with {base_language}"
+        if target != base
+        else f"include concise notes explaining the important {base_language} syntax line by line"
+    )
     return (
         f"Submit three different programs: day{day:02d}_q1.{ext}, day{day:02d}_q2.{ext}, and day{day:02d}_q3.{ext}. "
         "If you paste code instead of uploading files, paste all three programs in order with clear labels: HW Q1, HW Q2, HW Q3. "
-        f"Each program must demonstrate '{title}', run successfully by itself, and include concise notes comparing the target-language syntax with C++."
+        f"Each program must demonstrate '{title}', run successfully by itself, and {notes_request}."
     )
+
+
+BASE_COMPARISON_EXAMPLES = {
+    "comment": {
+        "cpp": "// note",
+        "c": "// note",
+        "java": "// note",
+        "python": "# note",
+        "racket": "; note",
+    },
+    "language_directive": {
+        "cpp": "the compiler mode and .cpp file",
+        "c": "the compiler mode and .c file",
+        "java": "the .java file and class name",
+        "python": "the .py file and Python interpreter",
+        "racket": "#lang racket",
+    },
+    "import": {
+        "cpp": "#include <iostream>",
+        "c": "#include <stdio.h>",
+        "java": "import java.util.Scanner;",
+        "python": "import math",
+        "racket": "(require racket/list)",
+    },
+    "entry": {
+        "cpp": "int main() { ... }",
+        "c": "int main(void) { ... }",
+        "java": "public static void main(String[] args) { ... }",
+        "python": "top-level code or if __name__ == '__main__':",
+        "racket": "top-level expressions after #lang racket",
+    },
+    "function_def": {
+        "cpp": "return_type name(args) { ... }",
+        "c": "return_type name(args) { ... }",
+        "java": "static returnType name(args) { ... }",
+        "python": "def name(args):",
+        "racket": "(define (name args) ...)",
+    },
+    "variable": {
+        "cpp": "auto name = value;",
+        "c": "int name = value;",
+        "java": "var name = value;",
+        "python": "name = value",
+        "racket": "(define name value)",
+    },
+    "if": {
+        "cpp": "if (condition) { ... }",
+        "c": "if (condition) { ... }",
+        "java": "if (condition) { ... }",
+        "python": "if condition:",
+        "racket": "(if condition then-value else-value)",
+    },
+    "else_if": {
+        "cpp": "else if (condition) { ... }",
+        "c": "else if (condition) { ... }",
+        "java": "else if (condition) { ... }",
+        "python": "elif condition:",
+        "racket": "(cond [condition result] [else result])",
+    },
+    "multi_case": {
+        "cpp": "switch (value) { case x: ... }",
+        "c": "switch (value) { case x: ... }",
+        "java": "switch (value) { case x -> ... }",
+        "python": "match value:",
+        "racket": "(case value [(x) result] [else result])",
+    },
+    "for_loop": {
+        "cpp": "for (int i = 0; i < n; ++i) { ... }",
+        "c": "for (int i = 0; i < n; ++i) { ... }",
+        "java": "for (int i = 0; i < n; i++) { ... }",
+        "python": "for item in items:",
+        "racket": "(for ([item items]) ...)",
+    },
+    "while_loop": {
+        "cpp": "while (condition) { ... }",
+        "c": "while (condition) { ... }",
+        "java": "while (condition) { ... }",
+        "python": "while condition:",
+        "racket": "a named let or recursive helper",
+    },
+    "local_binding": {
+        "cpp": "{ auto name = value; ... }",
+        "c": "{ int name = value; ... }",
+        "java": "{ var name = value; ... }",
+        "python": "a local name inside an indented block",
+        "racket": "(let ([name value]) ...)",
+    },
+    "data_shape": {
+        "cpp": "struct Name { ... };",
+        "c": "struct Name { ... };",
+        "java": "class Name { ... } or record Name(...)",
+        "python": "class Name:",
+        "racket": "(struct name (fields))",
+    },
+    "class": {
+        "cpp": "class Name { ... };",
+        "c": "a struct plus related functions",
+        "java": "class Name { ... }",
+        "python": "class Name:",
+        "racket": "(class object% ...)",
+    },
+    "function_call": {
+        "cpp": "name(arg1, arg2)",
+        "c": "name(arg1, arg2)",
+        "java": "name(arg1, arg2)",
+        "python": "name(arg1, arg2)",
+        "racket": "(name arg1 arg2)",
+    },
+    "block_start": {
+        "cpp": "{",
+        "c": "{",
+        "java": "{",
+        "python": "an indented block after :",
+        "racket": "nested parentheses",
+    },
+    "block_end": {
+        "cpp": "}",
+        "c": "}",
+        "java": "}",
+        "python": "dedenting back to the previous level",
+        "racket": "closing parentheses",
+    },
+    "return": {
+        "cpp": "return value;",
+        "c": "return value;",
+        "java": "return value;",
+        "python": "return value",
+        "racket": "the last expression in a function",
+    },
+    "output": {
+        "cpp": "std::cout << value;",
+        "c": "printf(\"%d\\n\", value);",
+        "java": "System.out.println(value);",
+        "python": "print(value)",
+        "racket": "(displayln value)",
+    },
+    "statement": {
+        "cpp": "statement;",
+        "c": "statement;",
+        "java": "statement;",
+        "python": "one logical line, usually no semicolon",
+        "racket": "one expression",
+    },
+}
+
+
+def _base_comparison(note: dict[str, str], target: str, base: str) -> str:
+    base_language = TARGET_LANGUAGES[base]["name"]
+    target_language = TARGET_LANGUAGES[target]["name"]
+    line = note.get("line", "").strip()
+    plain = note.get("plain", "").lower()
+    syntax = note.get("syntax", "").lower()
+
+    if not line:
+        concept = "blank"
+    elif line.startswith("#lang"):
+        concept = "language_directive"
+    elif "comment" in plain:
+        concept = "comment"
+    elif "imports" in plain or "include" in line or line.startswith("import "):
+        concept = "import"
+    elif "entry point" in plain or "main(" in line:
+        concept = "entry"
+    elif "defines a function" in plain or line.startswith("def "):
+        concept = "function_def"
+    elif "binds" in plain or "updates a name" in plain or " = " in line:
+        concept = "variable"
+    elif "two-way choice" in plain or "starts a condition" in plain or line.startswith("if "):
+        concept = "if"
+    elif "else-if" in syntax or line.startswith("elif ") or line.startswith("else"):
+        concept = "else_if"
+    elif "multi-case" in plain or "exact-value" in plain or "switch" in plain:
+        concept = "multi_case"
+    elif "for loop" in plain or line.startswith("for "):
+        concept = "for_loop"
+    elif "while loop" in plain or line.startswith("while ") or line.startswith("do "):
+        concept = "while_loop"
+    elif "local names" in plain or line.startswith("(let"):
+        concept = "local_binding"
+    elif "data shape" in plain or line.startswith("(struct"):
+        concept = "data_shape"
+    elif "class" in plain:
+        concept = "class"
+    elif "starts a block" in plain:
+        concept = "block_start"
+    elif "ends a block" in plain:
+        concept = "block_end"
+    elif "returns" in plain or line.startswith("return"):
+        concept = "return"
+    elif "prints" in plain or "displayln" in line or "print(" in line or "printf" in line or "System.out.println" in line:
+        concept = "output"
+    elif "function call" in plain or line.startswith("("):
+        concept = "function_call"
+    elif "statement" in plain:
+        concept = "statement"
+    else:
+        concept = "normal"
+
+    if concept == "blank":
+        return f"Blank lines serve the same readability role in {base_language}."
+    if target == base:
+        return f"This is the {base_language} baseline form; explain what this line does before moving to another language."
+    if concept == "normal":
+        return f"Read this {target_language} line by its surrounding structure, then match the same program role in {base_language}."
+
+    example = BASE_COMPARISON_EXAMPLES.get(concept, {}).get(base)
+    if not example:
+        return f"In {base_language}, use the normal {base_language} form for the same program role."
+    return f"In {base_language}, the closest shape is `{example}`."
 
 
 def _line_note_for_racket(line: str) -> dict[str, str]:
@@ -1155,12 +1407,12 @@ def _line_note_for_c_like(line: str, language: str) -> dict[str, str]:
         return {"line": line, "plain": "A comment.", "syntax": f"{language} supports line and block comments.", "cpp": "Same comment style as C++."}
     if stripped.startswith("#include") or stripped.startswith("import "):
         return {"line": line, "plain": "Imports library support.", "syntax": "This makes external names available.", "cpp": "Same purpose as preparing headers or libraries in C++."}
+    if stripped.startswith("class ") or " class " in stripped or stripped.startswith("public class"):
+        return {"line": line, "plain": "Defines a class.", "syntax": f"{language} class bodies group fields, methods, and constructors.", "cpp": "Similar goal to class Name { ... }."}
+    if stripped.startswith("struct ") or " struct " in stripped:
+        return {"line": line, "plain": "Defines a data shape.", "syntax": f"{language} uses this form to group related fields.", "cpp": "Similar to a C++ struct or simple class."}
     if "main(" in stripped:
         return {"line": line, "plain": "Program entry point.", "syntax": "Execution starts here for this sample.", "cpp": "Same role as C++ main."}
-    if stripped.endswith("{"):
-        return {"line": line, "plain": "Starts a block.", "syntax": "Braces group statements.", "cpp": "Same as C++ braces."}
-    if stripped in {"}", "};"}:
-        return {"line": line, "plain": "Ends a block.", "syntax": "This closes the nearest open brace.", "cpp": "Same as C++."}
     if stripped.startswith("if "):
         return {"line": line, "plain": "Starts a condition.", "syntax": "The condition controls whether the block runs.", "cpp": "Same if shape as C++."}
     if stripped.startswith("else if") or stripped.startswith("else"):
@@ -1175,61 +1427,71 @@ def _line_note_for_c_like(line: str, language: str) -> dict[str, str]:
         return {"line": line, "plain": "Returns from a function.", "syntax": "The current function exits here.", "cpp": "Same role as C++ return."}
     if "printf" in stripped or "System.out.println" in stripped:
         return {"line": line, "plain": "Prints output.", "syntax": "This writes a value to the console.", "cpp": "Similar purpose to std::cout."}
+    if stripped.endswith("{"):
+        return {"line": line, "plain": "Starts a block.", "syntax": "Braces group statements.", "cpp": "Same as C++ braces."}
+    if stripped in {"}", "};"}:
+        return {"line": line, "plain": "Ends a block.", "syntax": "This closes the nearest open brace.", "cpp": "Same as C++."}
     if stripped.endswith(";"):
         return {"line": line, "plain": "A statement.", "syntax": f"Most {language} statements end with a semicolon.", "cpp": "Very close to C++ syntax."}
     return {"line": line, "plain": "A normal code line.", "syntax": "Read it with the surrounding braces and declarations.", "cpp": "Use the same scope-reading habit as C++."}
 
 
-def _line_notes(code: str, target: str) -> list[dict[str, str]]:
+def _line_notes(code: str, target: str, base: str = "cpp") -> list[dict[str, str]]:
     if target == "racket":
-        return [_line_note_for_racket(line) for line in code.splitlines()]
-    if target == "python":
-        return [_line_note_for_python(line) for line in code.splitlines()]
-    language = TARGET_LANGUAGES[target]["name"]
-    return [_line_note_for_c_like(line, language) for line in code.splitlines()]
+        notes = [_line_note_for_racket(line) for line in code.splitlines()]
+    elif target == "python":
+        notes = [_line_note_for_python(line) for line in code.splitlines()]
+    else:
+        language = TARGET_LANGUAGES[target]["name"]
+        notes = [_line_note_for_c_like(line, language) for line in code.splitlines()]
+    return [{**note, "cpp": _base_comparison(note, target, base)} for note in notes]
 
 
-def _lesson(day: int, target: str) -> dict:
+def _lesson(day: int, target: str, base: str = "cpp") -> dict:
     title, kind = TOPICS[day - 1]
     language = TARGET_LANGUAGES[target]["name"]
+    base_language = TARGET_LANGUAGES[base]["name"]
     code = _code(kind, target)
-    bridge = _syntax_bridge(title, kind, target)
+    bridge = _syntax_bridge(title, kind, target, base)
     lesson = Lesson(
         day=day,
         category=f"Day {day:02d} - {title}",
         week=((day - 1) // 7) + 1,
         title=title,
-        goal=_goal(title, target),
+        goal=_goal(title, target, base),
         cpp_bridge=(
-            "This is the prerequisite C++ baseline for later language comparison."
-            if target == "cpp"
-            else f"Use the C++ snippet as the familiar baseline. Then compare how {language} expresses "
+            f"This is the prerequisite {base_language} baseline for later language comparison."
+            if target == base
+            else f"Use the {base_language} snippet as the familiar baseline. Then compare how {language} expresses "
             "the same idea through its own syntax, naming, and standard library."
         ),
-        explanation=_explanation(title, kind, target),
+        explanation=_explanation(title, kind, target, base),
         syntax_bridge=bridge,
         official_docs=bridge["docs"],
-        racket_focus=_focus(title, kind, target),
+        racket_focus=_focus(title, kind, target, base),
         code=code,
-        line_notes=_line_notes(code, target),
-        practice=_practice(day, title, target),
-        checklist=_checklist(day, title, target),
-        assignment=_assignment(day, title, target),
-        grading_rubric=_rubric(target),
+        line_notes=_line_notes(code, target, base),
+        practice=_practice(day, title, target, base),
+        checklist=_checklist(day, title, target, base),
+        assignment=_assignment(day, title, target, base),
+        grading_rubric=_rubric(target, base),
     )
     data = asdict(lesson)
     data["target_language"] = target
     data["target_language_name"] = language
+    data["base_language"] = base
+    data["base_language_name"] = base_language
     return data
 
 
-def get_lessons(target_language: str | None = None) -> list[dict]:
+def get_lessons(target_language: str | None = None, base_language: str | None = None) -> list[dict]:
     target = normalize_target_language(target_language)
-    return [_lesson(day, target) for day in range(1, len(TOPICS) + 1)]
+    base = normalize_base_language(base_language)
+    return [_lesson(day, target, base) for day in range(1, len(TOPICS) + 1)]
 
 
-def get_lesson(day: int, target_language: str | None = None) -> dict | None:
-    lessons = get_lessons(target_language)
+def get_lesson(day: int, target_language: str | None = None, base_language: str | None = None) -> dict | None:
+    lessons = get_lessons(target_language, base_language)
     if 1 <= day <= len(lessons):
         return lessons[day - 1]
     return None

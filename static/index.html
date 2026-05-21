@@ -84,39 +84,40 @@
         <section id="onboardingPanel" class="onboarding-panel" hidden>
           <div class="onboarding-inner">
             <p class="eyebrow">Language Experience Check</p>
-            <h2>Which languages can you already use?</h2>
+            <h2>Which one language can you already use?</h2>
             <p>
-              Select every language you can already write basic programs in. If C++ is not selected, the course starts with C++ Foundations first.
+              Choose one language as your foundation. The course will use that language to teach the other four. Choose None to start with C++ Foundations.
             </p>
             <div class="language-experience-grid" aria-label="Known programming languages">
               <label class="language-experience-card">
-                <input type="checkbox" value="cpp" data-language-experience />
+                <input type="radio" name="baseLanguage" value="cpp" data-language-experience />
                 <span>C++</span>
               </label>
               <label class="language-experience-card">
-                <input type="checkbox" value="python" data-language-experience />
+                <input type="radio" name="baseLanguage" value="python" data-language-experience />
                 <span>Python</span>
               </label>
               <label class="language-experience-card">
-                <input type="checkbox" value="java" data-language-experience />
+                <input type="radio" name="baseLanguage" value="java" data-language-experience />
                 <span>Java</span>
               </label>
               <label class="language-experience-card">
-                <input type="checkbox" value="c" data-language-experience />
+                <input type="radio" name="baseLanguage" value="c" data-language-experience />
                 <span>C</span>
               </label>
               <label class="language-experience-card">
-                <input type="checkbox" value="racket" data-language-experience />
+                <input type="radio" name="baseLanguage" value="racket" data-language-experience />
                 <span>Racket</span>
               </label>
               <label class="language-experience-card none-card">
-                <input type="checkbox" value="none" id="noneExperience" />
+                <input type="radio" name="baseLanguage" value="none" id="noneExperience" />
                 <span>None</span>
               </label>
             </div>
             <div class="onboarding-actions">
               <button id="continueFromExperience" class="primary-button" type="button">Continue</button>
             </div>
+            <p id="experienceMessage" class="access-message"></p>
           </div>
         </section>
 
@@ -159,7 +160,7 @@
 
             <section class="panel">
               <div class="section-heading">
-                <h3>C++ Bridge</h3>
+                <h3>Known Language Bridge</h3>
               </div>
               <p id="cppBridge" class="body-text"></p>
             </section>
@@ -167,14 +168,14 @@
             <section class="panel bridge-panel">
               <div class="section-heading">
                 <div>
-                  <p id="bridgeEyebrow" class="eyebrow">C++ Syntax → Target Syntax</p>
+                  <p id="bridgeEyebrow" class="eyebrow">Known Language Syntax → Target Syntax</p>
                   <h3 id="bridgeConcept">Syntax Bridge</h3>
                 </div>
               </div>
               <p id="bridgeAngle" class="body-text"></p>
               <div class="syntax-grid">
                 <div class="syntax-card">
-                  <div class="syntax-card-head">C++ Syntax</div>
+                  <div id="baseSyntaxLabel" class="syntax-card-head">Known Language Syntax</div>
                   <pre><code id="cppSyntaxBlock"></code></pre>
                 </div>
                 <div class="syntax-card">

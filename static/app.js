@@ -6,6 +6,11 @@ const state = {
   profileLoaded: false,
   target: localStorage.getItem("racketTutor.targetLanguage") || "racket",
   knownLanguages: readKnownLanguages(),
+  baseLanguage: localStorage.getItem("racketTutor.baseLanguage") || readKnownLanguages()[0] || "",
+  languageExperienceChosen: localStorage.getItem("racketTutor.languageExperienceChosen") === "true"
+    || localStorage.getItem("racketTutor.baseLanguage") !== null
+    || localStorage.getItem("racketTutor.knownLanguages") !== null
+    || localStorage.getItem("racketTutor.cppStatus") !== null,
   activeDay: Number(localStorage.getItem("racketTutor.activeDay") || 1),
   query: "",
   unlockedSampleCode: null,
@@ -34,6 +39,7 @@ const els = {
   continueFromExperience: document.querySelector("#continueFromExperience"),
   languageExperienceInputs: document.querySelectorAll("[data-language-experience]"),
   noneExperience: document.querySelector("#noneExperience"),
+  experienceMessage: document.querySelector("#experienceMessage"),
   brandSubtitle: document.querySelector("#brandSubtitle"),
   languagePicker: document.querySelector(".language-picker"),
   languageSelect: document.querySelector("#languageSelect"),
@@ -60,6 +66,7 @@ const els = {
   bridgeEyebrow: document.querySelector("#bridgeEyebrow"),
   bridgeConcept: document.querySelector("#bridgeConcept"),
   bridgeAngle: document.querySelector("#bridgeAngle"),
+  baseSyntaxLabel: document.querySelector("#baseSyntaxLabel"),
   cppSyntaxBlock: document.querySelector("#cppSyntaxBlock"),
   targetSyntaxLabel: document.querySelector("#targetSyntaxLabel"),
   targetSyntaxBlock: document.querySelector("#targetSyntaxBlock"),
@@ -104,18 +111,35 @@ function readKnownLanguages() {
 }
 
 function writeKnownLanguages(values) {
-  const unique = [...new Set(values.filter((value) => value !== "none"))];
+  const unique = [...new Set(values.filter((value) => value !== "none"))].slice(0, 1);
   state.knownLanguages = unique;
+  state.baseLanguage = unique[0] || "";
+  state.languageExperienceChosen = true;
   localStorage.setItem("racketTutor.knownLanguages", JSON.stringify(unique));
-  localStorage.setItem("racketTutor.cppStatus", unique.includes("cpp") ? "knows_cpp" : "needs_cpp");
+  localStorage.setItem("racketTutor.baseLanguage", state.baseLanguage);
+  localStorage.setItem("racketTutor.languageExperienceChosen", "true");
+  localStorage.setItem("racketTutor.cppStatus", state.baseLanguage ? "knows_cpp" : "needs_cpp");
 }
 
 function profilePayload() {
   return {
     knownLanguages: state.knownLanguages,
+    baseLanguage: state.baseLanguage,
+    languageExperienceChosen: state.languageExperienceChosen,
     targetLanguage: state.target,
     activeDay: state.activeDay,
     checklists: collectChecklistState(),
+  };
+}
+
+function emptyProfilePayload() {
+  return {
+    knownLanguages: [],
+    baseLanguage: "",
+    languageExperienceChosen: false,
+    targetLanguage: "racket",
+    activeDay: 1,
+    checklists: {},
   };
 }
 
@@ -149,8 +173,22 @@ async function saveProfile() {
 
 function applyProfile(profile) {
   if (!profile) return;
-  writeKnownLanguages(profile.knownLanguages || []);
+  const base = profile.baseLanguage || (profile.knownLanguages || [])[0] || "";
+  if (profile.languageExperienceChosen) {
+    writeKnownLanguages(base ? [base] : []);
+  } else {
+    state.knownLanguages = [];
+    state.baseLanguage = "";
+    state.languageExperienceChosen = false;
+    localStorage.removeItem("racketTutor.knownLanguages");
+    localStorage.removeItem("racketTutor.baseLanguage");
+    localStorage.removeItem("racketTutor.languageExperienceChosen");
+    localStorage.removeItem("racketTutor.cppStatus");
+  }
   state.target = profile.targetLanguage || state.target;
+  if (state.baseLanguage && state.target === state.baseLanguage) {
+    state.target = chooseDefaultTarget();
+  }
   state.activeDay = Number(profile.activeDay || 1);
   localStorage.setItem("racketTutor.targetLanguage", state.target);
   localStorage.setItem("racketTutor.activeDay", String(state.activeDay));
@@ -204,11 +242,15 @@ function activeLesson() {
 }
 
 function isCppFoundationMode() {
-  return state.knownLanguages.length > 0 && !state.knownLanguages.includes("cpp");
+  return !state.baseLanguage;
 }
 
 function hasExperienceProfile() {
-  return localStorage.getItem("racketTutor.knownLanguages") !== null || localStorage.getItem("racketTutor.cppStatus") !== null;
+  return state.languageExperienceChosen
+    || localStorage.getItem("racketTutor.languageExperienceChosen") === "true"
+    || localStorage.getItem("racketTutor.baseLanguage") !== null
+    || localStorage.getItem("racketTutor.knownLanguages") !== null
+    || localStorage.getItem("racketTutor.cppStatus") !== null;
 }
 
 function isAuthenticated() {
@@ -227,10 +269,10 @@ function renderOnboarding() {
     els.authPanel.hidden = !needsAuth;
   }
   for (const input of els.languageExperienceInputs || []) {
-    input.checked = state.knownLanguages.includes(input.value);
+    input.checked = state.baseLanguage === input.value;
   }
   if (els.noneExperience) {
-    els.noneExperience.checked = state.knownLanguages.length === 0 && hasExperienceProfile();
+    els.noneExperience.checked = !state.baseLanguage && hasExperienceProfile();
   }
   if (els.onboardingPanel) {
     els.onboardingPanel.hidden = needsAuth || !needsChoice;
@@ -251,17 +293,11 @@ function renderOnboarding() {
 }
 
 function setCppStatus(status) {
-  const current = new Set(state.knownLanguages);
-  if (status === "knows_cpp") {
-    current.add("cpp");
-  } else {
-    current.delete("cpp");
-  }
-  writeKnownLanguages([...current]);
+  writeKnownLanguages(status === "knows_cpp" ? ["cpp"] : []);
   state.activeDay = 1;
   localStorage.setItem("racketTutor.activeDay", "1");
 
-  if (!state.knownLanguages.includes("cpp")) {
+  if (!state.baseLanguage) {
     state.target = "cpp";
   } else if (state.target === "cpp") {
     state.target = "racket";
@@ -276,24 +312,33 @@ function setCppStatus(status) {
 
 function resetPrerequisiteChoice() {
   state.knownLanguages = [];
+  state.baseLanguage = "";
+  state.languageExperienceChosen = false;
   localStorage.removeItem("racketTutor.knownLanguages");
+  localStorage.removeItem("racketTutor.baseLanguage");
+  localStorage.removeItem("racketTutor.languageExperienceChosen");
   localStorage.removeItem("racketTutor.cppStatus");
   renderOnboarding();
   scheduleProfileSave();
 }
 
 function chooseDefaultTarget() {
-  const known = new Set(state.knownLanguages);
-  const candidates = ["racket", "python", "java", "c"];
-  return candidates.find((id) => !known.has(id)) || "racket";
+  const candidates = ["cpp", "python", "java", "c", "racket"];
+  return candidates.find((id) => id !== state.baseLanguage) || "cpp";
 }
 
 function continueFromLanguageExperience() {
-  const selected = [...els.languageExperienceInputs].filter((input) => input.checked).map((input) => input.value);
-  writeKnownLanguages(selected);
+  const checkedLanguage = [...els.languageExperienceInputs].find((input) => input.checked);
+  if (!els.noneExperience?.checked && !checkedLanguage) {
+    if (els.experienceMessage) els.experienceMessage.textContent = "Choose one language or None before continuing.";
+    return;
+  }
+  if (els.experienceMessage) els.experienceMessage.textContent = "";
+  const selected = els.noneExperience?.checked ? "" : (checkedLanguage?.value || "");
+  writeKnownLanguages(selected ? [selected] : []);
   state.activeDay = 1;
   localStorage.setItem("racketTutor.activeDay", "1");
-  state.target = selected.includes("cpp") ? chooseDefaultTarget() : "cpp";
+  state.target = state.baseLanguage ? (state.target === state.baseLanguage ? chooseDefaultTarget() : state.target) : "cpp";
   localStorage.setItem("racketTutor.targetLanguage", state.target);
   renderOnboarding();
   scheduleProfileSave();
@@ -341,7 +386,7 @@ async function submitAuth(event) {
       body: JSON.stringify({
         name: els.authName.value,
         password: els.authPassword.value,
-        profile: profilePayload(),
+        profile: state.authMode === "register" ? emptyProfilePayload() : profilePayload(),
       }),
     });
     const data = await response.json();
@@ -370,9 +415,13 @@ async function logout() {
   state.submittedLessons = new Set();
   state.unlockedSampleCode = null;
   state.knownLanguages = [];
+  state.baseLanguage = "";
+  state.languageExperienceChosen = false;
   state.target = "racket";
   state.activeDay = 1;
   localStorage.removeItem("racketTutor.knownLanguages");
+  localStorage.removeItem("racketTutor.baseLanguage");
+  localStorage.removeItem("racketTutor.languageExperienceChosen");
   localStorage.removeItem("racketTutor.cppStatus");
   localStorage.removeItem("racketTutor.targetLanguage");
   localStorage.removeItem("racketTutor.activeDay");
@@ -456,7 +505,7 @@ function renderLesson() {
   if (els.brandSubtitle) {
     els.brandSubtitle.textContent = isCppFoundationMode()
       ? "C++ Foundations · prerequisite track · 56 days"
-      : `C++ foundation to ${lesson.target_language_name || "target language"} · 56 days`;
+      : `${lesson.base_language_name || "Known language"} foundation to ${lesson.target_language_name || "target language"} · 56 days`;
   }
   els.lessonTitle.textContent = lesson.title;
   els.categoryLabel.textContent = lesson.category;
@@ -516,10 +565,12 @@ function renderSyntaxBridge(lesson) {
   const bridge = lesson.syntax_bridge;
   if (!bridge) return;
   const targetName = lesson.target_language_name || bridge.target_label || "Target";
+  const baseName = lesson.base_language_name || bridge.base_label || "Known Language";
 
-  els.bridgeEyebrow.textContent = `C++ Syntax → ${targetName} Syntax`;
+  els.bridgeEyebrow.textContent = `${baseName} Syntax → ${targetName} Syntax`;
   els.bridgeConcept.textContent = bridge.concept;
   els.bridgeAngle.textContent = bridge.today_angle;
+  els.baseSyntaxLabel.textContent = `${baseName} Syntax`;
   els.cppSyntaxBlock.textContent = bridge.cpp;
   els.targetSyntaxLabel.textContent = `${targetName} Syntax`;
   els.targetSyntaxBlock.textContent = bridge.target || bridge.racket;
@@ -569,7 +620,7 @@ function renderLineNotes(lesson) {
         <p></p>
         <dl>
           <div><dt>Syntax</dt><dd></dd></div>
-          <div><dt>C++ Comparison</dt><dd></dd></div>
+          <div><dt>${lesson.base_language_name || "Known Language"} Comparison</dt><dd></dd></div>
         </dl>
       </div>
     `;
@@ -634,8 +685,11 @@ async function loadCourse() {
   if (isCppFoundationMode()) {
     state.target = "cpp";
     localStorage.setItem("racketTutor.targetLanguage", state.target);
+  } else if (state.target === state.baseLanguage) {
+    state.target = chooseDefaultTarget();
+    localStorage.setItem("racketTutor.targetLanguage", state.target);
   }
-  const response = await fetch(`/api/course?target=${encodeURIComponent(state.target)}`, { headers: accessHeaders() });
+  const response = await fetch(`/api/course?target=${encodeURIComponent(state.target)}&base=${encodeURIComponent(state.baseLanguage || "cpp")}`, { headers: accessHeaders() });
   if (response.status === 401) {
     window.location.href = "/";
     return;
@@ -660,7 +714,7 @@ function renderLanguageOptions() {
   if (!els.languageSelect || !state.languages.length) return;
   els.languageSelect.innerHTML = "";
   for (const language of state.languages) {
-    if (language.id === "cpp") continue;
+    if (language.id === state.baseLanguage) continue;
     const option = document.createElement("option");
     option.value = language.id;
     option.textContent = language.name;
@@ -720,6 +774,7 @@ async function submitAssignment(event) {
   const formData = new FormData(els.submissionForm);
   formData.set("day", lesson.day);
   formData.set("target", state.target);
+  formData.set("base", state.baseLanguage || "cpp");
 
   els.submitButton.disabled = true;
   els.submitButton.textContent = "Reviewing";
@@ -766,9 +821,6 @@ els.searchInput.addEventListener("input", (event) => {
 els.languageSelect.addEventListener("change", (event) => {
   state.target = event.target.value;
   state.unlockedSampleCode = null;
-  if (!state.knownLanguages.includes("cpp")) {
-    writeKnownLanguages([...state.knownLanguages, "cpp"]);
-  }
   localStorage.setItem("racketTutor.targetLanguage", state.target);
   state.activeDay = 1;
   localStorage.setItem("racketTutor.activeDay", "1");
@@ -784,17 +836,12 @@ els.showLogin.addEventListener("click", () => setAuthMode("login"));
 els.logoutButton.addEventListener("click", logout);
 
 els.noneExperience.addEventListener("change", () => {
-  if (!els.noneExperience.checked) return;
-  for (const input of els.languageExperienceInputs) {
-    input.checked = false;
-  }
+  if (els.noneExperience.checked) writeKnownLanguages([]);
 });
 
 for (const input of els.languageExperienceInputs) {
   input.addEventListener("change", () => {
-    if (input.checked && els.noneExperience) {
-      els.noneExperience.checked = false;
-    }
+    if (input.checked) writeKnownLanguages([input.value]);
   });
 }
 

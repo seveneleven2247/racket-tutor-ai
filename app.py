@@ -14,7 +14,7 @@ from flask import Flask, jsonify, make_response, redirect, request, send_from_di
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 
-from course_data import get_language_options, get_lesson, get_lessons, normalize_target_language
+from course_data import get_language_options, get_lesson, get_lessons, normalize_base_language, normalize_target_language
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -81,6 +81,8 @@ def require_access(handler):
 def default_profile() -> dict:
     return {
         "knownLanguages": [],
+        "baseLanguage": "",
+        "languageExperienceChosen": False,
         "targetLanguage": "racket",
         "activeDay": 1,
         "checklists": {},
@@ -178,6 +180,10 @@ def sanitize_profile(profile: dict | None) -> dict:
     profile = profile or {}
     allowed_languages = {"cpp", "racket", "python", "java", "c"}
     known = [item for item in profile.get("knownLanguages", []) if item in allowed_languages]
+    raw_base = str(profile.get("baseLanguage") or "").strip().lower()
+    language_experience_chosen = bool(profile.get("languageExperienceChosen"))
+    if "languageExperienceChosen" not in profile and (known or raw_base in allowed_languages):
+        language_experience_chosen = True
     target = normalize_target_language(profile.get("targetLanguage", "racket"))
     try:
         active_day = int(profile.get("activeDay", 1))
@@ -186,8 +192,14 @@ def sanitize_profile(profile: dict | None) -> dict:
     checklists = profile.get("checklists", {})
     if not isinstance(checklists, dict):
         checklists = {}
+    base_language = normalize_base_language(raw_base) if raw_base in allowed_languages else (known[0] if known else "")
+    if not language_experience_chosen:
+        known = []
+        base_language = ""
     return {
-        "knownLanguages": list(dict.fromkeys(known)),
+        "knownLanguages": list(dict.fromkeys(known[:1])),
+        "baseLanguage": base_language,
+        "languageExperienceChosen": language_experience_chosen,
         "targetLanguage": target,
         "activeDay": max(1, min(active_day, 56)),
         "checklists": checklists,
@@ -273,23 +285,24 @@ def build_feedback_prompt(lesson: dict, content: str, student_note: str) -> str:
     docs = syntax_bridge.get("docs", lesson.get("official_docs", []))
     doc_lines = "\n".join(f"- {doc['title']}: {doc['url']}" for doc in docs)
     target_language_name = lesson.get("target_language_name", "Racket")
+    base_language_name = lesson.get("base_language_name", "C++")
     target_code = syntax_bridge.get("target") or syntax_bridge.get("racket", "")
     return f"""
-You are a strict but friendly programming teacher. The student knows C++ and is following a 56-day course to learn {target_language_name}.
+You are a strict but friendly programming teacher. The student knows {base_language_name} and is following a 56-day course to learn {target_language_name}.
 
 Today's lesson:
 Day {lesson['day']}: {lesson['title']}
 Category: {lesson['category']}
 Goal: {lesson['goal']}
-C++ bridge: {lesson['cpp_bridge']}
+Known-language bridge: {lesson['cpp_bridge']}
 Assignment: {lesson['assignment']}
 Rubric: {'; '.join(lesson['grading_rubric'])}
 
-Today's C++ to {target_language_name} syntax bridge:
+Today's {base_language_name} to {target_language_name} syntax bridge:
 Concept: {syntax_bridge.get('concept', 'None')}
 Migration angle: {syntax_bridge.get('today_angle', 'None')}
-C++ syntax:
-```cpp
+{base_language_name} syntax:
+```text
 {syntax_bridge.get('cpp', '')}
 ```
 {target_language_name} syntax:
@@ -312,11 +325,11 @@ Student submission:
 Review in English. Use this exact structure:
 1. Overall score out of 10.
 2. Correctness feedback.
-3. {target_language_name} style feedback, especially whether the code still follows C++ habits.
+3. {target_language_name} style feedback, especially whether the code still follows {base_language_name} habits.
 4. At least 5 concrete improvement points.
 5. A recommended revised version or key revised snippet.
 6. Which official documentation topic above the student should revisit.
-7. Pick 3-6 important lines from the student's code and explain them line by line: what the line does, what syntax point it uses, and the closest C++ comparison. Keep the sentences short, plain, and accurate.
+7. Pick 3-6 important lines from the student's code and explain them line by line: what the line does, what syntax point it uses, and the closest {base_language_name} comparison. Keep the sentences short, plain, and accurate.
 8. A checklist the student must complete before tomorrow's lesson.
 Do not invent runtime results you did not observe. If tests need to be run, explain exactly how the student should run them.
 """
@@ -488,14 +501,16 @@ def save_profile():
 @require_access
 def course():
     target = normalize_target_language(request.args.get("target"))
-    return jsonify({"languages": get_language_options(), "target": target, "lessons": get_lessons(target)})
+    base = normalize_base_language(request.args.get("base"))
+    return jsonify({"languages": get_language_options(), "target": target, "base": base, "lessons": get_lessons(target, base)})
 
 
 @app.get("/api/course/<int:day>")
 @require_access
 def lesson(day: int):
     target = normalize_target_language(request.args.get("target"))
-    item = get_lesson(day, target)
+    base = normalize_base_language(request.args.get("base"))
+    item = get_lesson(day, target, base)
     if not item:
         return jsonify({"error": "lesson not found"}), 404
     return jsonify(item)
@@ -518,7 +533,8 @@ def submit_assignment():
 
     day = int(request.form.get("day", "1"))
     target = normalize_target_language(request.form.get("target", "racket"))
-    lesson = get_lesson(day, target)
+    base = normalize_base_language(request.form.get("base", "cpp"))
+    lesson = get_lesson(day, target, base)
     if not lesson:
         return jsonify({"error": "invalid day"}), 400
 
