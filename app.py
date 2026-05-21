@@ -734,6 +734,42 @@ def update_feedback_record(feedback_id: str):
     return jsonify({"error": "feedback not found"}), 404
 
 
+@app.post("/api/admin/users/sync")
+@require_access
+@require_admin
+def admin_sync_user():
+    payload = request.get_json(silent=True) or {}
+    name = normalize_name(payload.get("name", ""))
+    password = str(payload.get("password", ""))
+    make_admin = bool(payload.get("isAdmin", True))
+
+    if len(name) < 2:
+        return jsonify({"error": "name must be at least 2 characters"}), 400
+    if password and len(password) < 6:
+        return jsonify({"error": "password must be at least 6 characters"}), 400
+
+    store = read_user_store()
+    user = find_user_by_name(store["users"], name)
+    if not user:
+        user = {
+            "id": uuid.uuid4().hex,
+            "name": name,
+            "passwordHash": generate_password_hash(password or uuid.uuid4().hex),
+            "profile": sanitize_profile(default_profile()),
+            "createdAt": datetime.now(timezone.utc).isoformat(),
+        }
+        store["users"].append(user)
+    elif password:
+        user["passwordHash"] = generate_password_hash(password)
+
+    if make_admin:
+        user["isAdmin"] = True
+        user["role"] = "admin"
+
+    write_user_store(store)
+    return jsonify({"user": public_user(user)})
+
+
 @app.post("/api/submit")
 @require_access
 def submit_assignment():
