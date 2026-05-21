@@ -35,6 +35,7 @@ const els = {
   showLogin: document.querySelector("#showLogin"),
   userPanel: document.querySelector("#userPanel"),
   userNameLabel: document.querySelector("#userNameLabel"),
+  changePasswordButton: document.querySelector("#changePasswordButton"),
   logoutButton: document.querySelector("#logoutButton"),
   onboardingPanel: document.querySelector("#onboardingPanel"),
   continueFromExperience: document.querySelector("#continueFromExperience"),
@@ -102,6 +103,14 @@ const els = {
   feedbackMessage: document.querySelector("#feedbackMessage"),
   sendFeedback: document.querySelector("#sendFeedback"),
   siteFeedbackStatus: document.querySelector("#siteFeedbackStatus"),
+  passwordModal: document.querySelector("#passwordModal"),
+  closePasswordModal: document.querySelector("#closePasswordModal"),
+  passwordForm: document.querySelector("#passwordForm"),
+  currentPassword: document.querySelector("#currentPassword"),
+  newPassword: document.querySelector("#newPassword"),
+  confirmPassword: document.querySelector("#confirmPassword"),
+  savePasswordButton: document.querySelector("#savePasswordButton"),
+  passwordStatus: document.querySelector("#passwordStatus"),
 };
 
 function readKnownLanguages() {
@@ -879,6 +888,63 @@ async function submitSiteFeedback(event) {
   }
 }
 
+function openPasswordModal() {
+  if (!els.passwordModal) return;
+  els.passwordModal.hidden = false;
+  if (els.passwordStatus) {
+    els.passwordStatus.textContent = "";
+    els.passwordStatus.classList.remove("success");
+  }
+  requestAnimationFrame(() => els.currentPassword?.focus());
+}
+
+function closePasswordModal() {
+  if (!els.passwordModal) return;
+  els.passwordModal.hidden = true;
+  els.passwordForm?.reset();
+  if (els.passwordStatus) {
+    els.passwordStatus.textContent = "";
+    els.passwordStatus.classList.remove("success");
+  }
+}
+
+async function submitPasswordChange(event) {
+  event.preventDefault();
+  const currentPassword = els.currentPassword.value;
+  const newPassword = els.newPassword.value;
+  const confirmPassword = els.confirmPassword.value;
+
+  els.passwordStatus.classList.remove("success");
+  if (newPassword !== confirmPassword) {
+    els.passwordStatus.textContent = "New passwords do not match.";
+    return;
+  }
+  if (newPassword.length < 8) {
+    els.passwordStatus.textContent = "New password must be at least 8 characters.";
+    return;
+  }
+
+  els.savePasswordButton.disabled = true;
+  els.passwordStatus.textContent = "Updating password...";
+  try {
+    const response = await fetch("/api/account/password", {
+      method: "POST",
+      headers: { ...accessHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Password update failed");
+    els.passwordForm.reset();
+    els.passwordStatus.classList.add("success");
+    els.passwordStatus.textContent = "Password updated. Use the new password next time you log in.";
+  } catch (error) {
+    els.passwordStatus.classList.remove("success");
+    els.passwordStatus.textContent = error.message;
+  } finally {
+    els.savePasswordButton.disabled = false;
+  }
+}
+
 els.searchInput.addEventListener("input", (event) => {
   state.query = event.target.value;
   renderDayList();
@@ -899,6 +965,7 @@ els.languageSelect.addEventListener("change", (event) => {
 els.authForm.addEventListener("submit", submitAuth);
 els.showRegister.addEventListener("click", () => setAuthMode("register"));
 els.showLogin.addEventListener("click", () => setAuthMode("login"));
+els.changePasswordButton?.addEventListener("click", openPasswordModal);
 els.logoutButton.addEventListener("click", logout);
 
 els.noneExperience.addEventListener("change", () => {
@@ -940,9 +1007,17 @@ els.feedbackModal?.addEventListener("click", (event) => {
   if (event.target === els.feedbackModal) closeFeedbackModal();
 });
 els.siteFeedbackForm?.addEventListener("submit", submitSiteFeedback);
+els.closePasswordModal?.addEventListener("click", closePasswordModal);
+els.passwordModal?.addEventListener("click", (event) => {
+  if (event.target === els.passwordModal) closePasswordModal();
+});
+els.passwordForm?.addEventListener("submit", submitPasswordChange);
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !els.feedbackModal?.hidden) {
     closeFeedbackModal();
+  }
+  if (event.key === "Escape" && !els.passwordModal?.hidden) {
+    closePasswordModal();
   }
 });
 

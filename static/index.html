@@ -36,6 +36,7 @@
         <div id="userPanel" class="user-panel" hidden>
           <strong id="userNameLabel"></strong>
           <span>Your progress is saved to this account.</span>
+          <button id="changePasswordButton" class="secondary-button account-button" type="button">Change Password</button>
           <button id="logoutButton" class="secondary-button logout-button" type="button">Log Out</button>
         </div>
 
@@ -321,6 +322,34 @@
           <button id="sendFeedback" class="primary-button" type="submit">Send Feedback</button>
         </form>
         <p id="siteFeedbackStatus" class="access-message"></p>
+      </section>
+    </div>
+
+    <div id="passwordModal" class="modal-backdrop" hidden>
+      <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="passwordTitle">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Account Security</p>
+            <h3 id="passwordTitle">Change your password</h3>
+          </div>
+          <button id="closePasswordModal" class="icon-button modal-close" type="button" aria-label="Close password form">×</button>
+        </div>
+        <form id="passwordForm">
+          <label>
+            <span>Current password</span>
+            <input id="currentPassword" type="password" autocomplete="current-password" required />
+          </label>
+          <label>
+            <span>New password</span>
+            <input id="newPassword" type="password" autocomplete="new-password" required minlength="8" />
+          </label>
+          <label>
+            <span>Confirm new password</span>
+            <input id="confirmPassword" type="password" autocomplete="new-password" required minlength="8" />
+          </label>
+          <button id="savePasswordButton" class="primary-button" type="submit">Update Password</button>
+        </form>
+        <p id="passwordStatus" class="access-message"></p>
       </section>
     </div>
 

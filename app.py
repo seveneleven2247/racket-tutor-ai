@@ -628,6 +628,33 @@ def save_profile():
     return jsonify({"error": "user not found"}), 404
 
 
+@app.post("/api/account/password")
+@require_access
+@require_user
+def change_own_password():
+    payload = request.get_json(silent=True) or {}
+    current_password = str(payload.get("currentPassword", ""))
+    new_password = str(payload.get("newPassword", ""))
+
+    if len(new_password) < 8:
+        return jsonify({"error": "new password must be at least 8 characters"}), 400
+    if current_password == new_password:
+        return jsonify({"error": "new password must be different from the current password"}), 400
+
+    user = current_user()
+    store = read_user_store()
+    for stored_user in store["users"]:
+        if stored_user["id"] == user["id"]:
+            if not check_password_hash(stored_user.get("passwordHash", ""), current_password):
+                return jsonify({"error": "current password is incorrect"}), 401
+            stored_user["passwordHash"] = generate_password_hash(new_password)
+            stored_user["passwordUpdatedAt"] = datetime.now(timezone.utc).isoformat()
+            write_user_store(store)
+            return jsonify({"ok": True, "user": public_user(stored_user)})
+
+    return jsonify({"error": "user not found"}), 404
+
+
 @app.get("/api/course")
 @require_access
 def course():
