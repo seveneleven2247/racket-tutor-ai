@@ -297,8 +297,11 @@ function renderOnboarding() {
     els.onboardingPanel.hidden = needsAuth || !needsChoice;
   }
   setMainContentHidden(needsAuth || needsChoice);
-  for (const item of [els.progressBlock, els.searchBox, els.dayList, els.userPanel]) {
+  for (const item of [els.progressBlock, els.searchBox, els.dayList]) {
     if (item) item.hidden = needsAuth || needsChoice;
+  }
+  if (els.userPanel) {
+    els.userPanel.hidden = needsAuth;
   }
   if (els.languagePicker) {
     els.languagePicker.hidden = needsAuth || needsChoice || isCppFoundationMode();
