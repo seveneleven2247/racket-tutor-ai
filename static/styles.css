@@ -263,6 +263,19 @@ form textarea:focus {
   font-size: 13px;
 }
 
+.logout-button {
+  width: 100%;
+  margin-top: 4px;
+  border-color: #e4c1ba;
+  background: #fff4f1;
+  color: var(--red);
+}
+
+.logout-button:hover {
+  border-color: #d99a90;
+  background: #ffe8e2;
+}
+
 .day-list {
   overflow: auto;
   display: flex;
