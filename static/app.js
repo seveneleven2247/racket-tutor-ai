@@ -112,10 +112,68 @@ const els = {
   confirmPassword: document.querySelector("#confirmPassword"),
   savePasswordButton: document.querySelector("#savePasswordButton"),
   passwordStatus: document.querySelector("#passwordStatus"),
-  tutorialModal: document.querySelector("#tutorialModal"),
-  closeTutorialModal: document.querySelector("#closeTutorialModal"),
-  finishTutorial: document.querySelector("#finishTutorial"),
+  tourLayer: document.querySelector("#tourLayer"),
+  tourSpotlight: document.querySelector("#tourSpotlight"),
+  tourTooltip: document.querySelector("#tourTooltip"),
+  tourStepCount: document.querySelector("#tourStepCount"),
+  tourTitle: document.querySelector("#tourTitle"),
+  tourText: document.querySelector("#tourText"),
+  tourSkip: document.querySelector("#tourSkip"),
+  tourNext: document.querySelector("#tourNext"),
 };
+
+const tourSteps = [
+  {
+    selector: "#userPanel",
+    title: "Your account tools",
+    text: "This area saves your progress. You can open this tutorial again, change your password, log out, and admins can check feedback.",
+    placement: "right",
+  },
+  {
+    selector: "#onboardingPanel",
+    title: "Choose your foundation",
+    text: "After registering, choose the one language you already know. Choose None if you want to start with C++ Foundations.",
+    placement: "bottom",
+  },
+  {
+    selector: ".language-picker",
+    title: "Pick a target language",
+    text: "Use this menu to switch what language CodeBridge teaches you next.",
+    placement: "right",
+  },
+  {
+    selector: "#dayList",
+    title: "Open a daily lesson",
+    text: "This is the 56-day course list. Scroll the left sidebar to reach every day.",
+    placement: "right",
+  },
+  {
+    selector: ".lesson-main",
+    title: "Study the lesson",
+    text: "Read the bridge from your known language, the detailed explanation, line-by-line notes, and official documentation.",
+    placement: "left",
+  },
+  {
+    selector: "#practiceList",
+    title: "Do HW Q1, Q2, and Q3",
+    text: "Each day has three concrete programs. Follow the exact numbers, calculation, and output requirements.",
+    placement: "left",
+  },
+  {
+    selector: ".submission-panel",
+    title: "Submit homework",
+    text: "Upload a file or paste code here. After submitting, review feedback and compare with sample code.",
+    placement: "left",
+  },
+  {
+    selector: "#feedbackButton",
+    title: "Send website feedback",
+    text: "Use this button if something is broken or confusing. Your message goes to the site owner.",
+    placement: "top",
+  },
+];
+
+let activeTourIndex = 0;
 
 function readKnownLanguages() {
   const raw = localStorage.getItem("racketTutor.knownLanguages");
@@ -368,9 +426,16 @@ function continueFromLanguageExperience() {
   localStorage.setItem("racketTutor.targetLanguage", state.target);
   renderOnboarding();
   scheduleProfileSave();
-  loadCourse().catch((error) => {
-    els.lessonTitle.textContent = error.message;
-  });
+  loadCourse()
+    .then(() => {
+      if (localStorage.getItem("codeBridge.pendingCourseTour") === "true") {
+        localStorage.removeItem("codeBridge.pendingCourseTour");
+        setTimeout(openTutorialModal, 250);
+      }
+    })
+    .catch((error) => {
+      els.lessonTitle.textContent = error.message;
+    });
 }
 
 function setAuthMode(mode) {
@@ -444,6 +509,7 @@ async function submitAuth(event) {
     await loadSubmissions();
     if (wasRegistering) {
       localStorage.removeItem("codeBridge.tutorialSeen");
+      localStorage.setItem("codeBridge.pendingCourseTour", "true");
       openTutorialModal();
     }
   } catch (error) {
@@ -957,16 +1023,105 @@ async function submitPasswordChange(event) {
   }
 }
 
+function visibleTourSteps() {
+  return tourSteps.filter((step) => {
+    const target = document.querySelector(step.selector);
+    return target && !target.hidden && target.offsetParent !== null;
+  });
+}
+
 function openTutorialModal() {
-  if (!els.tutorialModal) return;
-  els.tutorialModal.hidden = false;
-  requestAnimationFrame(() => els.finishTutorial?.focus());
+  if (!els.tourLayer) return;
+  activeTourIndex = 0;
+  els.tourLayer.hidden = false;
+  renderTourStep();
 }
 
 function closeTutorialModal() {
-  if (!els.tutorialModal) return;
-  els.tutorialModal.hidden = true;
+  if (!els.tourLayer) return;
+  els.tourLayer.hidden = true;
+  document.querySelectorAll(".tour-target").forEach((item) => item.classList.remove("tour-target"));
   localStorage.setItem("codeBridge.tutorialSeen", "true");
+}
+
+function clampTooltip(left, top, width, height) {
+  const margin = 14;
+  return {
+    left: Math.max(margin, Math.min(left, window.innerWidth - width - margin)),
+    top: Math.max(margin, Math.min(top, window.innerHeight - height - margin)),
+  };
+}
+
+function placeTourTooltip(target, placement) {
+  const rect = target.getBoundingClientRect();
+  const tooltip = els.tourTooltip;
+  const gap = 16;
+  const width = tooltip.offsetWidth || 320;
+  const height = tooltip.offsetHeight || 180;
+  let left = rect.right + gap;
+  let top = rect.top;
+
+  if (placement === "left") {
+    left = rect.left - width - gap;
+    top = rect.top;
+  } else if (placement === "top") {
+    left = rect.left + rect.width / 2 - width / 2;
+    top = rect.top - height - gap;
+  } else if (placement === "bottom") {
+    left = rect.left + rect.width / 2 - width / 2;
+    top = rect.bottom + gap;
+  }
+
+  const next = clampTooltip(left, top, width, height);
+  tooltip.style.left = `${next.left}px`;
+  tooltip.style.top = `${next.top}px`;
+  tooltip.dataset.placement = placement;
+
+  els.tourSpotlight.style.left = `${rect.left - 8}px`;
+  els.tourSpotlight.style.top = `${rect.top - 8}px`;
+  els.tourSpotlight.style.width = `${rect.width + 16}px`;
+  els.tourSpotlight.style.height = `${rect.height + 16}px`;
+}
+
+function renderTourStep() {
+  if (!els.tourLayer || els.tourLayer.hidden) return;
+  const steps = visibleTourSteps();
+  if (!steps.length) {
+    closeTutorialModal();
+    return;
+  }
+  activeTourIndex = Math.min(activeTourIndex, steps.length - 1);
+  const step = steps[activeTourIndex];
+  const target = document.querySelector(step.selector);
+  if (!target) {
+    activeTourIndex += 1;
+    renderTourStep();
+    return;
+  }
+
+  document.querySelectorAll(".tour-target").forEach((item) => item.classList.remove("tour-target"));
+  target.classList.add("tour-target");
+  target.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+
+  els.tourStepCount.textContent = `Step ${activeTourIndex + 1} of ${steps.length}`;
+  els.tourTitle.textContent = step.title;
+  els.tourText.textContent = step.text;
+  els.tourNext.textContent = activeTourIndex === steps.length - 1 ? "Finish" : "I got it";
+
+  setTimeout(() => {
+    placeTourTooltip(target, step.placement || "right");
+    els.tourNext.focus();
+  }, 180);
+}
+
+function nextTourStep() {
+  const steps = visibleTourSteps();
+  if (activeTourIndex >= steps.length - 1) {
+    closeTutorialModal();
+    return;
+  }
+  activeTourIndex += 1;
+  renderTourStep();
 }
 
 els.searchInput.addEventListener("input", (event) => {
@@ -1037,11 +1192,10 @@ els.passwordModal?.addEventListener("click", (event) => {
   if (event.target === els.passwordModal) closePasswordModal();
 });
 els.passwordForm?.addEventListener("submit", submitPasswordChange);
-els.closeTutorialModal?.addEventListener("click", closeTutorialModal);
-els.finishTutorial?.addEventListener("click", closeTutorialModal);
-els.tutorialModal?.addEventListener("click", (event) => {
-  if (event.target === els.tutorialModal) closeTutorialModal();
-});
+els.tourSkip?.addEventListener("click", closeTutorialModal);
+els.tourNext?.addEventListener("click", nextTourStep);
+window.addEventListener("resize", renderTourStep);
+window.addEventListener("scroll", renderTourStep, true);
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !els.feedbackModal?.hidden) {
     closeFeedbackModal();
@@ -1049,7 +1203,7 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !els.passwordModal?.hidden) {
     closePasswordModal();
   }
-  if (event.key === "Escape" && !els.tutorialModal?.hidden) {
+  if (event.key === "Escape" && !els.tourLayer?.hidden) {
     closeTutorialModal();
   }
 });
