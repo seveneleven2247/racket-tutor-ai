@@ -17,7 +17,7 @@ services:
       - key: ACCESS_CODE
         value: share123
       - key: ADMIN_USERS
-        value: Elven
+        value: Elven,Elven.
       - key: GEMINI_MODEL
         value: gemini-2.5-flash
       - key: OPENAI_MODEL

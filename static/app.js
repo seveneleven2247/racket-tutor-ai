@@ -369,10 +369,14 @@ function setAuthMode(mode) {
 
 function renderAiReviewStatus(enabled = state.aiReviewEnabled) {
   if (!els.aiReviewStatus) return;
+  if (!enabled) {
+    els.aiReviewStatus.hidden = true;
+    els.aiReviewStatus.innerHTML = "";
+    return;
+  }
+  els.aiReviewStatus.hidden = false;
   els.aiReviewStatus.classList.toggle("enabled", enabled);
-  els.aiReviewStatus.innerHTML = enabled
-    ? `<strong>AI Review Connected</strong><span>Submissions receive deeper paragraph-level review and line-by-line improvement suggestions, even for short code.</span>`
-    : `<strong>AI Review Setup Needed</strong><span>Add GEMINI_API_KEY from Google AI Studio or OPENAI_API_KEY to .env to receive deeper paragraph-level review and improvement suggestions. Short submissions still receive local line-by-line feedback.</span>`;
+  els.aiReviewStatus.innerHTML = `<strong>AI Review Connected</strong><span>Submissions receive deeper paragraph-level review and line-by-line improvement suggestions, even for short code.</span>`;
 }
 
 async function loadSession() {

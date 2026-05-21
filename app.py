@@ -58,7 +58,7 @@ def openai_feedback_enabled() -> bool:
 
 
 def configured_admin_names() -> set[str]:
-    raw = os.getenv("ADMIN_USERS", "Elven")
+    raw = os.getenv("ADMIN_USERS", "Elven,Elven.")
     return {normalize_name(name).casefold() for name in raw.split(",") if normalize_name(name)}
 
 
@@ -67,7 +67,8 @@ def is_admin_user(user: dict | None) -> bool:
         return False
     if user.get("isAdmin") is True or str(user.get("role", "")).lower() == "admin":
         return True
-    return normalize_name(user.get("name", "")).casefold() in configured_admin_names()
+    normalized_name = normalize_name(user.get("name", "")).casefold()
+    return normalized_name in configured_admin_names() or normalized_name.rstrip(".") in configured_admin_names()
 
 
 def has_access() -> bool:
@@ -140,6 +141,7 @@ def read_user_store() -> dict:
         data["users"] = []
     if "sessions" not in data:
         data["sessions"] = {}
+    sync_admin_flags(data)
     return data
 
 
@@ -150,6 +152,15 @@ def write_user_store(data: dict) -> None:
 
 def public_user(user: dict) -> dict:
     return {"id": user["id"], "name": user["name"], "isAdmin": is_admin_user(user)}
+
+
+def sync_admin_flags(data: dict) -> None:
+    admin_names = configured_admin_names()
+    for user in data.get("users", []):
+        normalized_name = normalize_name(user.get("name", "")).casefold()
+        if normalized_name in admin_names or normalized_name.rstrip(".") in admin_names:
+            user["isAdmin"] = True
+            user["role"] = "admin"
 
 
 def normalize_name(name: str) -> str:
@@ -377,7 +388,7 @@ def local_feedback(lesson: dict, content: str) -> str:
         + "\n".join(f"- {note}" for note in notes)
         + "\n\nLine-by-line quick review:\n"
         + "\n".join(line_reviews)
-        + "\n\nNo AI grading key is configured on the server. Add GEMINI_API_KEY from Google AI Studio or OPENAI_API_KEY to .env to receive deeper paragraph-level review and improvement suggestions."
+        + "\n\nThis review used the built-in checker. Use the notes above to revise the program, then submit again for another pass."
     )
 
 
