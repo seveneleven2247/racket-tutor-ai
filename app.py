@@ -53,7 +53,7 @@ def configured_access_code() -> str:
 
 
 def openai_feedback_enabled() -> bool:
-    return bool(os.getenv("OPENAI_API_KEY", "").strip())
+    return bool(os.getenv("GEMINI_API_KEY", "").strip() or os.getenv("OPENAI_API_KEY", "").strip())
 
 
 def has_access() -> bool:
@@ -264,25 +264,17 @@ def local_feedback(lesson: dict, content: str) -> str:
         f"- Target language: {target_language_name}\n"
         f"- Non-empty code lines detected: {len(lines)}\n"
         + "\n".join(f"- {note}" for note in notes)
-        + "\n\nOPENAI_API_KEY is not configured on the server. Add a real key to .env to receive deeper AI feedback with paragraph-level review and improvement suggestions."
+        + "\n\nNo AI grading key is configured on the server. Add GEMINI_API_KEY from Google AI Studio or OPENAI_API_KEY to .env to receive deeper paragraph-level review and improvement suggestions."
     )
 
 
-def ai_feedback(lesson: dict, content: str, student_note: str) -> str:
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        return local_feedback(lesson, content)
-
-    from openai import OpenAI
-
-    client = OpenAI(api_key=api_key)
-    model = os.getenv("OPENAI_MODEL", "gpt-5.4-mini")
+def build_feedback_prompt(lesson: dict, content: str, student_note: str) -> str:
     syntax_bridge = lesson.get("syntax_bridge", {})
     docs = syntax_bridge.get("docs", lesson.get("official_docs", []))
     doc_lines = "\n".join(f"- {doc['title']}: {doc['url']}" for doc in docs)
     target_language_name = lesson.get("target_language_name", "Racket")
     target_code = syntax_bridge.get("target") or syntax_bridge.get("racket", "")
-    prompt = f"""
+    return f"""
 You are a strict but friendly programming teacher. The student knows C++ and is following a 56-day course to learn {target_language_name}.
 
 Today's lesson:
@@ -328,11 +320,45 @@ Review in English. Use this exact structure:
 8. A checklist the student must complete before tomorrow's lesson.
 Do not invent runtime results you did not observe. If tests need to be run, explain exactly how the student should run them.
 """
+
+
+def gemini_feedback(prompt: str) -> str:
+    from google import genai
+
+    client = genai.Client(api_key=os.getenv("GEMINI_API_KEY", "").strip())
+    model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+    response = client.models.generate_content(
+        model=model,
+        contents=prompt,
+    )
+    return response.text or "Gemini returned an empty response. Try submitting again."
+
+
+def openai_feedback(prompt: str) -> str:
+    from openai import OpenAI
+
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY", "").strip())
+    model = os.getenv("OPENAI_MODEL", "gpt-5.4-mini")
     response = client.responses.create(
         model=model,
         input=prompt,
     )
     return response.output_text
+
+
+def ai_feedback(lesson: dict, content: str, student_note: str) -> str:
+    prompt = build_feedback_prompt(lesson, content, student_note)
+    if os.getenv("GEMINI_API_KEY", "").strip():
+        try:
+            return gemini_feedback(prompt)
+        except Exception as error:
+            return local_feedback(lesson, content) + f"\n\nGemini AI grading failed: {error}"
+    if os.getenv("OPENAI_API_KEY", "").strip():
+        try:
+            return openai_feedback(prompt)
+        except Exception as error:
+            return local_feedback(lesson, content) + f"\n\nOpenAI grading failed: {error}"
+    return local_feedback(lesson, content)
 
 
 @app.get("/")
