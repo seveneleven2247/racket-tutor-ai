@@ -4,10 +4,19 @@ services:
     runtime: python
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app --bind 0.0.0.0:$PORT
+    healthCheckPath: /health
+    disk:
+      name: racket-tutor-data
+      mountPath: /var/data
+      sizeGB: 1
     envVars:
+      - key: DATA_DIR
+        value: /var/data
       - key: FLASK_SECRET_KEY
         generateValue: true
       - key: ACCESS_CODE
-        generateValue: true
+        value: share123
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
       - key: OPENAI_MODEL
         value: gpt-5.4-mini

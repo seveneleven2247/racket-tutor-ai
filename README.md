@@ -82,18 +82,31 @@ Then open this from another device on the same Wi-Fi:
 http://your-computer-lan-ip:5055
 ```
 
-### Real Public Deployment
+### Permanent Public Deployment
 
-Render, Railway, Fly.io, or a VPS can host this project. The repo includes:
+The `trycloudflare.com` URL is temporary. It stops working when your computer sleeps, disconnects, restarts, or the local tunnel process stops.
+
+Use Render, Railway, Fly.io, or a VPS for a permanent public URL. The repo includes:
 
 ```text
 Procfile
 render.yaml
 ```
 
+Render setup:
+
+1. Push this repo to GitHub.
+2. In Render, choose **New +** → **Blueprint**.
+3. Connect `https://github.com/seveneleven2247/racket-tutor-ai`.
+4. Render will read `render.yaml`, create a web service, and mount a persistent disk at `/var/data`.
+5. Add real AI keys in Render environment variables if you want AI grading.
+
 Recommended environment variables:
 
 ```bash
+DATA_DIR=/var/data
+GEMINI_API_KEY=your_google_ai_studio_key
+GEMINI_MODEL=gemini-2.5-flash
 OPENAI_API_KEY=your_openai_api_key
 OPENAI_MODEL=gpt-5.4-mini
 FLASK_SECRET_KEY=a_long_random_secret
@@ -101,6 +114,8 @@ ACCESS_CODE=your_access_code
 ```
 
 Set `ACCESS_CODE` on any public deployment. The site allows file uploads and AI review, so an unprotected public site can let strangers upload files or spend your API budget.
+
+Render's persistent disk is important. Without it, `users.json`, `submissions.json`, and uploaded homework files can disappear on redeploy.
 
 ## Project Files
 

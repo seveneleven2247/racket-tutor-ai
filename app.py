@@ -18,7 +18,7 @@ from course_data import get_language_options, get_lesson, get_lessons, normalize
 
 
 BASE_DIR = Path(__file__).resolve().parent
-DATA_DIR = BASE_DIR / "data"
+DATA_DIR = Path(os.getenv("DATA_DIR", BASE_DIR / "data")).expanduser()
 UPLOAD_DIR = DATA_DIR / "uploads"
 SUBMISSIONS_FILE = DATA_DIR / "submissions.json"
 USERS_FILE = DATA_DIR / "users.json"
