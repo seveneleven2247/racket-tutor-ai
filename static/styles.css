@@ -601,6 +601,38 @@ form textarea:focus {
   line-height: 1;
 }
 
+.unlock-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border: 1px solid #e3cf98;
+  border-radius: 8px;
+  padding: 14px 16px;
+  background: #fff8e6;
+  color: #5d3f09;
+}
+
+.unlock-notice strong,
+.unlock-notice span {
+  display: block;
+}
+
+.unlock-notice span {
+  color: #80631f;
+  font-size: 14px;
+}
+
+.unlock-notice.complete {
+  border-color: #b8dbc8;
+  background: #edf8f1;
+  color: var(--green-dark);
+}
+
+.unlock-notice.complete span {
+  color: var(--green);
+}
+
 .section-heading {
   display: flex;
   align-items: center;

@@ -55,6 +55,7 @@ const els = {
   dayMetric: document.querySelector("#dayMetric"),
   checkMetric: document.querySelector("#checkMetric"),
   weekMetric: document.querySelector("#weekMetric"),
+  unlockNotice: document.querySelector("#unlockNotice"),
   cppBridge: document.querySelector("#cppBridge"),
   bridgeEyebrow: document.querySelector("#bridgeEyebrow"),
   bridgeConcept: document.querySelector("#bridgeConcept"),
@@ -464,6 +465,14 @@ function renderLesson() {
   els.dayMetric.textContent = padDay(lesson.day);
   els.checkMetric.textContent = `${done}/${lesson.checklist.length}`;
   els.weekMetric.textContent = lesson.week;
+  if (els.unlockNotice) {
+    const submittedToday = hasSubmitted(lesson.day);
+    const finalDay = lesson.day === state.lessons.length;
+    els.unlockNotice.classList.toggle("complete", submittedToday);
+    els.unlockNotice.innerHTML = submittedToday
+      ? `<strong>Homework submitted.</strong><span>${finalDay ? "You finished the final lesson for this track." : `Day ${padDay(lesson.day + 1)} is unlocked.`}</span>`
+      : `<strong>Submit today's homework to unlock the next lesson.</strong><span>Upload or paste all three programs for HW Q1, HW Q2, and HW Q3 before moving on.</span>`;
+  }
   els.cppBridge.textContent = lesson.cpp_bridge;
   renderSyntaxBridge(lesson);
   els.explanation.textContent = lesson.explanation;
