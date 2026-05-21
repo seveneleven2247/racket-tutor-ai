@@ -296,6 +296,36 @@
       </main>
     </div>
 
+    <button id="feedbackButton" class="feedback-launcher" type="button">Feedback</button>
+    <div id="feedbackModal" class="modal-backdrop" hidden>
+      <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Site Feedback</p>
+            <h3 id="feedbackTitle">Tell us what needs fixing</h3>
+          </div>
+          <button id="closeFeedback" class="icon-button modal-close" type="button" aria-label="Close feedback form">×</button>
+        </div>
+        <form id="siteFeedbackForm">
+          <label>
+            <span>Feedback type</span>
+            <select id="feedbackCategory" name="category">
+              <option value="bug">Bug or broken page</option>
+              <option value="content">Lesson or homework content</option>
+              <option value="feature">Feature request</option>
+              <option value="other">Other</option>
+            </select>
+          </label>
+          <label>
+            <span>What happened?</span>
+            <textarea id="feedbackMessage" name="message" rows="6" placeholder="Example: Day 12 homework is unclear because..." required minlength="10"></textarea>
+          </label>
+          <button id="sendFeedback" class="primary-button" type="submit">Send Feedback</button>
+        </form>
+        <p id="siteFeedbackStatus" class="access-message"></p>
+      </section>
+    </div>
+
     <script src="/app.js"></script>
   </body>
 </html>

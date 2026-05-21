@@ -94,6 +94,14 @@ const els = {
   feedbackBox: document.querySelector("#feedbackBox"),
   refreshSubmissions: document.querySelector("#refreshSubmissions"),
   submissionList: document.querySelector("#submissionList"),
+  feedbackButton: document.querySelector("#feedbackButton"),
+  feedbackModal: document.querySelector("#feedbackModal"),
+  closeFeedback: document.querySelector("#closeFeedback"),
+  siteFeedbackForm: document.querySelector("#siteFeedbackForm"),
+  feedbackCategory: document.querySelector("#feedbackCategory"),
+  feedbackMessage: document.querySelector("#feedbackMessage"),
+  sendFeedback: document.querySelector("#sendFeedback"),
+  siteFeedbackStatus: document.querySelector("#siteFeedbackStatus"),
 };
 
 function readKnownLanguages() {
@@ -826,6 +834,47 @@ async function submitAssignment(event) {
   }
 }
 
+function openFeedbackModal() {
+  if (!els.feedbackModal) return;
+  els.feedbackModal.hidden = false;
+  if (els.siteFeedbackStatus) els.siteFeedbackStatus.textContent = "";
+  requestAnimationFrame(() => els.feedbackMessage?.focus());
+}
+
+function closeFeedbackModal() {
+  if (!els.feedbackModal) return;
+  els.feedbackModal.hidden = true;
+}
+
+async function submitSiteFeedback(event) {
+  event.preventDefault();
+  const lesson = activeLesson();
+  els.sendFeedback.disabled = true;
+  els.siteFeedbackStatus.textContent = "Sending feedback...";
+  try {
+    const response = await fetch("/api/feedback", {
+      method: "POST",
+      headers: { ...accessHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({
+        category: els.feedbackCategory.value,
+        message: els.feedbackMessage.value,
+        page: window.location.href,
+        day: lesson?.day || null,
+        target: state.target,
+      }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Feedback failed to send");
+    els.siteFeedbackForm.reset();
+    els.siteFeedbackStatus.textContent = "Feedback sent. Thank you.";
+    setTimeout(closeFeedbackModal, 900);
+  } catch (error) {
+    els.siteFeedbackStatus.textContent = error.message;
+  } finally {
+    els.sendFeedback.disabled = false;
+  }
+}
+
 els.searchInput.addEventListener("input", (event) => {
   state.query = event.target.value;
   renderDayList();
@@ -881,6 +930,17 @@ els.resetChecklist.addEventListener("click", () => {
 
 els.submissionForm.addEventListener("submit", submitAssignment);
 els.refreshSubmissions.addEventListener("click", loadSubmissions);
+els.feedbackButton?.addEventListener("click", openFeedbackModal);
+els.closeFeedback?.addEventListener("click", closeFeedbackModal);
+els.feedbackModal?.addEventListener("click", (event) => {
+  if (event.target === els.feedbackModal) closeFeedbackModal();
+});
+els.siteFeedbackForm?.addEventListener("submit", submitSiteFeedback);
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !els.feedbackModal?.hidden) {
+    closeFeedbackModal();
+  }
+});
 
 renderOnboarding();
 setAuthMode("register");

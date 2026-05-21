@@ -22,6 +22,7 @@ DATA_DIR = Path(os.getenv("DATA_DIR", BASE_DIR / "data")).expanduser()
 UPLOAD_DIR = DATA_DIR / "uploads"
 SUBMISSIONS_FILE = DATA_DIR / "submissions.json"
 USERS_FILE = DATA_DIR / "users.json"
+FEEDBACK_FILE = DATA_DIR / "feedback.json"
 USER_SESSION_COOKIE = "code_tutor_session"
 ALLOWED_EXTENSIONS = {
     "rkt",
@@ -54,6 +55,19 @@ def configured_access_code() -> str:
 
 def openai_feedback_enabled() -> bool:
     return bool(os.getenv("GEMINI_API_KEY", "").strip() or os.getenv("OPENAI_API_KEY", "").strip())
+
+
+def configured_admin_names() -> set[str]:
+    raw = os.getenv("ADMIN_USERS", "Elven")
+    return {normalize_name(name).casefold() for name in raw.split(",") if normalize_name(name)}
+
+
+def is_admin_user(user: dict | None) -> bool:
+    if not user:
+        return False
+    if user.get("isAdmin") is True or str(user.get("role", "")).lower() == "admin":
+        return True
+    return normalize_name(user.get("name", "")).casefold() in configured_admin_names()
 
 
 def has_access() -> bool:
@@ -95,6 +109,8 @@ def ensure_data_files() -> None:
         SUBMISSIONS_FILE.write_text("[]", encoding="utf-8")
     if not USERS_FILE.exists():
         USERS_FILE.write_text(json.dumps({"users": [], "sessions": {}}, indent=2), encoding="utf-8")
+    if not FEEDBACK_FILE.exists():
+        FEEDBACK_FILE.write_text("[]", encoding="utf-8")
 
 
 def read_submissions() -> list[dict]:
@@ -105,6 +121,16 @@ def read_submissions() -> list[dict]:
 def write_submissions(submissions: list[dict]) -> None:
     ensure_data_files()
     SUBMISSIONS_FILE.write_text(json.dumps(submissions, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
+def read_feedback_records() -> list[dict]:
+    ensure_data_files()
+    return json.loads(FEEDBACK_FILE.read_text(encoding="utf-8"))
+
+
+def write_feedback_records(records: list[dict]) -> None:
+    ensure_data_files()
+    FEEDBACK_FILE.write_text(json.dumps(records, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
 def read_user_store() -> dict:
@@ -123,7 +149,7 @@ def write_user_store(data: dict) -> None:
 
 
 def public_user(user: dict) -> dict:
-    return {"id": user["id"], "name": user["name"]}
+    return {"id": user["id"], "name": user["name"], "isAdmin": is_admin_user(user)}
 
 
 def normalize_name(name: str) -> str:
@@ -152,6 +178,19 @@ def require_user(handler):
         user = current_user()
         if not user:
             return jsonify({"error": "login required"}), 401
+        return handler(*args, **kwargs)
+
+    return wrapper
+
+
+def require_admin(handler):
+    @wraps(handler)
+    def wrapper(*args, **kwargs):
+        user = current_user()
+        if not user:
+            return jsonify({"error": "login required"}), 401
+        if not is_admin_user(user):
+            return jsonify({"error": "admin required"}), 403
         return handler(*args, **kwargs)
 
     return wrapper
@@ -455,6 +494,24 @@ def index():
     return response
 
 
+@app.get("/feedback-admin")
+def feedback_admin_page():
+    if not has_access():
+        return send_from_directory(app.static_folder, "login.html")
+    response = make_response(send_from_directory(app.static_folder, "feedback-admin.html"))
+    access_code = configured_access_code()
+    if access_code and request.args.get("access", "") == access_code:
+        response.set_cookie(
+            "racket_tutor_access",
+            access_code,
+            max_age=60 * 60 * 24 * 30,
+            httponly=True,
+            secure=request.is_secure,
+            samesite="Lax",
+        )
+    return response
+
+
 @app.get("/health")
 def health():
     return jsonify({"status": "ok"})
@@ -587,6 +644,83 @@ def submissions():
     if user:
         records = [record for record in records if record.get("userId") == user["id"]]
     return jsonify({"submissions": [english_safe_submission(item) for item in reversed(records)]})
+
+
+@app.post("/api/feedback")
+@require_access
+def create_feedback():
+    payload = request.get_json(silent=True) or {}
+    message = str(payload.get("message", "")).strip()
+    category = str(payload.get("category", "bug")).strip().lower()
+    page = str(payload.get("page", "")).strip()
+    lesson_day = payload.get("day")
+    target = normalize_target_language(payload.get("target", "racket"))
+
+    if category not in {"bug", "content", "feature", "other"}:
+        category = "other"
+    if len(message) < 10:
+        return jsonify({"error": "feedback must be at least 10 characters"}), 400
+    if len(message) > 4000:
+        return jsonify({"error": "feedback must be 4000 characters or fewer"}), 400
+
+    user = current_user()
+    try:
+        lesson_day = int(lesson_day) if lesson_day else None
+    except (TypeError, ValueError):
+        lesson_day = None
+
+    record = {
+        "id": uuid.uuid4().hex,
+        "category": category,
+        "message": message,
+        "page": page[:500],
+        "day": lesson_day if lesson_day and 1 <= lesson_day <= 56 else None,
+        "target": target,
+        "status": "open",
+        "adminNote": "",
+        "userId": user["id"] if user else None,
+        "userName": user["name"] if user else "Anonymous",
+        "createdAt": datetime.now(timezone.utc).isoformat(),
+        "updatedAt": datetime.now(timezone.utc).isoformat(),
+    }
+    records = read_feedback_records()
+    records.append(record)
+    write_feedback_records(records)
+    return jsonify({"feedback": record}), 201
+
+
+@app.get("/api/admin/feedback")
+@require_access
+@require_admin
+def admin_feedback_records():
+    records = read_feedback_records()
+    status = str(request.args.get("status", "")).strip().lower()
+    if status:
+        records = [record for record in records if record.get("status") == status]
+    return jsonify({"feedback": list(reversed(records))})
+
+
+@app.patch("/api/admin/feedback/<feedback_id>")
+@require_access
+@require_admin
+def update_feedback_record(feedback_id: str):
+    payload = request.get_json(silent=True) or {}
+    next_status = str(payload.get("status", "")).strip().lower()
+    admin_note = str(payload.get("adminNote", "")).strip()
+    if next_status and next_status not in {"open", "reviewing", "fixed", "closed"}:
+        return jsonify({"error": "invalid feedback status"}), 400
+
+    records = read_feedback_records()
+    for record in records:
+        if record.get("id") == feedback_id:
+            if next_status:
+                record["status"] = next_status
+            if "adminNote" in payload:
+                record["adminNote"] = admin_note[:2000]
+            record["updatedAt"] = datetime.now(timezone.utc).isoformat()
+            write_feedback_records(records)
+            return jsonify({"feedback": record})
+    return jsonify({"error": "feedback not found"}), 404
 
 
 @app.post("/api/submit")

@@ -1008,6 +1008,65 @@ textarea {
   color: var(--red);
 }
 
+.feedback-launcher {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  z-index: 20;
+  border: 1px solid #6531bf;
+  border-radius: 8px;
+  padding: 11px 16px;
+  background: #7c3aed;
+  color: white;
+  box-shadow: 0 14px 34px rgba(63, 34, 125, 0.22);
+  font-weight: 900;
+}
+
+.feedback-launcher:hover {
+  background: #6531bf;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(18, 28, 23, 0.42);
+}
+
+.modal-backdrop[hidden] {
+  display: none;
+}
+
+.modal-panel {
+  width: min(560px, 100%);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 20px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.modal-panel select,
+.admin-toolbar select,
+.feedback-admin-form select {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: white;
+  color: var(--ink);
+  outline: none;
+}
+
+.modal-close {
+  width: 36px;
+  height: 36px;
+  font-size: 22px;
+}
+
 .sample-code-note {
   margin: 0 0 12px;
   color: var(--muted);
@@ -1070,6 +1129,171 @@ textarea {
   font-size: 13px;
 }
 
+.admin-page {
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.admin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.admin-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-link {
+  display: inline-block;
+  text-decoration: none;
+}
+
+.admin-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.admin-content[hidden] {
+  display: none;
+}
+
+.admin-toolbar {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.admin-toolbar label {
+  display: flex;
+  width: min(280px, 100%);
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admin-toolbar span,
+.feedback-admin-form span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.admin-feedback-list {
+  display: grid;
+  gap: 14px;
+}
+
+.feedback-admin-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 18px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.feedback-admin-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.feedback-admin-card h2 {
+  margin: 8px 0 0;
+  font-size: 20px;
+  line-height: 1.25;
+}
+
+.feedback-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.status-badge {
+  border-radius: 999px;
+  padding: 4px 9px;
+  background: #fff8e6;
+  color: #725015;
+  font-weight: 900;
+}
+
+.status-reviewing {
+  background: #eaf3ff;
+  color: #245584;
+}
+
+.status-fixed {
+  background: #edf8f1;
+  color: var(--green-dark);
+}
+
+.status-closed {
+  background: var(--surface-2);
+  color: var(--muted);
+}
+
+.feedback-message {
+  margin: 0;
+  white-space: pre-wrap;
+  color: #26372f;
+}
+
+.feedback-details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 14px 0;
+}
+
+.feedback-details div {
+  min-width: 0;
+  border-radius: 8px;
+  padding: 10px;
+  background: var(--surface-2);
+}
+
+.feedback-details dt {
+  color: var(--green-dark);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.feedback-details dd {
+  overflow-wrap: anywhere;
+  margin: 2px 0 0;
+  color: #35443b;
+  font-size: 13px;
+}
+
+.feedback-admin-form {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr) auto auto;
+  align-items: end;
+  gap: 10px;
+}
+
+.inline-status {
+  min-width: 80px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
 @media (max-width: 1180px) {
   .app-shell {
     grid-template-columns: 300px minmax(0, 1fr);
@@ -1093,6 +1317,10 @@ textarea {
     max-height: none;
     overflow: visible;
     padding-right: 0;
+  }
+
+  .feedback-admin-form {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -1118,6 +1346,26 @@ textarea {
 
   .lesson-layout {
     padding: 18px;
+  }
+
+  .admin-header,
+  .admin-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .feedback-details {
+    grid-template-columns: 1fr;
+  }
+
+  .feedback-launcher {
+    right: 14px;
+    bottom: 14px;
   }
 
   .lesson-hero {

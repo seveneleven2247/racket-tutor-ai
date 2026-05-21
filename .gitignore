@@ -8,6 +8,7 @@ data/server.log
 server.log
 data/submissions.json
 data/users.json
+data/feedback.json
 data/uploads/*
 !data/uploads/.gitkeep
 

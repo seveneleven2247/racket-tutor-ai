@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CodeBridge Feedback Tracker</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=purple-11" />
+    <link rel="shortcut icon" type="image/svg+xml" href="/favicon.svg?v=purple-11" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="admin-page">
+      <header class="admin-header">
+        <div class="brand">
+          <div class="brand-mark">11</div>
+          <div>
+            <h1>CodeBridge</h1>
+            <p>Feedback Tracker</p>
+          </div>
+        </div>
+        <div class="admin-actions">
+          <a class="secondary-button admin-link" href="/">Back to Course</a>
+          <button id="adminRefresh" class="primary-button" type="button">Refresh</button>
+        </div>
+      </header>
+
+      <section id="adminGate" class="onboarding-panel" hidden>
+        <div class="onboarding-inner">
+          <p class="eyebrow">Admin Required</p>
+          <h2>Log in as Elven</h2>
+          <p>Only administrator accounts can view and update site feedback.</p>
+          <p id="adminGateMessage" class="access-message"></p>
+        </div>
+      </section>
+
+      <section id="adminContent" class="admin-content" hidden>
+        <div class="admin-toolbar">
+          <label>
+            <span>Status</span>
+            <select id="feedbackStatusFilter">
+              <option value="">All feedback</option>
+              <option value="open">Open</option>
+              <option value="reviewing">Reviewing</option>
+              <option value="fixed">Fixed</option>
+              <option value="closed">Closed</option>
+            </select>
+          </label>
+          <p id="feedbackCount" class="body-text"></p>
+        </div>
+
+        <div id="adminFeedbackList" class="admin-feedback-list"></div>
+      </section>
+    </main>
+
+    <script src="/feedback-admin.js"></script>
+  </body>
+</html>
