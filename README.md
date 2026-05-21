@@ -33,10 +33,14 @@ http://127.0.0.1:5055
 Edit `.env`:
 
 ```bash
+GEMINI_API_KEY=your_google_ai_studio_api_key
+GEMINI_MODEL=gemini-2.5-flash
 OPENAI_API_KEY=your_openai_api_key
 OPENAI_MODEL=gpt-5.4-mini
 ACCESS_CODE=share123
 ```
+
+Set at least one of `GEMINI_API_KEY` or `OPENAI_API_KEY`. If neither is configured, CodeBridge still gives local line-by-line feedback for short submissions, but deeper paragraph-level AI review is disabled.
 
 Restart the Flask app after changing `.env`:
 

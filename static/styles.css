@@ -739,6 +739,38 @@ form textarea:focus {
   color: #44351b;
 }
 
+.ai-review-status {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 14px;
+  border: 1px solid #e3cf98;
+  border-radius: 8px;
+  padding: 12px 14px;
+  background: #fff8e6;
+  color: #5d3f09;
+}
+
+.ai-review-status strong {
+  font-size: 14px;
+}
+
+.ai-review-status span {
+  color: #80631f;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.ai-review-status.enabled {
+  border-color: #b8dbc8;
+  background: #edf8f1;
+  color: var(--green-dark);
+}
+
+.ai-review-status.enabled span {
+  color: var(--green);
+}
+
 .docs-list {
   display: flex;
   flex-wrap: wrap;

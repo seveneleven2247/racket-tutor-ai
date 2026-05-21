@@ -239,6 +239,58 @@ def read_uploaded_text(path: Path) -> str:
     return raw.decode("utf-8", errors="replace")
 
 
+def local_line_review(line: str, target_language: str) -> str:
+    stripped = line.strip()
+    if not stripped:
+        return "Blank line used for readability."
+    if target_language == "racket":
+        if stripped.startswith("#lang"):
+            return "Selects the Racket language for the file. This is normally the first line."
+        if stripped.startswith(";"):
+            return "Comment line. It explains code for a reader and does not run."
+        if stripped.startswith("(define ("):
+            return "Defines a function. The function name and parameters come after `define`."
+        if stripped.startswith("(define "):
+            return "Binds a name to a value. This is the normal Racket way to create a named value."
+        if stripped.startswith("(display") or stripped.startswith("(printf"):
+            return "Produces output. The function name comes first, followed by the value to print."
+        if stripped.startswith("("):
+            return "A function call or special form. Read the first item after `(` as the operation."
+    if target_language == "python":
+        if stripped.startswith("#"):
+            return "Comment line. Python ignores it when running the program."
+        if stripped.startswith("def "):
+            return "Defines a function. The indented lines below belong to this function."
+        if stripped.startswith(("if ", "elif ", "else")):
+            return "Controls a branch. The colon starts an indented block."
+        if stripped.startswith(("for ", "while ")):
+            return "Starts a loop. The indented block repeats according to this line."
+        if "print(" in stripped:
+            return "Prints output to the console."
+        if "=" in stripped:
+            return "Creates or updates a name. Python does not require a declared type here."
+    if target_language in {"c", "cpp", "java"}:
+        if stripped.startswith(("//", "/*", "*")):
+            return "Comment line. It documents the program and does not execute."
+        if stripped.startswith("#include") or stripped.startswith("import "):
+            return "Imports library support so the program can use external names."
+        if "class " in stripped:
+            return "Defines a class, grouping related data and behavior."
+        if "main(" in stripped:
+            return "Program entry point. Execution starts here for this sample."
+        if stripped.startswith(("if ", "else if", "else")):
+            return "Controls a branch. The block runs only for the matching condition."
+        if stripped.startswith(("for ", "while ", "do ")):
+            return "Starts a loop. The condition or counter controls repetition."
+        if stripped.startswith("return"):
+            return "Returns a value or exits the current function."
+        if "printf" in stripped or "cout" in stripped or "System.out.println" in stripped:
+            return "Prints output to the console."
+        if stripped.endswith(";"):
+            return "A statement. The semicolon marks the end of this instruction."
+    return "A code line that should be checked against the lesson goal, surrounding block, and expected output."
+
+
 def local_feedback(lesson: dict, content: str) -> str:
     code = content.strip()
     lines = [line for line in code.splitlines() if line.strip()]
@@ -266,9 +318,17 @@ def local_feedback(lesson: dict, content: str) -> str:
     if target_language not in {"c", "cpp"} and ("#include" in code or "std::" in code):
         notes.append("The submission still contains C++ syntax. Rewrite that part using the target language's normal idioms.")
     if len(lines) < 8:
-        notes.append("The submission is short. Add more examples, tests, or concise explanation comments to show the concept clearly.")
+        notes.append("This is a short submission, so the review focuses on every submitted line. Short code can still receive useful syntax and logic feedback.")
     if not notes:
         notes.append("The basic structure looks reasonable. Next, improve naming, test coverage, and edge-case handling.")
+
+    line_reviews = [
+        f"- L{index}: `{line.strip()}` - {local_line_review(line, target_language)}"
+        for index, line in enumerate(code.splitlines(), start=1)
+        if line.strip()
+    ][:12]
+    if not line_reviews:
+        line_reviews = ["- No non-empty lines were available for line-by-line review."]
 
     return (
         "Local rule-based feedback:\n"
@@ -276,6 +336,8 @@ def local_feedback(lesson: dict, content: str) -> str:
         f"- Target language: {target_language_name}\n"
         f"- Non-empty code lines detected: {len(lines)}\n"
         + "\n".join(f"- {note}" for note in notes)
+        + "\n\nLine-by-line quick review:\n"
+        + "\n".join(line_reviews)
         + "\n\nNo AI grading key is configured on the server. Add GEMINI_API_KEY from Google AI Studio or OPENAI_API_KEY to .env to receive deeper paragraph-level review and improvement suggestions."
     )
 
@@ -329,8 +391,9 @@ Review in English. Use this exact structure:
 4. At least 5 concrete improvement points.
 5. A recommended revised version or key revised snippet.
 6. Which official documentation topic above the student should revisit.
-7. Pick 3-6 important lines from the student's code and explain them line by line: what the line does, what syntax point it uses, and the closest {base_language_name} comparison. Keep the sentences short, plain, and accurate.
+7. Pick 3-6 important lines from the student's code and explain them line by line: what the line does, what syntax point it uses, and the closest {base_language_name} comparison. If the submission has fewer than 3 non-empty lines, analyze every non-empty line instead of dismissing the work as too short. Keep the sentences short, plain, and accurate.
 8. A checklist the student must complete before tomorrow's lesson.
+Important: short submissions still require concrete review. Explain what the existing lines do, what is correct, what is missing for a complete program, and how to improve them.
 Do not invent runtime results you did not observe. If tests need to be run, explain exactly how the student should run them.
 """
 
