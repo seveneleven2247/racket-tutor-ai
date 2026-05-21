@@ -9,6 +9,7 @@ const state = {
   activeDay: Number(localStorage.getItem("racketTutor.activeDay") || 1),
   query: "",
   unlockedSampleCode: null,
+  submittedLessons: new Set(),
 };
 
 function accessHeaders() {
@@ -164,6 +165,18 @@ function padDay(day) {
 
 function checklistKey(day) {
   return `racketTutor.checklist.${state.target}.${day}`;
+}
+
+function submissionKey(target, day) {
+  return `${target}:${day}`;
+}
+
+function hasSubmitted(day, target = state.target) {
+  return state.submittedLessons.has(submissionKey(target, day));
+}
+
+function isLessonUnlocked(day) {
+  return day <= 1 || hasSubmitted(day - 1);
 }
 
 function readChecklist(day) {
@@ -352,6 +365,9 @@ async function logout() {
   await fetch("/api/logout", { method: "POST", headers: accessHeaders() });
   state.user = null;
   state.profileLoaded = false;
+  state.lessons = [];
+  state.submittedLessons = new Set();
+  state.unlockedSampleCode = null;
   state.knownLanguages = [];
   state.target = "racket";
   state.activeDay = 1;
@@ -364,6 +380,14 @@ async function logout() {
       localStorage.removeItem(key);
     }
   }
+  if (els.submissionList) els.submissionList.innerHTML = "";
+  if (els.feedbackBox) {
+    els.feedbackBox.hidden = true;
+    els.feedbackBox.textContent = "";
+    els.feedbackBox.classList.remove("error");
+  }
+  if (els.authPanel) els.authPanel.hidden = false;
+  setAuthMode("login");
   renderOnboarding();
 }
 
@@ -390,16 +414,20 @@ function renderDayList() {
   els.dayList.innerHTML = "";
   for (const lesson of lessons) {
     const done = checkedCount(lesson.day) === lesson.checklist.length;
+    const submitted = hasSubmitted(lesson.day);
+    const unlocked = isLessonUnlocked(lesson.day);
     const button = document.createElement("button");
     button.type = "button";
-    button.className = `day-card${lesson.day === state.activeDay ? " active" : ""}`;
+    button.disabled = !unlocked;
+    button.title = unlocked ? "" : `Submit Day ${padDay(lesson.day - 1)} homework before opening this lesson.`;
+    button.className = `day-card${lesson.day === state.activeDay ? " active" : ""}${!unlocked ? " locked" : ""}`;
     button.innerHTML = `
       <span class="day-number">${padDay(lesson.day)}</span>
       <span>
         <strong>${lesson.title}</strong>
-        <span>${lesson.category}</span>
+        <span>${lesson.category}${submitted ? " · Submitted" : ""}</span>
       </span>
-      <span class="done-dot${done ? " complete" : ""}" aria-hidden="true"></span>
+      <span class="done-dot${done || submitted ? " complete" : ""}" aria-hidden="true"></span>
     `;
     button.addEventListener("click", () => selectDay(lesson.day));
     els.dayList.appendChild(button);
@@ -445,7 +473,8 @@ function renderLesson() {
   els.assignmentText.textContent = lesson.assignment;
 
   els.prevDay.disabled = lesson.day === 1;
-  els.nextDay.disabled = lesson.day === state.lessons.length;
+  els.nextDay.disabled = lesson.day === state.lessons.length || !hasSubmitted(lesson.day);
+  els.nextDay.title = hasSubmitted(lesson.day) ? "" : "Submit today's homework before opening tomorrow's lesson.";
 
   els.focusList.innerHTML = "";
   for (const focus of lesson.racket_focus) {
@@ -574,7 +603,15 @@ function renderChecklist(lesson) {
 }
 
 function selectDay(day) {
-  state.activeDay = Math.max(1, Math.min(day, state.lessons.length));
+  const nextDay = Math.max(1, Math.min(day, state.lessons.length));
+  if (!isLessonUnlocked(nextDay)) {
+    els.feedbackBox.hidden = false;
+    els.feedbackBox.classList.add("error");
+    els.feedbackBox.textContent = `Day ${padDay(nextDay)} is locked. Submit Day ${padDay(nextDay - 1)} homework before moving on.`;
+    renderDayList();
+    return;
+  }
+  state.activeDay = nextDay;
   state.unlockedSampleCode = null;
   renderLesson();
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -604,6 +641,9 @@ async function loadCourse() {
   if (!state.lessons.some((lesson) => lesson.day === state.activeDay)) {
     state.activeDay = 1;
   }
+  while (state.activeDay > 1 && !isLessonUnlocked(state.activeDay)) {
+    state.activeDay -= 1;
+  }
   renderLesson();
 }
 
@@ -624,7 +664,14 @@ async function loadSubmissions() {
   const response = await fetch("/api/submissions", { headers: accessHeaders() });
   if (!response.ok) return;
   const data = await response.json();
+  state.submittedLessons = new Set(
+    data.submissions.map((item) => submissionKey(item.target || "racket", item.day)),
+  );
   els.submissionList.innerHTML = "";
+  if (state.lessons.length) {
+    renderDayList();
+    renderProgress();
+  }
 
   if (!data.submissions.length) {
     const empty = document.createElement("p");
@@ -642,11 +689,18 @@ async function loadSubmissions() {
       <strong>${item.targetLanguage || "Racket"} · Day ${padDay(item.day)} · ${item.title}</strong>
       <span>${item.studentName} · ${created}${item.filename ? ` · ${item.filename}` : ""}</span>
       <details>
-        <summary>View feedback</summary>
-        <pre></pre>
+        <summary>View submitted program and review</summary>
+        <div class="submission-detail">
+          <h4>Submitted Program</h4>
+          <pre data-submission-content></pre>
+          <h4>What to Fix / Review Feedback</h4>
+          <pre data-submission-feedback></pre>
+        </div>
       </details>
     `;
-    div.querySelector("pre").textContent = item.feedback;
+    div.querySelector("[data-submission-content]").textContent =
+      item.content || item.contentPreview || "No submitted program text was saved for this older record.";
+    div.querySelector("[data-submission-feedback]").textContent = item.feedback;
     els.submissionList.appendChild(div);
   });
 }
@@ -681,6 +735,7 @@ async function submitAssignment(event) {
         target: data.submission.target,
         code: data.sampleCode,
       };
+      state.submittedLessons.add(submissionKey(data.submission.target, data.submission.day));
       renderLesson();
     }
     els.submissionForm.reset();

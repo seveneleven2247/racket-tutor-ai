@@ -196,7 +196,7 @@ def sanitize_profile(profile: dict | None) -> dict:
 
 def english_safe_submission(record: dict) -> dict:
     cleaned = dict(record)
-    for field in ("title", "category", "studentNote", "contentPreview", "feedback"):
+    for field in ("title", "category", "studentNote", "contentPreview", "content", "feedback"):
         value = cleaned.get(field)
         if isinstance(value, str) and HAN_RE.search(value):
             if field == "feedback":
@@ -206,6 +206,8 @@ def english_safe_submission(record: dict) -> dict:
                 )
             elif field == "contentPreview":
                 cleaned[field] = "Older submission preview hidden by the English-only site setting."
+            elif field == "content":
+                cleaned[field] = "Older submission content hidden by the English-only site setting."
             elif field == "studentNote":
                 cleaned[field] = ""
             else:
@@ -530,6 +532,7 @@ def submit_assignment():
         "studentNote": student_note,
         "filename": saved_filename,
         "contentPreview": content[:1000],
+        "content": content,
         "feedback": feedback,
         "createdAt": datetime.now(timezone.utc).isoformat(),
     }

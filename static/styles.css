@@ -307,6 +307,15 @@ form textarea:focus {
   background: #edf7f1;
 }
 
+.day-card.locked {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.day-card.locked:hover {
+  border-color: var(--line);
+}
+
 .day-number {
   display: grid;
   place-items: center;
@@ -971,6 +980,18 @@ textarea {
   color: var(--green-dark);
   cursor: pointer;
   font-weight: 800;
+}
+
+.submission-detail {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.submission-detail h4 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 13px;
 }
 
 .submission-item pre {

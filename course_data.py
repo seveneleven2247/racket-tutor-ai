@@ -1036,11 +1036,20 @@ def _explanation(title: str, kind: str, target: str) -> str:
 
 def _practice(day: int, title: str, target: str) -> list[str]:
     language = TARGET_LANGUAGES[target]["name"]
+    ext = TARGET_LANGUAGES[target]["file_ext"]
     return [
-        f"Run the Day {day:02d} {language} sample code.",
-        "Rewrite the C++ snippet by hand in the target language.",
-        "Change two values in the code and predict the output before running it.",
-        "Write a line-by-line note for the three most important syntax lines.",
+        (
+            f"HW Q1: Build a small {language} program in day{day:02d}_q1.{ext} that demonstrates '{title}'. "
+            "It must run successfully, show clear input/output when the topic uses them, and keep the example focused on today's syntax."
+        ),
+        (
+            "HW Q2: Rewrite the C++ bridge example in the target language without copying C++ punctuation or habits. "
+            "Add short comments beside at least three important lines explaining the closest C++ comparison."
+        ),
+        (
+            "HW Q3: Create a second test case or variation by changing values, inputs, branches, or loop counts. "
+            "Before the output, write a brief prediction of what should happen, then make the program print the actual result."
+        ),
     ]
 
 
@@ -1070,8 +1079,8 @@ def _rubric(target: str) -> list[str]:
 def _assignment(day: int, title: str, target: str) -> str:
     ext = TARGET_LANGUAGES[target]["file_ext"]
     return (
-        f"Submit day{day:02d}.{ext}. The program must demonstrate '{title}', run successfully, "
-        "and include five concise notes comparing the target-language syntax with C++."
+        f"Submit one file named day{day:02d}_homework.{ext} or paste the full code. Include HW Q1, HW Q2, and HW Q3 in order. "
+        f"Each answer must demonstrate '{title}', run successfully, and include concise notes comparing the target-language syntax with C++."
     )
 
 
