@@ -8,6 +8,7 @@ Features:
 - C++ syntax bridges, concise explanations, sample code, practice tasks, and daily checklists
 - Browser-local checklist progress
 - Homework upload or pasted-code submission
+- Built-in Judge0 code execution for Python, C, C++, and Java submissions
 - AI homework review for correctness, style, C++ transfer habits, and next-step improvements
 - Local rule-based feedback when `OPENAI_API_KEY` is not configured
 
@@ -41,6 +42,37 @@ ACCESS_CODE=share123
 ```
 
 Set at least one of `GEMINI_API_KEY` or `OPENAI_API_KEY`. If neither is configured, CodeBridge still gives local line-by-line feedback for short submissions, but deeper paragraph-level AI review is disabled.
+
+## Configure Judge0 Code Runner
+
+CodeBridge can send submitted code to Judge0 before AI review. The run result is saved with the submission and shown in review history.
+
+Default public endpoint:
+
+```bash
+JUDGE0_API_URL=https://ce.judge0.com
+```
+
+Default language IDs used by this app:
+
+```text
+Python: 109
+C: 103
+C++: 105
+Java: 91
+```
+
+Public Judge0 CE does not currently provide Racket in this app's language list. Racket submissions still receive AI/local feedback. If you self-host a Judge0 image that supports Racket, set:
+
+```bash
+JUDGE0_RACKET_LANGUAGE_ID=your_racket_language_id
+```
+
+For a different Judge0 deployment, override multiple IDs:
+
+```bash
+JUDGE0_LANGUAGE_IDS={"python":109,"c":103,"cpp":105,"java":91,"racket":999}
+```
 
 Restart the Flask app after changing `.env`:
 

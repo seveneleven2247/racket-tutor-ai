@@ -4,6 +4,8 @@ import argparse
 import json
 import os
 import re
+import urllib.error
+import urllib.request
 import uuid
 from datetime import datetime, timezone
 from functools import wraps
@@ -24,6 +26,13 @@ SUBMISSIONS_FILE = DATA_DIR / "submissions.json"
 USERS_FILE = DATA_DIR / "users.json"
 FEEDBACK_FILE = DATA_DIR / "feedback.json"
 USER_SESSION_COOKIE = "code_tutor_session"
+JUDGE0_DEFAULT_URL = "https://ce.judge0.com"
+JUDGE0_DEFAULT_LANGUAGE_IDS = {
+    "c": 103,
+    "cpp": 105,
+    "java": 91,
+    "python": 109,
+}
 ALLOWED_EXTENSIONS = {
     "rkt",
     "rktl",
@@ -55,6 +64,44 @@ def configured_access_code() -> str:
 
 def openai_feedback_enabled() -> bool:
     return bool(os.getenv("GEMINI_API_KEY", "").strip() or os.getenv("OPENAI_API_KEY", "").strip())
+
+
+def judge0_api_url() -> str:
+    return os.getenv("JUDGE0_API_URL", JUDGE0_DEFAULT_URL).strip().rstrip("/")
+
+
+def judge0_language_ids() -> dict[str, int]:
+    language_ids = dict(JUDGE0_DEFAULT_LANGUAGE_IDS)
+    raw = os.getenv("JUDGE0_LANGUAGE_IDS", "").strip()
+    if raw:
+        try:
+            overrides = json.loads(raw)
+            for language, language_id in overrides.items():
+                language_ids[normalize_target_language(language)] = int(language_id)
+        except (TypeError, ValueError, json.JSONDecodeError):
+            app.logger.warning("Invalid JUDGE0_LANGUAGE_IDS value. Expected JSON such as {\"racket\": 999}.")
+    racket_id = os.getenv("JUDGE0_RACKET_LANGUAGE_ID", "").strip()
+    if racket_id:
+        try:
+            language_ids["racket"] = int(racket_id)
+        except ValueError:
+            app.logger.warning("Invalid JUDGE0_RACKET_LANGUAGE_ID value: %s", racket_id)
+    return language_ids
+
+
+def judge0_headers() -> dict[str, str]:
+    headers = {
+        "Content-Type": "application/json",
+        "User-Agent": "CodeBridge/1.0",
+    }
+    api_key = os.getenv("JUDGE0_API_KEY", "").strip()
+    rapidapi_host = os.getenv("JUDGE0_RAPIDAPI_HOST", "").strip()
+    if api_key and rapidapi_host:
+        headers["X-RapidAPI-Key"] = api_key
+        headers["X-RapidAPI-Host"] = rapidapi_host
+    elif api_key:
+        headers["X-Auth-Token"] = api_key
+    return headers
 
 
 def configured_admin_names() -> set[str]:
@@ -400,7 +447,92 @@ def local_feedback(lesson: dict, content: str) -> str:
     )
 
 
-def build_feedback_prompt(lesson: dict, content: str, student_note: str) -> str:
+def run_with_judge0(target: str, source_code: str, stdin: str = "") -> dict:
+    language_id = judge0_language_ids().get(target)
+    if not language_id:
+        return {
+            "available": False,
+            "status": "not_supported",
+            "message": f"Judge0 is not configured for {target}. Public Judge0 CE currently covers Python, C, C++, and Java in this app.",
+        }
+    if len(source_code.encode("utf-8")) > 64 * 1024:
+        return {
+            "available": False,
+            "status": "too_large",
+            "message": "Code was not sent to Judge0 because it is larger than 64 KB.",
+        }
+
+    payload = {
+        "source_code": source_code,
+        "language_id": language_id,
+        "stdin": stdin[:8000],
+        "cpu_time_limit": 5,
+        "wall_time_limit": 10,
+        "memory_limit": 128000,
+    }
+    request_object = urllib.request.Request(
+        f"{judge0_api_url()}/submissions?base64_encoded=false&wait=true",
+        data=json.dumps(payload).encode("utf-8"),
+        headers=judge0_headers(),
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(request_object, timeout=20) as response:
+            result = json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as error:
+        body = error.read().decode("utf-8", errors="replace")[:1200]
+        return {
+            "available": False,
+            "status": "api_error",
+            "message": f"Judge0 returned HTTP {error.code}: {body or error.reason}",
+        }
+    except Exception as error:
+        return {
+            "available": False,
+            "status": "api_error",
+            "message": f"Judge0 could not run this code: {error}",
+        }
+
+    status = result.get("status") or {}
+    return {
+        "available": True,
+        "statusId": status.get("id"),
+        "status": status.get("description", "Unknown"),
+        "languageId": language_id,
+        "stdout": result.get("stdout") or "",
+        "stderr": result.get("stderr") or "",
+        "compileOutput": result.get("compile_output") or "",
+        "message": result.get("message") or "",
+        "time": result.get("time"),
+        "memory": result.get("memory"),
+    }
+
+
+def format_execution_result(result: dict) -> str:
+    if not result.get("available"):
+        return f"Judge0 code run: {result.get('message', 'Not available.')}"
+
+    lines = [
+        "Judge0 code run:",
+        f"- Status: {result.get('status', 'Unknown')}",
+    ]
+    if result.get("time"):
+        lines.append(f"- Time: {result['time']}s")
+    if result.get("memory"):
+        lines.append(f"- Memory: {result['memory']} KB")
+    for label, key in (
+        ("Stdout", "stdout"),
+        ("Stderr", "stderr"),
+        ("Compile output", "compileOutput"),
+        ("Message", "message"),
+    ):
+        value = str(result.get(key) or "").strip()
+        if value:
+            lines.append(f"- {label}:\n{value[:4000]}")
+    return "\n".join(lines)
+
+
+def build_feedback_prompt(lesson: dict, content: str, student_note: str, execution_summary: str = "") -> str:
     syntax_bridge = lesson.get("syntax_bridge", {})
     docs = syntax_bridge.get("docs", lesson.get("official_docs", []))
     doc_lines = "\n".join(f"- {doc['title']}: {doc['url']}" for doc in docs)
@@ -442,6 +574,11 @@ Student submission:
 {content[:12000]}
 ```
 
+Observed code runner result:
+```text
+{execution_summary or 'Code was not run.'}
+```
+
 Review in English. Use this exact structure:
 1. Overall score out of 10.
 2. Correctness feedback.
@@ -480,8 +617,8 @@ def openai_feedback(prompt: str) -> str:
     return response.output_text
 
 
-def ai_feedback(lesson: dict, content: str, student_note: str) -> str:
-    prompt = build_feedback_prompt(lesson, content, student_note)
+def ai_feedback(lesson: dict, content: str, student_note: str, execution_summary: str = "") -> str:
+    prompt = build_feedback_prompt(lesson, content, student_note, execution_summary)
     if os.getenv("GEMINI_API_KEY", "").strip():
         try:
             return gemini_feedback(prompt)
@@ -822,6 +959,7 @@ def submit_assignment():
     if user and (not student_name or student_name == "Anonymous"):
         student_name = user["name"]
     student_note = request.form.get("studentNote", "").strip()
+    stdin = request.form.get("stdin", "")
     pasted_code = request.form.get("code", "")
     file = request.files.get("file")
 
@@ -840,7 +978,9 @@ def submit_assignment():
     if not content.strip():
         return jsonify({"error": "empty submission"}), 400
 
-    feedback = ai_feedback(lesson, content, student_note)
+    execution = run_with_judge0(target, content, stdin)
+    execution_summary = format_execution_result(execution)
+    feedback = execution_summary + "\n\n" + ai_feedback(lesson, content, student_note, execution_summary)
     record = {
         "id": uuid.uuid4().hex,
         "userId": user["id"] if user else None,
@@ -851,9 +991,11 @@ def submit_assignment():
         "title": lesson["title"],
         "studentName": student_name,
         "studentNote": student_note,
+        "stdin": stdin[:8000],
         "filename": saved_filename,
         "contentPreview": content[:1000],
         "content": content,
+        "execution": execution,
         "feedback": feedback,
         "createdAt": datetime.now(timezone.utc).isoformat(),
     }

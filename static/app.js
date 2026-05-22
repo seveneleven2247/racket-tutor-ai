@@ -868,6 +868,8 @@ async function loadSubmissions() {
         <div class="submission-detail">
           <h4>Submitted Program</h4>
           <pre data-submission-content></pre>
+          <h4>Judge0 Run Result</h4>
+          <pre data-submission-execution></pre>
           <h4>What to Fix / Review Feedback</h4>
           <pre data-submission-feedback></pre>
         </div>
@@ -875,9 +877,23 @@ async function loadSubmissions() {
     `;
     div.querySelector("[data-submission-content]").textContent =
       item.content || item.contentPreview || "No submitted program text was saved for this older record.";
+    div.querySelector("[data-submission-execution]").textContent = formatExecutionHistory(item.execution);
     div.querySelector("[data-submission-feedback]").textContent = item.feedback;
     els.submissionList.appendChild(div);
   });
+}
+
+function formatExecutionHistory(execution) {
+  if (!execution) return "No Judge0 result saved for this older submission.";
+  if (!execution.available) return execution.message || "Judge0 was not available for this submission.";
+  const parts = [`Status: ${execution.status || "Unknown"}`];
+  if (execution.time) parts.push(`Time: ${execution.time}s`);
+  if (execution.memory) parts.push(`Memory: ${execution.memory} KB`);
+  if (execution.stdout) parts.push(`Stdout:\n${execution.stdout}`);
+  if (execution.stderr) parts.push(`Stderr:\n${execution.stderr}`);
+  if (execution.compileOutput) parts.push(`Compile output:\n${execution.compileOutput}`);
+  if (execution.message) parts.push(`Message:\n${execution.message}`);
+  return parts.join("\n");
 }
 
 async function submitAssignment(event) {
@@ -892,7 +908,7 @@ async function submitAssignment(event) {
   els.submitButton.textContent = "Reviewing";
   els.feedbackBox.hidden = false;
   els.feedbackBox.classList.remove("error");
-  els.feedbackBox.textContent = "Reading the assignment and generating feedback...";
+  els.feedbackBox.textContent = "Running code with Judge0, then generating feedback...";
 
   try {
     const response = await fetch("/api/submit", {
