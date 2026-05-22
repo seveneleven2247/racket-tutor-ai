@@ -88,6 +88,13 @@ const els = {
   practiceList: document.querySelector("#practiceList"),
   checklist: document.querySelector("#checklist"),
   resetChecklist: document.querySelector("#resetChecklist"),
+  guidancePanel: document.querySelector("#guidancePanel"),
+  guidanceSummary: document.querySelector("#guidanceSummary"),
+  guidanceToday: document.querySelector("#guidanceToday"),
+  guidanceHabits: document.querySelector("#guidanceHabits"),
+  guidanceFocus: document.querySelector("#guidanceFocus"),
+  guidanceNext: document.querySelector("#guidanceNext"),
+  refreshGuidance: document.querySelector("#refreshGuidance"),
   assignmentText: document.querySelector("#assignmentText"),
   rubricList: document.querySelector("#rubricList"),
   aiReviewStatus: document.querySelector("#aiReviewStatus"),
@@ -479,6 +486,7 @@ async function loadSession() {
     await loadCourse();
   }
   await loadSubmissions();
+  await loadGuidance();
 }
 
 async function submitAuth(event) {
@@ -507,6 +515,7 @@ async function submitAuth(event) {
       await loadCourse();
     }
     await loadSubmissions();
+    await loadGuidance();
     if (wasRegistering) {
       localStorage.removeItem("codeBridge.tutorialSeen");
       localStorage.setItem("codeBridge.pendingCourseTour", "true");
@@ -543,6 +552,7 @@ async function logout() {
     }
   }
   if (els.submissionList) els.submissionList.innerHTML = "";
+  if (els.guidancePanel) els.guidancePanel.hidden = true;
   if (els.feedbackBox) {
     els.feedbackBox.hidden = true;
     els.feedbackBox.textContent = "";
@@ -734,6 +744,10 @@ function renderLineNotes(lesson) {
           <div><dt>Syntax</dt><dd></dd></div>
           <div><dt>${lesson.base_language_name || "Known Language"} Comparison</dt><dd></dd></div>
         </dl>
+        <div class="phrase-breakdown" hidden>
+          <h4>Phrase Breakdown</h4>
+          <ul></ul>
+        </div>
       </div>
     `;
     row.querySelector("code").textContent = codeText;
@@ -741,6 +755,20 @@ function renderLineNotes(lesson) {
     const descriptions = row.querySelectorAll("dd");
     descriptions[0].textContent = note.syntax;
     descriptions[1].textContent = note.cpp;
+    const phraseBox = row.querySelector(".phrase-breakdown");
+    const phraseList = phraseBox.querySelector("ul");
+    if (Array.isArray(note.phrases) && note.phrases.length) {
+      phraseBox.hidden = false;
+      for (const item of note.phrases) {
+        const li = document.createElement("li");
+        const phrase = document.createElement("code");
+        phrase.textContent = item.phrase;
+        const meaning = document.createElement("span");
+        meaning.textContent = item.meaning;
+        li.append(phrase, meaning);
+        phraseList.appendChild(li);
+      }
+    }
     els.lineNotesList.appendChild(row);
   });
 }
@@ -764,6 +792,7 @@ function renderChecklist(lesson) {
       next[index] = input.checked;
       writeChecklist(lesson.day, next);
       renderLesson();
+      loadGuidance();
     });
 
     const span = document.createElement("span");
@@ -785,7 +814,10 @@ function selectDay(day) {
   }
   state.activeDay = nextDay;
   state.unlockedSampleCode = null;
+  localStorage.setItem("racketTutor.activeDay", String(state.activeDay));
+  scheduleProfileSave();
   renderLesson();
+  loadGuidance();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -820,6 +852,7 @@ async function loadCourse() {
     state.activeDay -= 1;
   }
   renderLesson();
+  loadGuidance();
 }
 
 function renderLanguageOptions() {
@@ -870,6 +903,8 @@ async function loadSubmissions() {
           <pre data-submission-content></pre>
           <h4>Judge0 Run Result</h4>
           <pre data-submission-execution></pre>
+          <h4>Built-in Code Checker</h4>
+          <pre data-submission-code-check></pre>
           <h4>What to Fix / Review Feedback</h4>
           <pre data-submission-feedback></pre>
         </div>
@@ -878,6 +913,7 @@ async function loadSubmissions() {
     div.querySelector("[data-submission-content]").textContent =
       item.content || item.contentPreview || "No submitted program text was saved for this older record.";
     div.querySelector("[data-submission-execution]").textContent = formatExecutionHistory(item.execution);
+    div.querySelector("[data-submission-code-check]").textContent = formatCodeCheckHistory(item.codeCheck);
     div.querySelector("[data-submission-feedback]").textContent = item.feedback;
     els.submissionList.appendChild(div);
   });
@@ -894,6 +930,63 @@ function formatExecutionHistory(execution) {
   if (execution.compileOutput) parts.push(`Compile output:\n${execution.compileOutput}`);
   if (execution.message) parts.push(`Message:\n${execution.message}`);
   return parts.join("\n");
+}
+
+function formatCodeCheckHistory(codeCheck) {
+  if (!codeCheck) return "No built-in checker result saved for this older submission.";
+  const lines = [
+    `Score: ${codeCheck.score ?? 0}/10`,
+    `Non-empty lines: ${codeCheck.nonEmptyLines ?? 0}`,
+    `Homework labels found: ${(codeCheck.programLabelsFound || []).join(", ") || "none"}`,
+    "",
+    "Checks:",
+  ];
+  for (const check of codeCheck.checks || []) {
+    lines.push(`${check.passed ? "PASS" : "FIX"} - ${check.name}${check.passed ? "" : ` | ${check.fix}`}`);
+  }
+  return lines.join("\n");
+}
+
+function renderGuidanceList(element, items) {
+  if (!element) return;
+  element.innerHTML = "";
+  for (const item of items || []) {
+    const li = document.createElement("li");
+    li.textContent = item;
+    element.appendChild(li);
+  }
+}
+
+async function loadGuidance() {
+  if (!els.guidancePanel) return;
+  if (!state.user || !state.lessons.length) {
+    els.guidancePanel.hidden = true;
+    return;
+  }
+  els.guidancePanel.hidden = false;
+  els.guidanceSummary.textContent = "Loading guidance...";
+  try {
+    const params = new URLSearchParams({
+      day: String(state.activeDay),
+      target: state.target,
+      base: state.baseLanguage || "cpp",
+    });
+    const response = await fetch(`/api/guidance?${params.toString()}`, { headers: accessHeaders() });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Guidance failed to load");
+    const guidance = data.guidance || {};
+    els.guidanceSummary.textContent = guidance.summary || "No guidance available yet.";
+    renderGuidanceList(els.guidanceToday, guidance.today);
+    renderGuidanceList(els.guidanceHabits, guidance.habits);
+    renderGuidanceList(els.guidanceFocus, guidance.focusAreas);
+    renderGuidanceList(els.guidanceNext, guidance.nextSteps);
+  } catch (error) {
+    els.guidanceSummary.textContent = error.message;
+    renderGuidanceList(els.guidanceToday, []);
+    renderGuidanceList(els.guidanceHabits, []);
+    renderGuidanceList(els.guidanceFocus, []);
+    renderGuidanceList(els.guidanceNext, []);
+  }
 }
 
 async function submitAssignment(event) {
@@ -932,6 +1025,7 @@ async function submitAssignment(event) {
     }
     els.submissionForm.reset();
     await loadSubmissions();
+    await loadGuidance();
   } catch (error) {
     els.feedbackBox.classList.add("error");
     els.feedbackBox.textContent = error.message;
@@ -1193,10 +1287,12 @@ els.copyCode.addEventListener("click", async () => {
 els.resetChecklist.addEventListener("click", () => {
   writeChecklist(state.activeDay, []);
   renderLesson();
+  loadGuidance();
 });
 
 els.submissionForm.addEventListener("submit", submitAssignment);
 els.refreshSubmissions.addEventListener("click", loadSubmissions);
+els.refreshGuidance?.addEventListener("click", loadGuidance);
 els.feedbackButton?.addEventListener("click", openFeedbackModal);
 els.closeFeedback?.addEventListener("click", closeFeedbackModal);
 els.feedbackModal?.addEventListener("click", (event) => {

@@ -532,7 +532,257 @@ def format_execution_result(result: dict) -> str:
     return "\n".join(lines)
 
 
-def build_feedback_prompt(lesson: dict, content: str, student_note: str, execution_summary: str = "") -> str:
+def target_syntax_checks(target: str, code: str) -> list[tuple[str, bool]]:
+    checks = {
+        "racket": [
+            ("Racket language line `#lang racket` or `#lang typed/racket`", "#lang racket" in code or "#lang typed/racket" in code),
+            ("Racket prefix calls such as `(displayln value)` or `(+ a b)`", bool(re.search(r"\([A-Za-z+*/<>=!?-]+\s+", code))),
+        ],
+        "python": [
+            ("Python output with `print(...)`", "print(" in code),
+            ("Python avoids C++ braces for blocks", "{" not in code and "}" not in code),
+            ("Python names avoid C-style declared types", not bool(re.search(r"\b(int|double|float|string|auto)\s+[A-Za-z_]\w*\s*=", code))),
+        ],
+        "cpp": [
+            ("C++ include for standard library support", "#include" in code),
+            ("C++ `main` entry point", "main(" in code),
+            ("C++ output/input style such as `std::cout` or `std::cin`", "cout" in code or "cin" in code),
+        ],
+        "c": [
+            ("C include for standard library support", "#include" in code),
+            ("C `main` entry point", "main(" in code),
+            ("C I/O style such as `printf` or `scanf`", "printf" in code or "scanf" in code),
+        ],
+        "java": [
+            ("Java class or record wrapper", "class " in code or "record " in code),
+            ("Java `main` entry point for runnable samples", "main(" in code),
+            ("Java output with `System.out.println(...)`", "System.out.println" in code),
+        ],
+    }
+    return checks.get(target, [])
+
+
+def topic_construct_checks(base_kind: str, target: str, code: str) -> list[tuple[str, bool]]:
+    lower = code.lower()
+    checks = {
+        "output": [("prints visible output", any(token in code for token in ("display", "print(", "printf", "cout", "System.out.println")))],
+        "input": [("reads or simulates input", any(token in code for token in ("read-line", "input(", "scanf", "cin", "Scanner", "read ")))],
+        "math": [("uses arithmetic calculation", any(token in code for token in ("+", "-", "*", "/", "%")))],
+        "variable": [("creates named values", bool(re.search(r"(define\s+|=)", code)))],
+        "if_statement": [("uses a conditional branch", "if" in lower)],
+        "else_if": [("uses multi-branch logic", any(token in lower for token in ("else", "elif", "cond", "case", "switch")))],
+        "error_check": [("checks invalid values before calculating", any(token in lower for token in ("if", "error", "invalid", "cannot")))],
+        "while_loop": [("uses while-style repetition", any(token in lower for token in ("while", "let loop", "loop")))],
+        "do_while": [("runs a menu or body at least once", any(token in lower for token in ("do", "while", "menu", "choice", "loop")))],
+        "random_number": [("uses or simulates randomness", any(token in lower for token in ("random", "rand", "rng", "dice")))],
+        "for_loop": [("uses counted or sequence repetition", any(token in lower for token in ("for", "range", "in-range")))],
+        "nested_for": [("uses nested repetition", len(re.findall(r"\b(for|for\*|while)\b", lower)) >= 2 or "for*" in lower)],
+        "function_intro": [("uses or explains a reusable function/helper", any(token in lower for token in ("def ", "define (", "function", "return", "helper")))],
+        "create_function": [("defines a function", any(token in code for token in ("define (", "def ", "function ", "static ", "public static")))],
+        "call_function": [("calls a function and uses returned value", bool(re.search(r"\w+\s*\(", code)) or bool(re.search(r"\(\w+[!?-]?\s+", code)))],
+        "arrays_intro": [("uses a collection/list/array", any(token in lower for token in ("list", "vector", "array", "[", "{")))],
+        "array_kinds": [("compares or uses collection types", any(token in lower for token in ("list", "vector", "array", "collection")))],
+        "array_declare": [("declares and initializes a collection", any(token in lower for token in ("list", "vector", "array", "[", "{")))],
+        "strings": [("uses string/text operations", any(token in lower for token in ("string", "str", "\"", "append", "length")))],
+        "char_arrays": [("works with characters", any(token in lower for token in ("char", "character", "string-ref", "chars")))],
+        "classes": [("defines a data type/class/struct", any(token in lower for token in ("class", "struct", "record")))],
+        "switch_statement": [("uses exact-case branching", any(token in lower for token in ("switch", "case", "cond")))],
+        "multi_arrays": [("uses nested collections or grid logic", any(token in lower for token in ("grid", "row", "column", "matrix", "list", "vector")))],
+        "vectors": [("uses a vector/list-style sequence", any(token in lower for token in ("vector", "list", "array", "append", "push")))],
+        "objects_classes": [("creates object/record values", any(token in lower for token in ("new ", "object", "struct", "class", "record")))],
+        "recursion": [("uses a function that calls itself", (bool(re.search(r"(define\s+\((\w+)|def\s+(\w+)|\b(\w+)\s*\()", code)) and "return" in lower) or "recursive" in lower)],
+        "search_float": [("searches data or uses decimals", any(token in lower for token in ("find", "search", "index", "float", "double", ".")))],
+        "combined_if": [("combines conditions", any(token in lower for token in ("&&", "||", " and ", " or ", "and", "or")))],
+        "nested_if": [("uses nested or staged decisions", lower.count("if") >= 2 or "cond" in lower)],
+        "for_arrays": [("loops through a collection", any(token in lower for token in ("for", "map", "for/list", "foreach", "for-each")) and any(token in lower for token in ("list", "vector", "array", "[")))],
+        "nested_for_multi": [("uses nested loops for rows and columns", len(re.findall(r"\b(for|for\*|while)\b", lower)) >= 2 or ("row" in lower and "col" in lower))],
+        "while_validation": [("repeats until input is valid", any(token in lower for token in ("while", "loop", "valid", "invalid")))],
+        "do_while_menu": [("uses menu-style repeated choices", any(token in lower for token in ("menu", "choice", "quit", "while", "do")))],
+    }
+    return checks.get(base_kind, [])
+
+
+def analyze_code_submission(lesson: dict, content: str, execution: dict) -> dict:
+    code = content.strip()
+    target = lesson.get("target_language", "racket")
+    base_kind = lesson.get("base_kind") or lesson.get("topic_kind", "")
+    lines = [line for line in code.splitlines() if line.strip()]
+    labels = sorted(set(re.findall(r"HW\s*Q\s*([123])", code, flags=re.IGNORECASE)))
+    checks: list[dict] = []
+
+    def add_check(name: str, passed: bool, fix: str) -> None:
+        checks.append({"name": name, "passed": bool(passed), "fix": fix})
+
+    add_check("Non-empty submission", bool(code), "Upload a file or paste code.")
+    add_check("Includes all three homework labels", len(labels) == 3, "Paste or label all three programs as HW Q1, HW Q2, and HW Q3.")
+    add_check("Enough code for review", len(lines) >= 6, "Add complete programs, not only one or two lines.")
+    add_check("Has at least one output line", any(token in code for token in ("display", "print(", "printf", "cout", "System.out.println")), "Print the required results so the checker can see behavior.")
+    add_check("No obvious C++ leakage in target language", target in {"c", "cpp"} or ("#include" not in code and "std::" not in code), "Rewrite C++ syntax using the target language's normal form.")
+
+    for name, passed in target_syntax_checks(target, code):
+        add_check(name, passed, f"Revise this using normal {lesson.get('target_language_name', target)} syntax.")
+    for name, passed in topic_construct_checks(base_kind, target, code):
+        add_check(name, passed, f"Use the Day {lesson['day']} topic directly: {lesson['title']}.")
+
+    if execution.get("available"):
+        accepted = execution.get("statusId") == 3 or execution.get("status") == "Accepted"
+        add_check("Runs successfully in Judge0", accepted, "Fix compile/runtime errors shown by Judge0 first.")
+    else:
+        message = execution.get("message", "Judge0 did not run this language.")
+        runner_optional = "not configured" in message and target not in JUDGE0_DEFAULT_LANGUAGE_IDS
+        add_check(
+            "Judge0 run optional for this language" if runner_optional else "Judge0 run available",
+            runner_optional,
+            message,
+        )
+
+    passed_count = sum(1 for check in checks if check["passed"])
+    score = round((passed_count / max(len(checks), 1)) * 10, 1)
+    fixes = [check["fix"] for check in checks if not check["passed"]][:6]
+    strengths = [check["name"] for check in checks if check["passed"]][:6]
+    return {
+        "score": score,
+        "checks": checks,
+        "strengths": strengths,
+        "fixes": fixes,
+        "programLabelsFound": labels,
+        "nonEmptyLines": len(lines),
+    }
+
+
+def format_code_check_report(report: dict) -> str:
+    lines = [
+        "Built-in code checker:",
+        f"- Score: {report.get('score', 0)}/10",
+        f"- Non-empty lines: {report.get('nonEmptyLines', 0)}",
+        f"- Homework labels found: {', '.join(report.get('programLabelsFound') or []) or 'none'}",
+        "- Passed checks:",
+    ]
+    lines.extend(f"  - {item}" for item in report.get("strengths", []) or ["None yet"])
+    lines.append("- Fix next:")
+    lines.extend(f"  - {item}" for item in report.get("fixes", []) or ["Keep improving clarity and tests."])
+    return "\n".join(lines)
+
+
+def parse_iso_datetime(value: str | None) -> datetime:
+    if not value:
+        return datetime.min.replace(tzinfo=timezone.utc)
+    try:
+        return datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return datetime.min.replace(tzinfo=timezone.utc)
+
+def user_learning_guidance(user: dict, profile_override: dict | None = None) -> dict:
+    profile = sanitize_profile(profile_override or user.get("profile", {}))
+    target = normalize_target_language(profile.get("targetLanguage", "racket"))
+    base = normalize_base_language(profile.get("baseLanguage") or "cpp")
+    active_day = int(profile.get("activeDay", 1))
+    lesson = get_lesson(active_day, target, base) or get_lesson(1, target, base)
+    target_name = lesson.get("target_language_name", "target language")
+
+    records = [
+        record for record in read_submissions()
+        if record.get("userId") == user["id"] and normalize_target_language(record.get("target", target)) == target
+    ]
+    records.sort(key=lambda item: parse_iso_datetime(item.get("createdAt")))
+    submitted_days = {int(record.get("day", 0)) for record in records if str(record.get("day", "")).isdigit()}
+    checker_reports = [record.get("codeCheck") or {} for record in records if record.get("codeCheck")]
+    scores = [float(report.get("score", 0)) for report in checker_reports if isinstance(report.get("score"), (int, float))]
+    average_score = round(sum(scores) / len(scores), 1) if scores else None
+
+    failed_counts: dict[str, int] = {}
+    missing_label_count = 0
+    short_submission_count = 0
+    runner_issue_count = 0
+    for report in checker_reports:
+        labels = report.get("programLabelsFound") or []
+        if len(labels) < 3:
+            missing_label_count += 1
+        if int(report.get("nonEmptyLines") or 0) < 6:
+            short_submission_count += 1
+        for check in report.get("checks", []):
+            if check.get("passed"):
+                continue
+            name = str(check.get("name", "Unclear issue"))
+            failed_counts[name] = failed_counts.get(name, 0) + 1
+            if "Judge0" in name or "Runs successfully" in name:
+                runner_issue_count += 1
+
+    common_failures = sorted(failed_counts.items(), key=lambda item: item[1], reverse=True)[:4]
+    checklist_key = f"{target}.{active_day}"
+    today_checks = profile.get("checklists", {}).get(checklist_key, [])
+    checklist_done = sum(1 for item in today_checks if item)
+    checklist_total = len(lesson.get("checklist", []))
+    missing_previous = [day for day in range(1, active_day) if day not in submitted_days][:5]
+
+    if not records:
+        summary = (
+            f"No homework has been submitted in the {target_name} track yet. "
+            f"Start with Day {active_day:02d}, write HW Q1, HW Q2, and HW Q3 as separate programs, then submit once."
+        )
+    else:
+        score_text = f" Average checker score: {average_score}/10." if average_score is not None else ""
+        summary = (
+            f"You have submitted {len(records)} homework record(s) across {len(submitted_days)} day(s) in {target_name}."
+            f"{score_text} Current checklist: {checklist_done}/{checklist_total}."
+        )
+
+    today = [
+        f"Day {active_day:02d}: {lesson['title']}. Study the bridge first, then code the three homework programs.",
+        "Before coding, copy the exact numbers from HW Q1, HW Q2, and HW Q3 into comments so your output matches the task.",
+        f"After coding, explain 3-6 important {target_name} lines with phrase-level notes: keyword/function, inputs, operator, result.",
+    ]
+    if missing_previous:
+        today.append(f"Missing earlier submissions: Day {', Day '.join(str(day).zfill(2) for day in missing_previous)}. Review them before relying on later topics.")
+
+    habits = []
+    if missing_label_count:
+        habits.append("You often miss HW labels. Put `HW Q1`, `HW Q2`, and `HW Q3` above each program.")
+    if short_submission_count:
+        habits.append("Some submissions are too short for strong review. Submit complete programs, not isolated lines.")
+    if runner_issue_count:
+        habits.append("Recent code runner checks found compile/runtime issues. Run the smallest program first, then add features.")
+    if not habits:
+        habits.append("Your current habit data is clean. Keep submitting labelled programs with visible output.")
+    if checklist_total and checklist_done < checklist_total:
+        habits.append("Checklist is not complete. Finish the unchecked items before moving your own study notes forward.")
+
+    focus_areas = [
+        f"{name}: failed {count} time(s)."
+        for name, count in common_failures
+    ] or [
+        f"Phrase-level {target_name} syntax: explain what each token does before memorizing the full line.",
+        "Clear output: every program should print labelled values and final result.",
+    ]
+
+    next_steps = [
+        "First 10 minutes: read line-by-line notes and rewrite one sample line in your own words.",
+        "Next 25 minutes: build HW Q1, HW Q2, and HW Q3 separately. Do not merge them into one vague program.",
+        "Final 10 minutes: run code, check output, then submit with any question you want AI to focus on.",
+    ]
+
+    return {
+        "summary": summary,
+        "today": today,
+        "habits": habits,
+        "focusAreas": focus_areas,
+        "nextSteps": next_steps,
+        "stats": {
+            "submissions": len(records),
+            "submittedDays": len(submitted_days),
+            "averageCheckerScore": average_score,
+            "activeDay": active_day,
+            "target": target,
+        },
+    }
+
+def build_feedback_prompt(
+    lesson: dict,
+    content: str,
+    student_note: str,
+    execution_summary: str = "",
+    code_check_summary: str = "",
+) -> str:
     syntax_bridge = lesson.get("syntax_bridge", {})
     docs = syntax_bridge.get("docs", lesson.get("official_docs", []))
     doc_lines = "\n".join(f"- {doc['title']}: {doc['url']}" for doc in docs)
@@ -579,6 +829,11 @@ Observed code runner result:
 {execution_summary or 'Code was not run.'}
 ```
 
+Built-in code checker result:
+```text
+{code_check_summary or 'No built-in checker report.'}
+```
+
 Review in English. Use this exact structure:
 1. Overall score out of 10.
 2. Correctness feedback.
@@ -586,8 +841,9 @@ Review in English. Use this exact structure:
 4. At least 5 concrete improvement points.
 5. A recommended revised version or key revised snippet.
 6. Which official documentation topic above the student should revisit.
-7. Pick 3-6 important lines from the student's code and explain them line by line: what the line does, what syntax point it uses, and the closest {base_language_name} comparison. If the submission has fewer than 3 non-empty lines, analyze every non-empty line instead of dismissing the work as too short. Keep the sentences short, plain, and accurate.
+7. Pick 3-6 important lines from the student's code and explain them line by line. For each selected line, explain important words or short phrases: keyword/function name, parentheses/braces/colon/semicolon, operators, values, variables, arguments, and result. Include the closest {base_language_name} comparison.
 8. A checklist the student must complete before tomorrow's lesson.
+Use the built-in code checker result as evidence. If the checker says HW labels, output, target syntax, or runner status failed, mention that directly.
 Important: short submissions still require concrete review. Explain what the existing lines do, what is correct, what is missing for a complete program, and how to improve them.
 Do not invent runtime results you did not observe. If tests need to be run, explain exactly how the student should run them.
 """
@@ -617,8 +873,14 @@ def openai_feedback(prompt: str) -> str:
     return response.output_text
 
 
-def ai_feedback(lesson: dict, content: str, student_note: str, execution_summary: str = "") -> str:
-    prompt = build_feedback_prompt(lesson, content, student_note, execution_summary)
+def ai_feedback(
+    lesson: dict,
+    content: str,
+    student_note: str,
+    execution_summary: str = "",
+    code_check_summary: str = "",
+) -> str:
+    prompt = build_feedback_prompt(lesson, content, student_note, execution_summary, code_check_summary)
     if os.getenv("GEMINI_API_KEY", "").strip():
         try:
             return gemini_feedback(prompt)
@@ -829,6 +1091,26 @@ def submissions():
     return jsonify({"submissions": [english_safe_submission(item) for item in reversed(records)]})
 
 
+@app.get("/api/guidance")
+@require_access
+@require_user
+def learning_guidance():
+    user = current_user()
+    profile = dict(user.get("profile", {}) or {})
+    if request.args.get("day"):
+        try:
+            profile["activeDay"] = int(request.args["day"])
+        except (TypeError, ValueError):
+            pass
+    if request.args.get("target"):
+        profile["targetLanguage"] = request.args["target"]
+    if request.args.get("base"):
+        profile["baseLanguage"] = request.args["base"]
+        profile["knownLanguages"] = [request.args["base"]] if request.args["base"] else []
+        profile["languageExperienceChosen"] = True
+    return jsonify({"guidance": user_learning_guidance(user, profile)})
+
+
 @app.post("/api/feedback")
 @require_access
 def create_feedback():
@@ -980,7 +1262,13 @@ def submit_assignment():
 
     execution = run_with_judge0(target, content, stdin)
     execution_summary = format_execution_result(execution)
-    feedback = execution_summary + "\n\n" + ai_feedback(lesson, content, student_note, execution_summary)
+    code_check = analyze_code_submission(lesson, content, execution)
+    code_check_summary = format_code_check_report(code_check)
+    feedback = "\n\n".join([
+        execution_summary,
+        code_check_summary,
+        ai_feedback(lesson, content, student_note, execution_summary, code_check_summary),
+    ])
     record = {
         "id": uuid.uuid4().hex,
         "userId": user["id"] if user else None,
@@ -996,6 +1284,7 @@ def submit_assignment():
         "contentPreview": content[:1000],
         "content": content,
         "execution": execution,
+        "codeCheck": code_check,
         "feedback": feedback,
         "createdAt": datetime.now(timezone.utc).isoformat(),
     }

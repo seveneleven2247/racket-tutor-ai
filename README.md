@@ -9,7 +9,10 @@ Features:
 - Browser-local checklist progress
 - Homework upload or pasted-code submission
 - Built-in Judge0 code execution for Python, C, C++, and Java submissions
+- Built-in static code checker that verifies labels, target-language syntax, visible output, topic usage, and runner status
 - AI homework review for correctness, style, C++ transfer habits, and next-step improvements
+- Day-by-day guidance based on each user's submissions, checker scores, checklist progress, and repeated habits
+- Phrase-level syntax breakdowns for sample-code lines
 - Local rule-based feedback when `OPENAI_API_KEY` is not configured
 
 ## Run Locally

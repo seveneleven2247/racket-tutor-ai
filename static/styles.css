@@ -890,6 +890,56 @@ form textarea:focus {
   font-size: 14px;
 }
 
+.phrase-breakdown {
+  margin-top: 10px;
+  border-radius: 8px;
+  padding: 10px;
+  background: #f6f8f4;
+}
+
+.phrase-breakdown[hidden] {
+  display: none;
+}
+
+.phrase-breakdown h4,
+.guidance-section h4 {
+  margin: 0 0 8px;
+  color: var(--green-dark);
+  font-size: 13px;
+}
+
+.phrase-breakdown ul {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.phrase-breakdown li {
+  display: grid;
+  grid-template-columns: minmax(70px, 0.8fr) minmax(0, 1.6fr);
+  gap: 8px;
+  align-items: start;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  background: white;
+}
+
+.phrase-breakdown code {
+  overflow-wrap: anywhere;
+  color: var(--green-dark);
+  font-weight: 900;
+}
+
+.phrase-breakdown span {
+  color: #35443b;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 code {
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
   font-size: 14px;
@@ -1015,6 +1065,25 @@ textarea {
   border-color: #e3b5ae;
   background: #fff4f1;
   color: var(--red);
+}
+
+.guidance-panel {
+  border-color: #c6d9d4;
+  background: #fbfdfb;
+}
+
+.guidance-panel .body-text {
+  margin-bottom: 12px;
+}
+
+.guidance-section {
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+  margin-top: 10px;
+}
+
+.guidance-section .rubric-list li {
+  margin: 6px 0;
 }
 
 .feedback-launcher {
@@ -1499,6 +1568,10 @@ textarea {
   }
 
   .line-note-body dl {
+    grid-template-columns: 1fr;
+  }
+
+  .phrase-breakdown ul {
     grid-template-columns: 1fr;
   }
 

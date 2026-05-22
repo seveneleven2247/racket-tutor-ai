@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+import re
 from dataclasses import asdict, dataclass
 
 
@@ -17,7 +18,7 @@ class Lesson:
     official_docs: list[dict[str, str]]
     racket_focus: list[str]
     code: str
-    line_notes: list[dict[str, str]]
+    line_notes: list[dict]
     practice: list[str]
     checklist: list[str]
     assignment: str
@@ -1326,9 +1327,9 @@ def _practice(day: int, title: str, kind: str, target: str, base: str = "cpp") -
     )
     prompts = _concrete_homework_prompts(kind, day)
     return [
-        f"HW Q1: Write Program 1 in day{day:02d}_q1.{ext}. {prompts[0]} {comparison_note}",
-        f"HW Q2: Write Program 2 in day{day:02d}_q2.{ext}. {prompts[1]} {comparison_note}",
-        f"HW Q3: Write Program 3 in day{day:02d}_q3.{ext}. {prompts[2]} Before the final output, include a brief prediction in a comment and then print the actual result. {comparison_note}",
+        f"HW Q1: Program 1 file day{day:02d}_q1.{ext}. Goal: solve only this prompt. Required task: {prompts[0]} Required output: print labelled inputs, the formula or decision, and the final result. Syntax requirement: use normal {language} syntax for today's topic. {comparison_note}",
+        f"HW Q2: Program 2 file day{day:02d}_q2.{ext}. Goal: write a different program from Q1. Required task: {prompts[1]} Required output: print enough labels that another student can see each value and result. Syntax requirement: use the Day {day:02d} concept directly. {comparison_note}",
+        f"HW Q3: Program 3 file day{day:02d}_q3.{ext}. Goal: add one extra explanation habit. Required task: {prompts[2]} Before the final output, include a brief prediction in a comment and then print the actual result. Required output: labelled prediction plus labelled actual result. {comparison_note}",
     ]
 
 
@@ -1383,7 +1384,8 @@ def _assignment(day: int, title: str, target: str, base: str = "cpp") -> str:
     return (
         f"Submit three different programs: day{day:02d}_q1.{ext}, day{day:02d}_q2.{ext}, and day{day:02d}_q3.{ext}. "
         "If you paste code instead of uploading files, paste all three programs in order with clear labels: HW Q1, HW Q2, HW Q3. "
-        f"Each program must solve its exact numbered homework prompt for '{title}', run successfully by itself, print the requested results, and {notes_request}."
+        f"Each program must solve its exact numbered homework prompt for '{title}', run successfully by itself, print labelled input values, calculation or decision steps, and the requested result. "
+        f"Add short line notes for important syntax and {notes_request}. If your program reads input, put the test input values in the Standard input box before submitting."
     )
 
 
@@ -1529,6 +1531,153 @@ BASE_COMPARISON_EXAMPLES = {
         "racket": "one expression",
     },
 }
+
+TOKEN_RE = re.compile(
+    r"System\.out\.println|std::cout|std::cin|#include|#lang|//|/\*|\*/|==|!=|<=|>=|&&|\|\||::|->|"
+    r'"(?:\\.|[^"])*"|\'(?:\\.|[^\'])*\'|<[^>\s]+>|[A-Za-z_][A-Za-z0-9_!?-]*|'
+    r"[0-9]+(?:\.[0-9]+)?|[(){}\[\],;:+\-*/%=<>.]"
+)
+
+RACKET_PHRASES = {
+    "#lang": "Reader directive. It must be first so Racket knows which language rules read this file.",
+    "racket": "Language name. It selects normal Racket libraries and syntax.",
+    "(": "Starts one Racket expression. In a call, the function name comes right after it.",
+    ")": "Ends the current Racket expression.",
+    "displayln": "Output function. It prints one value and then adds a newline.",
+    "display": "Output function. It prints without adding a newline.",
+    "define": "Creates a name for a value or function.",
+    "read-line": "Reads one line of text from standard input.",
+    "string-append": "Builds one string by joining smaller strings.",
+    "if": "Two-way choice: test, then-value, else-value.",
+    "cond": "Multi-branch choice. It is Racket's common else-if replacement.",
+    "case": "Exact-value branch, closest to a switch statement.",
+    "for": "Loop over a sequence.",
+    "for*": "Nested sequence loop.",
+    "let": "Creates local names; named let can behave like a loop.",
+    "struct": "Creates a data shape with fields.",
+    "class": "Creates a class value.",
+    "random": "Produces a random value.",
+    "+": "Prefix addition operator. `(+ a b)` means `a + b`.",
+    "-": "Prefix subtraction operator. `(- a b)` means `a - b`.",
+    "*": "Prefix multiplication operator. `(* a b)` means `a * b`.",
+    "/": "Prefix division operator. `(/ a b)` means `a / b`.",
+}
+
+PYTHON_PHRASES = {
+    "import": "Makes a module available.",
+    "def": "Starts a function definition.",
+    "class": "Starts a class definition.",
+    "if": "Starts a conditional block.",
+    "elif": "Else-if branch.",
+    "else": "Fallback branch.",
+    "for": "Loop keyword.",
+    "while": "Repeat while a condition is true.",
+    "in": "Connects a loop variable to a sequence.",
+    "return": "Sends a value back from a function.",
+    "print": "Built-in output function.",
+    "input": "Reads text from the user.",
+    "range": "Creates a countable sequence for loops.",
+    ":": "Starts an indented block.",
+    "=": "Binds or updates a name.",
+    "(": "Starts function arguments or grouping.",
+    ")": "Ends function arguments or grouping.",
+    "[": "Starts a list or index access.",
+    "]": "Ends a list or index access.",
+}
+
+C_LIKE_PHRASES = {
+    "#include": "Imports a header/library before compilation.",
+    "<stdio.h>": "C standard input/output header.",
+    "<iostream>": "C++ stream input/output header.",
+    "import": "Imports Java library support.",
+    "public": "Java access modifier.",
+    "static": "Belongs to the class, so main can run without an object.",
+    "void": "Function returns no value.",
+    "int": "Integer type.",
+    "double": "Decimal number type.",
+    "float": "Decimal number type.",
+    "char": "Character type.",
+    "String": "Java text type.",
+    "main": "Program entry point.",
+    "printf": "C output function.",
+    "scanf": "C input function.",
+    "System.out.println": "Java output call that prints and adds a newline.",
+    "std::cout": "C++ output stream.",
+    "std::cin": "C++ input stream.",
+    "return": "Ends a function and can send back a value.",
+    "if": "Starts a condition.",
+    "else": "Fallback or else-if branch.",
+    "for": "Counted or sequence loop.",
+    "while": "Repeats while condition is true.",
+    "do": "Starts a loop body that runs before the condition check.",
+    "switch": "Exact-value branching.",
+    "case": "One switch branch.",
+    "class": "Defines a type with fields and methods.",
+    "struct": "Defines a grouped data shape.",
+    "{": "Starts a block.",
+    "}": "Ends a block.",
+    ";": "Ends a statement.",
+    "=": "Initializes or assigns a value.",
+    "(": "Starts parameters, arguments, or a condition.",
+    ")": "Ends parameters, arguments, or a condition.",
+}
+
+def _is_number_token(token: str) -> bool:
+    return bool(re.fullmatch(r"[0-9]+(?:\.[0-9]+)?", token))
+
+def _phrase_meaning(token: str, target: str, index: int, tokens: list[str]) -> str:
+    if token.startswith('"') or token.startswith("'"):
+        return "String/text literal. The program uses these exact characters."
+    if _is_number_token(token):
+        return "Number literal. The program uses this exact numeric value."
+    if target == "racket":
+        if token in RACKET_PHRASES:
+            return RACKET_PHRASES[token]
+        if index == 1 and tokens[:1] == ["("]:
+            return "Function or special-form name. It decides what this expression does."
+        return "Name or value used by this Racket expression."
+    if target == "python":
+        if token in PYTHON_PHRASES:
+            return PYTHON_PHRASES[token]
+        if re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", token):
+            return "Name for a value, function, class, or module."
+        return "Python syntax symbol."
+    if token in C_LIKE_PHRASES:
+        return C_LIKE_PHRASES[token]
+    if token in {"+", "-", "*", "/", "%", "==", "!=", "<", ">", "<=", ">=", "&&", "||"}:
+        return "Operator. It calculates or compares values."
+    if re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", token):
+        return "Identifier: a variable, function, type, or class name."
+    return "Syntax symbol that helps structure this line."
+
+def _phrase_breakdown(line: str, target: str) -> list[dict[str, str]]:
+    stripped = line.strip()
+    if not stripped:
+        return []
+    if target == "racket" and stripped.startswith(";"):
+        return [
+            {"phrase": ";", "meaning": "Starts a Racket comment. Racket ignores the rest of the line."},
+            {"phrase": stripped[1:].strip() or "comment text", "meaning": "Human note for the reader, not code that runs."},
+        ]
+    if target == "python" and stripped.startswith("#"):
+        return [
+            {"phrase": "#", "meaning": "Starts a Python comment."},
+            {"phrase": stripped[1:].strip() or "comment text", "meaning": "Human note for the reader, not code that runs."},
+        ]
+    if target in {"c", "cpp", "java"} and stripped.startswith("//"):
+        return [
+            {"phrase": "//", "meaning": "Starts a line comment."},
+            {"phrase": stripped[2:].strip() or "comment text", "meaning": "Human note for the reader, not code that runs."},
+        ]
+
+    tokens = TOKEN_RE.findall(stripped)
+    phrases = [
+        {"phrase": token, "meaning": _phrase_meaning(token, target, index, tokens)}
+        for index, token in enumerate(tokens[:16])
+    ]
+    if len(tokens) > 16:
+        phrases.append({"phrase": "...", "meaning": "More tokens continue the same line pattern."})
+    return phrases
 
 
 def _base_comparison(note: dict[str, str], target: str, base: str) -> str:
@@ -1745,7 +1894,7 @@ def _line_note_for_c_like(line: str, language: str) -> dict[str, str]:
     return {"line": line, "plain": "A normal code line.", "syntax": "Read it with the surrounding braces and declarations.", "cpp": "Use the same scope-reading habit as C++."}
 
 
-def _line_notes(code: str, target: str, base: str = "cpp") -> list[dict[str, str]]:
+def _line_notes(code: str, target: str, base: str = "cpp") -> list[dict]:
     if target == "racket":
         notes = [_line_note_for_racket(line) for line in code.splitlines()]
     elif target == "python":
@@ -1753,7 +1902,14 @@ def _line_notes(code: str, target: str, base: str = "cpp") -> list[dict[str, str
     else:
         language = TARGET_LANGUAGES[target]["name"]
         notes = [_line_note_for_c_like(line, language) for line in code.splitlines()]
-    return [{**note, "cpp": _base_comparison(note, target, base)} for note in notes]
+    return [
+        {
+            **note,
+            "cpp": _base_comparison(note, target, base),
+            "phrases": _phrase_breakdown(note.get("line", ""), target),
+        }
+        for note in notes
+    ]
 
 
 def _lesson(day: int, target: str, base: str = "cpp") -> dict:
@@ -1790,6 +1946,8 @@ def _lesson(day: int, target: str, base: str = "cpp") -> dict:
     data["target_language_name"] = language
     data["base_language"] = base
     data["base_language_name"] = base_language
+    data["topic_kind"] = kind
+    data["base_kind"] = _base_kind(kind)
     return data
 
 
