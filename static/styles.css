@@ -1385,6 +1385,110 @@ textarea {
   display: none;
 }
 
+.admin-section {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 18px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.admin-section h2 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.admin-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.admin-stat-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+  background: #fbfdfb;
+}
+
+.admin-stat-card span,
+.admin-stat-card small {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.admin-stat-card strong {
+  display: block;
+  margin: 4px 0;
+  color: var(--ink);
+  font-size: 32px;
+  line-height: 1;
+}
+
+.user-table-wrap {
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.admin-user-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 920px;
+  background: white;
+}
+
+.admin-user-table th,
+.admin-user-table td {
+  border-bottom: 1px solid var(--line);
+  padding: 12px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.admin-user-table th {
+  background: #f4faf6;
+  color: var(--green-dark);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.admin-user-table td {
+  color: #314238;
+  font-size: 13px;
+}
+
+.admin-user-table td strong,
+.admin-user-table td span {
+  display: block;
+}
+
+.admin-user-table td span {
+  color: var(--muted);
+}
+
+.online-badge {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 4px 9px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.online-badge.online {
+  background: #edf8f1;
+  color: var(--green-dark);
+}
+
+.online-badge.offline {
+  background: var(--surface-2);
+  color: var(--muted);
+}
+
 .admin-toolbar {
   display: flex;
   align-items: end;
@@ -1393,8 +1497,7 @@ textarea {
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 16px;
-  background: var(--surface);
-  box-shadow: var(--shadow);
+  background: #fbfdfb;
 }
 
 .admin-toolbar label {
@@ -1544,6 +1647,10 @@ textarea {
   .feedback-admin-form {
     grid-template-columns: 1fr;
   }
+
+  .admin-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 840px) {
@@ -1584,6 +1691,10 @@ textarea {
   .feedback-launcher {
     right: 14px;
     bottom: 14px;
+  }
+
+  .admin-stat-grid {
+    grid-template-columns: 1fr;
   }
 
   .tour-tooltip {

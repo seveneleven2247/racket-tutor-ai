@@ -145,7 +145,7 @@ const tourSteps = [
   {
     selector: "#userPanel",
     title: "Your account tools",
-    text: "This area saves your progress. You can open this tutorial again, change your password, log out, and admins can check feedback.",
+    text: "This area saves your progress. You can open this tutorial again, change your password, log out, and admins can check users and feedback.",
     placement: "right",
   },
   {

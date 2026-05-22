@@ -13,6 +13,7 @@ Features:
 - AI homework review for correctness, style, C++ transfer habits, and next-step improvements
 - Day-by-day guidance based on each user's submissions, checker scores, checklist progress, and repeated habits
 - Phrase-level syntax breakdowns for sample-code lines
+- Admin dashboard for registered users, online activity, sessions, and site feedback
 - Local rule-based feedback when `OPENAI_API_KEY` is not configured
 
 ## Run Locally

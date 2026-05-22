@@ -11,6 +11,9 @@ const els = {
   statusFilter: document.querySelector("#feedbackStatusFilter"),
   feedbackCount: document.querySelector("#feedbackCount"),
   feedbackList: document.querySelector("#adminFeedbackList"),
+  userStats: document.querySelector("#userStats"),
+  userList: document.querySelector("#adminUserList"),
+  onlineWindow: document.querySelector("#onlineWindow"),
 };
 
 function escapeHtml(value) {
@@ -29,6 +32,56 @@ function statusBadge(status) {
 
 function formatDate(value) {
   return value ? new Date(value).toLocaleString() : "Unknown time";
+}
+
+function renderStat(label, value, note = "") {
+  return `
+    <article class="admin-stat-card">
+      <span>${escapeHtml(label)}</span>
+      <strong>${escapeHtml(value)}</strong>
+      ${note ? `<small>${escapeHtml(note)}</small>` : ""}
+    </article>
+  `;
+}
+
+function renderUsers(data) {
+  const stats = data.stats || {};
+  const users = data.users || [];
+  const onlineWindow = stats.onlineWindowMinutes || 15;
+  els.onlineWindow.textContent = `Online means active in the last ${onlineWindow} minutes.`;
+  els.userStats.innerHTML = [
+    renderStat("Registered", stats.totalRegistered ?? 0, "all accounts"),
+    renderStat("Online now", stats.onlineUsers ?? 0, "active users"),
+    renderStat("Active sessions", stats.activeSessions ?? 0, `${stats.totalSessions ?? 0} total sessions`),
+    renderStat("Admins", stats.adminUsers ?? 0, "full permissions"),
+  ].join("");
+
+  els.userList.innerHTML = "";
+  if (!users.length) {
+    const row = document.createElement("tr");
+    row.innerHTML = `<td colspan="7">No registered users yet.</td>`;
+    els.userList.appendChild(row);
+    return;
+  }
+
+  for (const user of users) {
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>
+        <strong>${escapeHtml(user.name)}</strong>
+        <span>${escapeHtml(user.role || "student")}</span>
+      </td>
+      <td>
+        <span class="online-badge ${user.online ? "online" : "offline"}">${user.online ? "Online" : "Offline"}</span>
+      </td>
+      <td>${escapeHtml(formatDate(user.createdAt))}</td>
+      <td>${escapeHtml(formatDate(user.lastActiveAt))}</td>
+      <td>Day ${String(user.activeDay || 1).padStart(2, "0")} · ${escapeHtml(user.baseLanguage || "none")} → ${escapeHtml(user.targetLanguage || "racket")}</td>
+      <td>${escapeHtml(user.activeSessionCount || 0)} active / ${escapeHtml(user.sessionCount || 0)} total</td>
+      <td>${escapeHtml(user.submissions || 0)}</td>
+    `;
+    els.userList.appendChild(row);
+  }
 }
 
 function renderFeedback(records) {
@@ -105,10 +158,16 @@ async function loadFeedback() {
     await loadMe();
     els.adminGate.hidden = true;
     els.adminContent.hidden = false;
-    const response = await fetch(`/api/admin/feedback${query}`, { headers: accessHeaders() });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error || "Feedback failed to load");
-    renderFeedback(data.feedback || []);
+    const [usersResponse, feedbackResponse] = await Promise.all([
+      fetch("/api/admin/users", { headers: accessHeaders() }),
+      fetch(`/api/admin/feedback${query}`, { headers: accessHeaders() }),
+    ]);
+    const usersData = await usersResponse.json();
+    const feedbackData = await feedbackResponse.json();
+    if (!usersResponse.ok) throw new Error(usersData.error || "User monitor failed to load");
+    if (!feedbackResponse.ok) throw new Error(feedbackData.error || "Feedback failed to load");
+    renderUsers(usersData);
+    renderFeedback(feedbackData.feedback || []);
   } catch (error) {
     els.adminContent.hidden = true;
     els.adminGate.hidden = false;
@@ -149,3 +208,4 @@ els.adminRefresh.addEventListener("click", loadFeedback);
 els.statusFilter.addEventListener("change", loadFeedback);
 
 loadFeedback();
+setInterval(loadFeedback, 60000);

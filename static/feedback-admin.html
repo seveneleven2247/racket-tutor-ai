@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>CodeBridge Feedback Tracker</title>
+    <title>CodeBridge Admin Dashboard</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=purple-11" />
     <link rel="shortcut icon" type="image/svg+xml" href="/favicon.svg?v=purple-11" />
     <link rel="stylesheet" href="/styles.css" />
@@ -15,7 +15,7 @@
           <div class="brand-mark">11</div>
           <div>
             <h1>CodeBridge</h1>
-            <p>Feedback Tracker</p>
+            <p>Admin Dashboard</p>
           </div>
         </div>
         <div class="admin-actions">
@@ -28,27 +28,62 @@
         <div class="onboarding-inner">
           <p class="eyebrow">Admin Required</p>
           <h2>Log in as Elven</h2>
-          <p>Only administrator accounts can view and update site feedback.</p>
+          <p>Only administrator accounts can view user activity and site feedback.</p>
           <p id="adminGateMessage" class="access-message"></p>
         </div>
       </section>
 
       <section id="adminContent" class="admin-content" hidden>
-        <div class="admin-toolbar">
-          <label>
-            <span>Status</span>
-            <select id="feedbackStatusFilter">
-              <option value="">All feedback</option>
-              <option value="open">Open</option>
-              <option value="reviewing">Reviewing</option>
-              <option value="fixed">Fixed</option>
-              <option value="closed">Closed</option>
-            </select>
-          </label>
-          <p id="feedbackCount" class="body-text"></p>
-        </div>
+        <section class="admin-section">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">User Monitor</p>
+              <h2>Registered Users</h2>
+            </div>
+            <p id="onlineWindow" class="body-text"></p>
+          </div>
+          <div id="userStats" class="admin-stat-grid"></div>
+          <div class="user-table-wrap">
+            <table class="admin-user-table">
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Status</th>
+                  <th>Registered</th>
+                  <th>Last active</th>
+                  <th>Course</th>
+                  <th>Sessions</th>
+                  <th>Submissions</th>
+                </tr>
+              </thead>
+              <tbody id="adminUserList"></tbody>
+            </table>
+          </div>
+        </section>
 
-        <div id="adminFeedbackList" class="admin-feedback-list"></div>
+        <section class="admin-section">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Feedback Tracker</p>
+              <h2>Site Feedback</h2>
+            </div>
+          </div>
+          <div class="admin-toolbar">
+            <label>
+              <span>Status</span>
+              <select id="feedbackStatusFilter">
+                <option value="">All feedback</option>
+                <option value="open">Open</option>
+                <option value="reviewing">Reviewing</option>
+                <option value="fixed">Fixed</option>
+                <option value="closed">Closed</option>
+              </select>
+            </label>
+            <p id="feedbackCount" class="body-text"></p>
+          </div>
+
+          <div id="adminFeedbackList" class="admin-feedback-list"></div>
+        </section>
       </section>
     </main>
 

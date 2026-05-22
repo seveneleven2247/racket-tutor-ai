@@ -26,6 +26,8 @@ SUBMISSIONS_FILE = DATA_DIR / "submissions.json"
 USERS_FILE = DATA_DIR / "users.json"
 FEEDBACK_FILE = DATA_DIR / "feedback.json"
 USER_SESSION_COOKIE = "code_tutor_session"
+ONLINE_WINDOW_SECONDS = 15 * 60
+SESSION_TOUCH_SECONDS = 30
 JUDGE0_DEFAULT_URL = "https://ce.judge0.com"
 JUDGE0_DEFAULT_LANGUAGE_IDS = {
     "c": 103,
@@ -219,6 +221,23 @@ def find_user_by_name(users: list[dict], name: str) -> dict | None:
     return next((user for user in users if user.get("name", "").casefold() == normalized), None)
 
 
+def utc_now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def touch_session_activity(store: dict, token: str, user: dict) -> None:
+    session = store.get("sessions", {}).get(token)
+    if not session:
+        return
+    now = datetime.now(timezone.utc)
+    last_seen = parse_iso_datetime(session.get("lastSeenAt") or session.get("createdAt"))
+    if (now - last_seen).total_seconds() < SESSION_TOUCH_SECONDS:
+        return
+    session["lastSeenAt"] = now.isoformat()
+    user["lastActiveAt"] = session["lastSeenAt"]
+    write_user_store(store)
+
+
 def current_user() -> dict | None:
     token = request.cookies.get(USER_SESSION_COOKIE, "")
     if not token:
@@ -227,7 +246,10 @@ def current_user() -> dict | None:
     session = store.get("sessions", {}).get(token)
     if not session:
         return None
-    return next((user for user in store["users"] if user["id"] == session.get("userId")), None)
+    user = next((item for item in store["users"] if item["id"] == session.get("userId")), None)
+    if user:
+        touch_session_activity(store, token, user)
+    return user
 
 
 def require_user(handler):
@@ -256,10 +278,13 @@ def require_admin(handler):
 
 def create_user_session_response(user: dict, store: dict):
     token = uuid.uuid4().hex
+    now = utc_now_iso()
     store["sessions"][token] = {
         "userId": user["id"],
-        "createdAt": datetime.now(timezone.utc).isoformat(),
+        "createdAt": now,
+        "lastSeenAt": now,
     }
+    user["lastActiveAt"] = now
     write_user_store(store)
     response = make_response(jsonify({"user": public_user(user), "profile": sanitize_profile(user.get("profile", {}))}))
     response.set_cookie(
@@ -930,6 +955,11 @@ def feedback_admin_page():
     return response
 
 
+@app.get("/admin-dashboard")
+def admin_dashboard_page():
+    return feedback_admin_page()
+
+
 @app.get("/health")
 def health():
     return jsonify({"status": "ok"})
@@ -1152,6 +1182,88 @@ def create_feedback():
     records.append(record)
     write_feedback_records(records)
     return jsonify({"feedback": record}), 201
+
+
+def admin_user_dashboard_data() -> dict:
+    store = read_user_store()
+    users = store.get("users", [])
+    user_ids = {user.get("id") for user in users}
+    sessions = store.get("sessions", {})
+    now = datetime.now(timezone.utc)
+    submissions = read_submissions()
+    submissions_by_user: dict[str, int] = {}
+    for record in submissions:
+        user_id = record.get("userId")
+        if user_id:
+            submissions_by_user[user_id] = submissions_by_user.get(user_id, 0) + 1
+
+    sessions_by_user: dict[str, list[dict]] = {}
+    active_sessions_by_user: dict[str, int] = {}
+    for token, session in sessions.items():
+        user_id = session.get("userId")
+        if not user_id or user_id not in user_ids:
+            continue
+        session_record = dict(session)
+        session_record["token"] = token
+        sessions_by_user.setdefault(user_id, []).append(session_record)
+        last_seen = parse_iso_datetime(session.get("lastSeenAt") or session.get("createdAt"))
+        if (now - last_seen).total_seconds() <= ONLINE_WINDOW_SECONDS:
+            active_sessions_by_user[user_id] = active_sessions_by_user.get(user_id, 0) + 1
+
+    user_rows = []
+    min_time = datetime.min.replace(tzinfo=timezone.utc)
+    for user in users:
+        profile = sanitize_profile(user.get("profile", {}))
+        user_sessions = sessions_by_user.get(user["id"], [])
+        session_times = [
+            parse_iso_datetime(session.get("lastSeenAt") or session.get("createdAt"))
+            for session in user_sessions
+        ]
+        stored_last_active = parse_iso_datetime(user.get("lastActiveAt") or user.get("createdAt"))
+        last_active = max([stored_last_active, *session_times]) if session_times else stored_last_active
+        active_session_count = active_sessions_by_user.get(user["id"], 0)
+        user_rows.append({
+            "id": user["id"],
+            "name": user.get("name", "Unknown"),
+            "isAdmin": is_admin_user(user),
+            "role": "admin" if is_admin_user(user) else "student",
+            "createdAt": user.get("createdAt"),
+            "lastActiveAt": last_active.isoformat() if last_active != min_time else None,
+            "online": active_session_count > 0,
+            "sessionCount": len(user_sessions),
+            "activeSessionCount": active_session_count,
+            "submissions": submissions_by_user.get(user["id"], 0),
+            "targetLanguage": profile.get("targetLanguage", "racket"),
+            "baseLanguage": profile.get("baseLanguage", "") or "none",
+            "activeDay": profile.get("activeDay", 1),
+        })
+
+    user_rows.sort(key=lambda item: (
+        not item["online"],
+        -(parse_iso_datetime(item.get("lastActiveAt")).timestamp()),
+        item["name"].casefold(),
+    ))
+    online_users = sum(1 for item in user_rows if item["online"])
+    active_sessions = sum(active_sessions_by_user.values())
+    valid_sessions = sum(len(items) for items in sessions_by_user.values())
+    return {
+        "stats": {
+            "totalRegistered": len(users),
+            "onlineUsers": online_users,
+            "activeSessions": active_sessions,
+            "totalSessions": valid_sessions,
+            "adminUsers": sum(1 for user in users if is_admin_user(user)),
+            "onlineWindowMinutes": ONLINE_WINDOW_SECONDS // 60,
+        },
+        "users": user_rows,
+    }
+
+
+@app.get("/api/admin/users")
+@require_access
+@require_admin
+def admin_users():
+    return jsonify(admin_user_dashboard_data())
 
 
 @app.get("/api/admin/feedback")
