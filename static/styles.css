@@ -813,6 +813,48 @@ form textarea:focus {
   color: var(--code-ink);
 }
 
+.example-io {
+  display: grid;
+  gap: 10px;
+  border-top: 1px solid var(--line);
+  padding: 12px;
+  background: #f6faf7;
+}
+
+.example-io[hidden],
+.example-io-block[hidden] {
+  display: none;
+}
+
+.example-io-block {
+  display: grid;
+  gap: 6px;
+}
+
+.example-io-block span {
+  color: var(--green-dark);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.example-io pre,
+.code-panel .example-io pre {
+  min-height: 0;
+  max-height: 220px;
+  overflow: auto;
+  margin: 0;
+  border-radius: 8px;
+  padding: 10px;
+  background: #22332b;
+  color: #ecf7ef;
+}
+
+.sample-output {
+  margin-top: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
 .line-notes-panel[hidden] {
   display: none;
 }

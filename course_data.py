@@ -218,6 +218,7 @@ SNIPPETS = {
 
 int main() {
     std::cout << "Hello, C++!" << std::endl;
+    std::cout << 42 << std::endl;
 }""",
         "racket": """#lang racket
 
@@ -1098,6 +1099,61 @@ def _cpp(kind: str) -> str:
     return SNIPPETS[_base_kind(kind)]["cpp"]
 
 
+def _example_io(kind: str, target: str) -> dict[str, str]:
+    base_kind = _base_kind(kind)
+    language = TARGET_LANGUAGES[target]["name"]
+    no_input = ""
+    examples = {
+        "output": {"input": no_input, "output": f"Hello, {language}!\n42"},
+        "input": {
+            "input": "Code\n16\n19.50\ntrue\nA\n88 91 84",
+            "output": "Name: Age integer: Price decimal: Member true/false: Initial character: Three integer scores:\nCode is 16 years old. Price: 19.5. Member: true. Initial: A. First score: 88",
+        },
+        "math": {"input": no_input, "output": "No console output yet.\nComputed values: subtotal = 80, tax = 10, total = 90, average = 45.0"},
+        "variable": {"input": no_input, "output": "No console output yet.\nStored values: count = 3, price = 9.99, label = book"},
+        "if_statement": {"input": no_input, "output": "pass"},
+        "else_if": {"input": no_input, "output": "grade = B"},
+        "error_check": {
+            "input": "Example call: average(total = 90, count = 0)",
+            "output": "Invalid count path runs.\nRacket/Python/Java/C++ raise an error; C returns -1.0 in this simplified sample.",
+        },
+        "while_loop": {"input": no_input, "output": "3\n2\n1"},
+        "do_while": {"input": "0", "output": "Body runs once, then stops because choice is 0."},
+        "random_number": {"input": no_input, "output": "Random output from 1 to 10.\nExample: 7"},
+        "for_loop": {"input": no_input, "output": "0\n1\n2\n3\n4"},
+        "nested_for": {"input": no_input, "output": "0 0\n0 1\n0 2\n1 0\n1 1\n1 2\n2 0\n2 1\n2 2"},
+        "function_intro": {"input": "Example call: square(5)", "output": "25"},
+        "create_function": {"input": "Example call: addTax(100)", "output": "113.0"},
+        "call_function": {"input": no_input, "output": "25"},
+        "arrays_intro": {"input": no_input, "output": "90"},
+        "array_kinds": {"input": no_input, "output": "No console output yet.\nFixed sequence: 1, 2, 3\nDynamic sequence starts as 1, 2, 3"},
+        "array_declare": {"input": no_input, "output": "No console output yet.\nvalues = 0, 1, 2, 3\nnames = Ada, Grace"},
+        "strings": {"input": no_input, "output": "Hi Ada"},
+        "char_arrays": {"input": no_input, "output": "code"},
+        "classes": {"input": no_input, "output": "Student object/record stores name and score."},
+        "switch_statement": {"input": no_input, "output": "label = start"},
+        "multi_arrays": {"input": no_input, "output": "6"},
+        "vectors": {"input": no_input, "output": "nums = 1, 2, 3"},
+        "objects_classes": {"input": no_input, "output": "95"},
+        "recursion": {"input": "Example call: fact(5)", "output": "120"},
+        "search_float": {"input": no_input, "output": "found = true"},
+        "combined_if": {"input": no_input, "output": "teen = true"},
+        "nested_if": {"input": no_input, "output": "role = admin"},
+        "for_arrays": {"input": no_input, "output": "total = 270"},
+        "nested_for_multi": {"input": no_input, "output": "total = 10"},
+        "while_validation": {"input": "-1\n105\n88", "output": "Invalid values are rejected.\nAccepted score = 88"},
+        "do_while_menu": {"input": "0", "output": "1) Play  0) Quit\nThen the loop stops."},
+    }
+    result = dict(examples.get(base_kind, {"input": no_input, "output": "Result depends on the values printed by this practice fragment."}))
+    if base_kind == "input":
+        if target == "c":
+            result["input"] = "Code\n16\n19.50\n1\nA\n88 91 84"
+            result["output"] = "Name: Age integer: Price decimal: Member 1/0: Initial character: Three integer scores:\nCode is 16 years old. Price: 19.50. Member: 1. Initial: A. First score: 88"
+        elif target == "racket":
+            result["output"] = "Name: Age integer: Price decimal: Member true/false: Initial character: Three integer scores separated by spaces:\nCode is 16 years old. Price: 19.5. Member: #t. Initial: A. First score: 88"
+    return result
+
+
 def _focus(title: str, kind: str, target: str, base: str = "cpp") -> list[str]:
     language = TARGET_LANGUAGES[target]["name"]
     base_language = TARGET_LANGUAGES[base]["name"]
@@ -1151,9 +1207,11 @@ def _syntax_bridge(title: str, kind: str, target: str, base: str = "cpp") -> dic
             "cpp": base_code,
             "base": base_code,
             "base_label": base_language,
+            "base_io": _example_io(kind, base),
             "racket": _code(kind, target),
             "target": _code(kind, target),
             "target_label": language,
+            "target_io": _example_io(kind, target),
             "translation_steps": translation_steps,
             "pitfalls": pitfalls,
             "drill": f"Type the {base_language} snippet, run it, then explain every non-blank line in plain English.",
@@ -1202,9 +1260,11 @@ def _syntax_bridge(title: str, kind: str, target: str, base: str = "cpp") -> dic
         "cpp": base_code,
         "base": base_code,
         "base_label": base_language,
+        "base_io": _example_io(kind, base),
         "racket": _code(kind, target),
         "target": _code(kind, target),
         "target_label": language,
+        "target_io": _example_io(kind, target),
         "translation_steps": translation_steps,
         "pitfalls": pitfalls,
         "drill": f"Rewrite the {base_language} snippet in {language}, then explain every non-blank line.",

@@ -71,8 +71,16 @@ const els = {
   bridgeAngle: document.querySelector("#bridgeAngle"),
   baseSyntaxLabel: document.querySelector("#baseSyntaxLabel"),
   cppSyntaxBlock: document.querySelector("#cppSyntaxBlock"),
+  baseExampleIo: document.querySelector("#baseExampleIo"),
+  baseExampleInputBlock: document.querySelector("#baseExampleInputBlock"),
+  baseExampleInput: document.querySelector("#baseExampleInput"),
+  baseExampleOutput: document.querySelector("#baseExampleOutput"),
   targetSyntaxLabel: document.querySelector("#targetSyntaxLabel"),
   targetSyntaxBlock: document.querySelector("#targetSyntaxBlock"),
+  targetExampleIo: document.querySelector("#targetExampleIo"),
+  targetExampleInputBlock: document.querySelector("#targetExampleInputBlock"),
+  targetExampleInput: document.querySelector("#targetExampleInput"),
+  targetExampleOutput: document.querySelector("#targetExampleOutput"),
   translationSteps: document.querySelector("#translationSteps"),
   pitfallList: document.querySelector("#pitfallList"),
   bridgeDrill: document.querySelector("#bridgeDrill"),
@@ -81,6 +89,10 @@ const els = {
   focusList: document.querySelector("#focusList"),
   codePanel: document.querySelector("#codePanel"),
   codeBlock: document.querySelector("#codeBlock"),
+  sampleExampleIo: document.querySelector("#sampleExampleIo"),
+  sampleExampleInputBlock: document.querySelector("#sampleExampleInputBlock"),
+  sampleExampleInput: document.querySelector("#sampleExampleInput"),
+  sampleExampleOutput: document.querySelector("#sampleExampleOutput"),
   lineNotesEyebrow: document.querySelector("#lineNotesEyebrow"),
   lineNotesPanel: document.querySelector("#lineNotesPanel"),
   lineNotesList: document.querySelector("#lineNotesList"),
@@ -649,6 +661,13 @@ function renderLesson() {
   els.explanation.textContent = lesson.explanation;
   els.codePanel.hidden = state.unlockedSampleCode?.day !== lesson.day || state.unlockedSampleCode?.target !== state.target;
   els.codeBlock.textContent = els.codePanel.hidden ? "" : state.unlockedSampleCode.code;
+  renderExampleIo(
+    els.sampleExampleIo,
+    els.sampleExampleInputBlock,
+    els.sampleExampleInput,
+    els.sampleExampleOutput,
+    els.codePanel.hidden ? null : lesson.syntax_bridge?.target_io,
+  );
   renderLineNotes(lesson);
   els.assignmentText.textContent = lesson.assignment;
 
@@ -683,6 +702,23 @@ function renderLesson() {
   renderProgress();
 }
 
+function renderExampleIo(wrapper, inputBlock, inputElement, outputElement, io) {
+  if (!wrapper || !outputElement) return;
+  const output = String(io?.output || "").trim();
+  const input = String(io?.input || "").trim();
+  wrapper.hidden = !output && !input;
+  if (wrapper.hidden) {
+    if (inputElement) inputElement.textContent = "";
+    outputElement.textContent = "";
+    return;
+  }
+  if (inputBlock && inputElement) {
+    inputBlock.hidden = !input;
+    inputElement.textContent = input;
+  }
+  outputElement.textContent = output || "No console output for this example.";
+}
+
 function renderSyntaxBridge(lesson) {
   const bridge = lesson.syntax_bridge;
   if (!bridge) return;
@@ -694,8 +730,10 @@ function renderSyntaxBridge(lesson) {
   els.bridgeAngle.textContent = bridge.today_angle;
   els.baseSyntaxLabel.textContent = `${baseName} Syntax`;
   els.cppSyntaxBlock.textContent = bridge.cpp;
+  renderExampleIo(els.baseExampleIo, els.baseExampleInputBlock, els.baseExampleInput, els.baseExampleOutput, bridge.base_io);
   els.targetSyntaxLabel.textContent = `${targetName} Syntax`;
   els.targetSyntaxBlock.textContent = bridge.target || bridge.racket;
+  renderExampleIo(els.targetExampleIo, els.targetExampleInputBlock, els.targetExampleInput, els.targetExampleOutput, bridge.target_io);
   els.bridgeDrill.textContent = bridge.drill;
 
   els.translationSteps.innerHTML = "";
