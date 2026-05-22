@@ -120,7 +120,7 @@ TOPICS = [
 
 KIND_SUMMARIES = {
     "output": "Start with visible program behavior. You print values first so every later topic has a quick feedback loop.",
-    "input": "Read a value from the user and store it in a name so the program can react to outside data.",
+    "input": "Read text first, then convert it when the program needs a number, boolean, character, decimal, or array/list.",
     "math": "Use arithmetic expressions for totals, averages, remainders, and grouped calculations.",
     "variable": "Bind a name to a value and learn which parts of the syntax are type, name, value, and initialization.",
     "if_statement": "Use one condition to choose whether a block or expression should run.",
@@ -170,7 +170,11 @@ RACKET_KIND_DETAILS = {
     "input": (
         "`display` prints a prompt without moving to a new line. `read-line` waits for the user to type text and press Enter. "
         "`(define name (read-line))` runs `read-line`, then binds the typed text to `name`. "
-        "In Racket, the outer parentheses show one complete expression, and nested parentheses show work that must happen first."
+        "For numbers, Racket usually reads text first and converts it with `string->number`: `(define age (string->number (read-line)))`. "
+        "For a boolean, compare the typed text: `(equal? answer \"true\")`. For a character, read a string and take the first character with `string-ref`. "
+        "For an array-like input, read one line, split it with `string-split`, then convert each piece with `map string->number`. "
+        "To output a sentence with variables, use `format`, for example `(format \"~a is ~a\" name age)`. "
+        "Watch out: `read-line` gives a string, `string->number` can return `#f` for bad input, and `string-ref` fails on an empty string."
     ),
     "math": (
         "Racket writes arithmetic in prefix form: `(+ subtotal tax)` means `subtotal + tax`. "
@@ -182,6 +186,31 @@ RACKET_KIND_DETAILS = {
     ),
 }
 
+
+INPUT_TYPE_DETAILS = {
+    "cpp": (
+        "C++ uses `std::cin >> variable` for simple input. The variable type controls how the text is interpreted: `int` reads an integer, "
+        "`double` reads a decimal, `bool` reads `true` or `false` when `std::boolalpha` is used, `char` reads one character, and `std::string` reads one word. "
+        "For array/vector input, read one element at a time, such as `scores[0]`, `scores[1]`, and `scores[2]`. "
+        "To output a sentence with variables, chain text and values with `<<`. Be careful that `std::cin >> name` stops at whitespace; use `std::getline` later when you need a full sentence."
+    ),
+    "python": (
+        "Python's `input()` always returns a string. Convert it when needed: `int(input(...))` for integers, `float(input(...))` for decimals, "
+        "`input(...).lower() == \"true\"` for a boolean, `input(...)[0]` for a character, and `[int(x) for x in input(...).split()]` for a list of numbers. "
+        "To output a sentence with variables, an f-string is usually clearest: `f\"{name} is {age}\"`. Be careful: invalid numeric text causes a conversion error, and `[0]` fails on an empty string."
+    ),
+    "c": (
+        "C uses `scanf` with format specifiers. `%d` reads an integer, `%lf` reads a double, `%c` reads one character, `%s` reads a word into a character array, "
+        "and arrays are read one element at a time with addresses like `&scores[0]`. C has no beginner-friendly built-in boolean input, so use `int member` with 1 for true and 0 for false. "
+        "To output a sentence with variables, use matching `printf` placeholders. Be careful: every `scanf` target except character arrays usually needs `&`, and `scanf(\" %c\", &initial)` uses a leading space to skip old whitespace."
+    ),
+    "java": (
+        "Java commonly uses `Scanner`. Use `nextInt()` for integers, `nextDouble()` for decimals, `nextBoolean()` for booleans, `next().charAt(0)` for one character, "
+        "`next()` for one word string, and `int[] scores` with separate `nextInt()` calls for array elements. "
+        "To output a sentence with variables, join text and values with `+` or use `System.out.printf`. Be careful mixing `nextLine()` with `nextInt()` later because leftover newline characters can be read accidentally."
+    ),
+    "racket": RACKET_KIND_DETAILS["input"],
+}
 
 SNIPPETS = {
     "output": {
@@ -211,22 +240,88 @@ int main(void) {
 }""",
     },
     "input": {
-        "cpp": """std::string name;
-std::cin >> name;
-std::cout << "Hi " << name << std::endl;""",
+        "cpp": """#include <iostream>
+#include <string>
+#include <vector>
+
+int main() {
+    std::string name;
+    int age;
+    double price;
+    bool member;
+    char initial;
+    std::vector<int> scores(3);
+
+    std::cout << "Name: ";
+    std::cin >> name;
+    std::cout << "Age integer: ";
+    std::cin >> age;
+    std::cout << "Price decimal: ";
+    std::cin >> price;
+    std::cout << "Member true/false: ";
+    std::cin >> std::boolalpha >> member;
+    std::cout << "Initial character: ";
+    std::cin >> initial;
+    std::cout << "Three integer scores: ";
+    std::cin >> scores[0] >> scores[1] >> scores[2];
+
+    std::cout << name << " is " << age << " years old. Price: "
+              << price << ". Member: " << std::boolalpha << member
+              << ". Initial: " << initial << ". First score: "
+              << scores[0] << std::endl;
+}""",
         "racket": """#lang racket
+(require racket/string)
 
 (display "Name: ")
 (define name (read-line))
-(displayln (string-append "Hi " name))""",
+(display "Age integer: ")
+(define age (string->number (read-line)))
+(display "Price decimal: ")
+(define price (string->number (read-line)))
+(display "Member true/false: ")
+(define member? (equal? (read-line) "true"))
+(display "Initial character: ")
+(define initial (string-ref (read-line) 0))
+(display "Three integer scores separated by spaces: ")
+(define scores (map string->number (string-split (read-line))))
+
+(displayln
+ (format "~a is ~a years old. Price: ~a. Member: ~a. Initial: ~a. First score: ~a"
+         name age price member? initial (first scores)))""",
         "python": """name = input("Name: ")
-print("Hi " + name)""",
+age = int(input("Age integer: "))
+price = float(input("Price decimal: "))
+member = input("Member true/false: ").lower() == "true"
+initial = input("Initial character: ")[0]
+scores = [int(piece) for piece in input("Three integer scores: ").split()]
+
+print(f"{name} is {age} years old. Price: {price}. Member: {member}. Initial: {initial}. First score: {scores[0]}")""",
         "c": """#include <stdio.h>
 
 int main(void) {
     char name[40];
+    int age;
+    double price;
+    int member;
+    char initial;
+    int scores[3];
+
+    printf("Name: ");
     scanf("%39s", name);
-    printf("Hi %s\\n", name);
+    printf("Age integer: ");
+    scanf("%d", &age);
+    printf("Price decimal: ");
+    scanf("%lf", &price);
+    printf("Member 1/0: ");
+    scanf("%d", &member);
+    printf("Initial character: ");
+    scanf(" %c", &initial);
+    printf("Three integer scores: ");
+    scanf("%d %d %d", &scores[0], &scores[1], &scores[2]);
+
+    printf("%s is %d years old. Price: %.2f. Member: %d. Initial: %c. First score: %d\\n",
+           name, age, price, member, initial, scores[0]);
     return 0;
 }""",
         "java": """import java.util.Scanner;
@@ -234,8 +329,25 @@ int main(void) {
 public class Day02 {
     public static void main(String[] args) {
         Scanner input = new Scanner(System.in);
-        String name = input.nextLine();
-        System.out.println("Hi " + name);
+        System.out.print("Name: ");
+        String name = input.next();
+        System.out.print("Age integer: ");
+        int age = input.nextInt();
+        System.out.print("Price decimal: ");
+        double price = input.nextDouble();
+        System.out.print("Member true/false: ");
+        boolean member = input.nextBoolean();
+        System.out.print("Initial character: ");
+        char initial = input.next().charAt(0);
+        int[] scores = new int[3];
+        System.out.print("Three integer scores: ");
+        scores[0] = input.nextInt();
+        scores[1] = input.nextInt();
+        scores[2] = input.nextInt();
+
+        System.out.println(name + " is " + age + " years old. Price: " + price
+            + ". Member: " + member + ". Initial: " + initial
+            + ". First score: " + scores[0]);
     }
 }""",
     },
@@ -1011,6 +1123,29 @@ def _syntax_bridge(title: str, kind: str, target: str, base: str = "cpp") -> dic
     base_code = _code(kind, base)
     base_kind = _base_kind(kind)
     if target == base:
+        translation_steps = [
+            f"Read the {base_language} example from top to bottom and identify the output, input, and processing lines.",
+            "Mark the syntax pieces: header, main function, declarations, statements, blocks, and semicolons.",
+            "Run the smallest version first, then change one value and predict the new result.",
+            f"Write one short note per important line so later languages have a clear {base_language} baseline.",
+        ]
+        pitfalls = [
+            "Do not skip main, headers, or semicolons until you can explain why they are there.",
+            "Do not memorize syntax alone; connect each line to a concrete program action.",
+            "Keep examples small enough that compiler errors point to one concept at a time.",
+        ]
+        if base_kind == "input":
+            translation_steps = [
+                f"Identify each input variable and its type in the {base_language} sample: string, integer, decimal, boolean, character, and array/list.",
+                "Mark where text input becomes a typed value. In some languages the variable type controls parsing; in others you call a conversion function.",
+                "Mark the final output sentence and point to every variable inserted into that sentence.",
+                "Run with the given test inputs, then change one input and predict the changed output.",
+            ]
+            pitfalls = [
+                "Do not assume all input is already a number. Many languages read text first or need a format/parser.",
+                "Do not mix full-line input and token input until you understand leftover newline behavior.",
+                "When outputting a sentence, convert or format values cleanly instead of building unreadable concatenation.",
+            ]
         return {
             "concept": f"{base_language} foundation: {title}.",
             "cpp": base_code,
@@ -1019,17 +1154,8 @@ def _syntax_bridge(title: str, kind: str, target: str, base: str = "cpp") -> dic
             "racket": _code(kind, target),
             "target": _code(kind, target),
             "target_label": language,
-            "translation_steps": [
-                f"Read the {base_language} example from top to bottom and identify the output, input, and processing lines.",
-                "Mark the syntax pieces: header, main function, declarations, statements, blocks, and semicolons.",
-                "Run the smallest version first, then change one value and predict the new result.",
-                f"Write one short note per important line so later languages have a clear {base_language} baseline.",
-            ],
-            "pitfalls": [
-                "Do not skip main, headers, or semicolons until you can explain why they are there.",
-                "Do not memorize syntax alone; connect each line to a concrete program action.",
-                "Keep examples small enough that compiler errors point to one concept at a time.",
-            ],
+            "translation_steps": translation_steps,
+            "pitfalls": pitfalls,
             "drill": f"Type the {base_language} snippet, run it, then explain every non-blank line in plain English.",
             "today_angle": f"Prerequisite {base_language} topic: {title}. Build the baseline before moving to another language.",
             "docs": _docs_for(target),
@@ -1057,6 +1183,19 @@ def _syntax_bridge(title: str, kind: str, target: str, base: str = "cpp") -> dic
             "Do not write `displayln(42)`. Racket calls use prefix parentheses: `(displayln 42)`.",
             "Do not delete `#lang racket`; most Racket files need it as the first line.",
             "Do not confuse `display` and `displayln`: `displayln` adds the newline for you.",
+        ]
+    elif base_kind == "input":
+        translation_steps = [
+            f"Start from the {base_language} input variable: name its data type before translating the syntax.",
+            f"Write the {language} input form for string, integer, decimal, boolean, character, and array/list values.",
+            "For number input, show exactly where conversion happens, such as a parser, format specifier, scanner method, or typed input stream.",
+            "For output, build one sentence that includes text plus every variable, then check spacing and formatting.",
+        ]
+        pitfalls = [
+            "Input from a keyboard starts as characters; do not use it in math until the language has parsed it as a number.",
+            "Boolean input spelling matters. Decide whether the test input is `true/false`, `1/0`, or another form.",
+            "Character input should handle empty input or old whitespace carefully.",
+            "Array/list input usually needs repeated reads or splitting one line into pieces.",
         ]
     return {
         "concept": f"{title}: translate the {base_language} pattern into {language}.",
@@ -1087,10 +1226,12 @@ def _explanation(title: str, kind: str, target: str, base: str = "cpp") -> str:
     base_language = TARGET_LANGUAGES[base]["name"]
     base_kind = _base_kind(kind)
     if target == base:
+        extra = f" {INPUT_TYPE_DETAILS[target]}" if base_kind == "input" else ""
         return (
             f"{_summary(kind)} This prerequisite track teaches the {base_language} version first. "
             "Focus on what each line does, where the syntax boundaries are, and how the compiler reads the program. "
             "Once this baseline is comfortable, the other language tracks can compare against it directly."
+            f"{extra}"
         )
     if target == "racket":
         detail = RACKET_KIND_DETAILS.get(
@@ -1106,7 +1247,8 @@ def _explanation(title: str, kind: str, target: str, base: str = "cpp") -> str:
     return (
         f"{_summary(kind)} In this lesson, read the {base_language} snippet first and name the exact idea. "
         f"Then study the {language} code line by line. Keep the explanation short: what the line does, "
-        f"what syntax it uses, and which {base_language} habit it matches or replaces."
+        f"what syntax it uses, and which {base_language} habit it matches or replaces. "
+        f"{INPUT_TYPE_DETAILS.get(target, '') if base_kind == 'input' else ''}"
     )
 
 
@@ -1146,9 +1288,9 @@ def _concrete_homework_prompts(kind: str, day: int) -> list[str]:
             f"Print a score report. Start with score {score}, add bonus {bonus}, calculate {score} + {bonus} = {final_score}, and print the final score on its own line.",
         ],
         "input": [
-            f"Ask the user for one integer. In your test run, enter {a}. Add {b}, calculate {a} + {b} = {a + b}, and print the result.",
-            f"Ask for price and quantity. In your test run, enter price {price} and quantity {quantity}. Calculate subtotal {price} * {quantity} = {subtotal} and print it.",
-            f"Ask for width and height. In your test run, enter {width} and {height}. Calculate area {width} * {height} = {area} and print `Area: {area}`.",
+            f"Ask the user for one integer age. Test input: {a}. Add {b}, calculate {a} + {b} = {a + b}, and print one sentence such as `Age plus {b} is {a + b}`.",
+            f"Ask for a string item, decimal price, integer quantity, and boolean member flag. Test input: item `notebook`, price {price}.50, quantity {quantity}, member true/1. Calculate subtotal {price}.50 * {quantity} and print one receipt sentence containing all four variables.",
+            f"Ask for one character initial and three integer scores as an array/list. Test input: initial `A`, scores {values[0]}, {values[1]}, {values[2]}. Calculate sum {values[0] + values[1] + values[2]} and print a sentence containing the character, the array/list values, and the sum.",
         ],
         "math": [
             f"Create variables subtotal = {subtotal}, discount = {discount}, and taxRate = {tax_rate}. Calculate afterDiscount = {subtotal} - {discount} = {after_discount}, tax = afterDiscount * {tax_rate}/100 = {tax}, and finalTotal = {final_total}. Print all three results.",
@@ -1533,7 +1675,7 @@ BASE_COMPARISON_EXAMPLES = {
 }
 
 TOKEN_RE = re.compile(
-    r"System\.out\.println|std::cout|std::cin|#include|#lang|//|/\*|\*/|==|!=|<=|>=|&&|\|\||::|->|"
+    r"System\.out\.println|std::boolalpha|std::vector|std::string|std::cout|std::cin|string->number|racket/string|#include|#lang|//|/\*|\*/|==|!=|<=|>=|&&|\|\||::|->|"
     r'"(?:\\.|[^"])*"|\'(?:\\.|[^\'])*\'|<[^>\s]+>|[A-Za-z_][A-Za-z0-9_!?-]*|'
     r"[0-9]+(?:\.[0-9]+)?|[(){}\[\],;:+\-*/%=<>.]"
 )
@@ -1547,6 +1689,15 @@ RACKET_PHRASES = {
     "display": "Output function. It prints without adding a newline.",
     "define": "Creates a name for a value or function.",
     "read-line": "Reads one line of text from standard input.",
+    "require": "Imports a Racket library.",
+    "racket/string": "Library that provides string helpers such as `string-split`.",
+    "string->number": "Converts typed text into a number, or returns `#f` if conversion fails.",
+    "string-ref": "Takes one character from a string by index.",
+    "string-split": "Splits one text line into smaller string pieces.",
+    "map": "Applies one function to every item in a list.",
+    "format": "Builds a string by inserting values into placeholders.",
+    "first": "Gets the first item from a list.",
+    "equal?": "Compares two values for equality.",
     "string-append": "Builds one string by joining smaller strings.",
     "if": "Two-way choice: test, then-value, else-value.",
     "cond": "Multi-branch choice. It is Racket's common else-if replacement.",
@@ -1577,6 +1728,10 @@ PYTHON_PHRASES = {
     "print": "Built-in output function.",
     "input": "Reads text from the user.",
     "range": "Creates a countable sequence for loops.",
+    "int": "Converts text to an integer, or names an integer idea in context.",
+    "float": "Converts text to a decimal number, or names a decimal idea in context.",
+    "lower": "Converts text to lowercase before comparing it.",
+    "split": "Splits a text line into pieces by whitespace.",
     ":": "Starts an indented block.",
     "=": "Binds or updates a name.",
     "(": "Starts function arguments or grouping.",
@@ -1604,7 +1759,17 @@ C_LIKE_PHRASES = {
     "System.out.println": "Java output call that prints and adds a newline.",
     "std::cout": "C++ output stream.",
     "std::cin": "C++ input stream.",
+    "std::string": "C++ text type.",
+    "std::vector": "C++ resizable array-like sequence.",
+    "std::boolalpha": "C++ I/O flag that reads or prints booleans as `true` and `false`.",
     "return": "Ends a function and can send back a value.",
+    "bool": "Boolean type. It stores true or false.",
+    "boolean": "Boolean type. It stores true or false.",
+    "next": "Scanner method that reads one word token.",
+    "nextInt": "Scanner method that reads an integer.",
+    "nextDouble": "Scanner method that reads a decimal number.",
+    "nextBoolean": "Scanner method that reads true or false.",
+    "charAt": "String method that gets one character by index.",
     "if": "Starts a condition.",
     "else": "Fallback or else-if branch.",
     "for": "Counted or sequence loop.",
