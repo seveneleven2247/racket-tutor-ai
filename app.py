@@ -295,15 +295,23 @@ def local_line_review(line: str, target_language: str) -> str:
         return "Blank line used for readability."
     if target_language == "racket":
         if stripped.startswith("#lang"):
-            return "Selects the Racket language for the file. This is normally the first line."
+            return "`#lang racket` selects the Racket language for this file. It is required at the top of a normal Racket file so the reader knows which grammar and libraries to use."
         if stripped.startswith(";"):
             return "Comment line. It explains code for a reader and does not run."
         if stripped.startswith("(define ("):
             return "Defines a function. The function name and parameters come after `define`."
         if stripped.startswith("(define "):
-            return "Binds a name to a value. This is the normal Racket way to create a named value."
-        if stripped.startswith("(display") or stripped.startswith("(printf"):
-            return "Produces output. The function name comes first, followed by the value to print."
+            if "(read-line)" in stripped:
+                return "Runs `(read-line)` to get user text, then binds that result to a name with `define`."
+            return "Binds a name to a value. Read `(define total (+ a b))` as: calculate `(+ a b)`, then name that result `total`."
+        if stripped == "(displayln 42)":
+            return "`(displayln 42)` calls `displayln` with the number `42`. `displayln` prints the value and adds a newline; parentheses are required because Racket calls look like `(function argument ...)`."
+        if stripped.startswith("(displayln"):
+            return "`displayln` produces output and moves to the next line. The first item after `(` is the function name; the rest is the value expression to print."
+        if stripped.startswith("(display"):
+            return "`display` produces output without adding a newline. It is useful for prompts before user input."
+        if stripped.startswith("(printf"):
+            return "`printf` prints formatted output. The format string controls where later values appear."
         if stripped.startswith("("):
             return "A function call or special form. Read the first item after `(` as the operation."
     if target_language == "python":

@@ -157,6 +157,31 @@ KIND_SUMMARIES = {
 DEFAULT_SUMMARY = "Combine earlier skills into a small program. Keep the code short, testable, and easy to explain line by line."
 
 
+RACKET_KIND_DETAILS = {
+    "output": (
+        "`displayln` is Racket's basic output function for beginner programs. "
+        "`display` means show a value, and `ln` means add a newline after it. "
+        "`(displayln 42)` means: call `displayln` with the numeric value `42`, print `42`, then move to the next line. "
+        "The parentheses are required because Racket uses prefix expression syntax: the first item after `(` is the function or operation, and the following items are arguments. "
+        "This replaces the C++ habit `std::cout << 42 << std::endl;`. "
+        "`#lang racket` is also required at the top of the file because it tells Racket which language rules to use when reading the file."
+    ),
+    "input": (
+        "`display` prints a prompt without moving to a new line. `read-line` waits for the user to type text and press Enter. "
+        "`(define name (read-line))` runs `read-line`, then binds the typed text to `name`. "
+        "In Racket, the outer parentheses show one complete expression, and nested parentheses show work that must happen first."
+    ),
+    "math": (
+        "Racket writes arithmetic in prefix form: `(+ subtotal tax)` means `subtotal + tax`. "
+        "The operator comes first, then the numbers or names. Parentheses are required because they mark the exact expression and its arguments."
+    ),
+    "variable": (
+        "`define` binds a name to a value. For a beginner, read `(define count 3)` as `const auto count = 3;` in C++. "
+        "Racket usually builds new values instead of repeatedly changing the same variable."
+    ),
+}
+
+
 SNIPPETS = {
     "output": {
         "cpp": """#include <iostream>
@@ -963,19 +988,27 @@ def _cpp(kind: str) -> str:
 def _focus(title: str, kind: str, target: str, base: str = "cpp") -> list[str]:
     language = TARGET_LANGUAGES[target]["name"]
     base_language = TARGET_LANGUAGES[base]["name"]
-    base = _base_kind(kind).replace("_", " ")
-    return [
+    base_kind = _base_kind(kind)
+    base = base_kind.replace("_", " ")
+    focus = [
         f"{language} syntax",
         f"{base_language} comparison: {base}",
         "line-by-line explanation",
         "small runnable example",
     ]
+    if target == "racket":
+        focus.insert(1, "Racket expression shape: (function argument ...)")
+        if base_kind == "output":
+            focus.insert(2, "`displayln` prints a value and then a newline")
+            focus.insert(3, "`#lang racket` selects the language for the file")
+    return focus
 
 
 def _syntax_bridge(title: str, kind: str, target: str, base: str = "cpp") -> dict:
     language = TARGET_LANGUAGES[target]["name"]
     base_language = TARGET_LANGUAGES[base]["name"]
     base_code = _code(kind, base)
+    base_kind = _base_kind(kind)
     if target == base:
         return {
             "concept": f"{base_language} foundation: {title}.",
@@ -1000,6 +1033,30 @@ def _syntax_bridge(title: str, kind: str, target: str, base: str = "cpp") -> dic
             "today_angle": f"Prerequisite {base_language} topic: {title}. Build the baseline before moving to another language.",
             "docs": _docs_for(target),
         }
+    translation_steps = [
+        f"First identify what the {base_language} code is doing, not just which symbols it uses.",
+        f"Write the same idea using normal {language} syntax and naming.",
+        "Run the smallest version, then change one value and predict the output.",
+        f"Add one short note per important line explaining the {base_language} comparison.",
+    ]
+    pitfalls = [
+        f"Do not copy {base_language} punctuation when the target language has a different block style.",
+        f"Use the standard {language} library or idiom instead of forcing a literal translation.",
+        "Keep input, calculation, and output separated when the example grows.",
+    ]
+    if target == "racket" and base_kind == "output":
+        translation_steps = [
+            f"Read `{BASE_COMPARISON_EXAMPLES['output'][base]}` as the familiar {base_language} way to print a value.",
+            "In Racket, use `(displayln value)`: `displayln` is the output function and `value` is what you want printed.",
+            "Read `(displayln 42)` aloud as: call `displayln` with argument `42`; print 42; add a newline.",
+            "`#lang racket` must stay at the top because it tells Racket how to read every expression in the file.",
+            "Do not add C++ semicolons. Racket expression boundaries come from parentheses and line structure.",
+        ]
+        pitfalls = [
+            "Do not write `displayln(42)`. Racket calls use prefix parentheses: `(displayln 42)`.",
+            "Do not delete `#lang racket`; most Racket files need it as the first line.",
+            "Do not confuse `display` and `displayln`: `displayln` adds the newline for you.",
+        ]
     return {
         "concept": f"{title}: translate the {base_language} pattern into {language}.",
         "cpp": base_code,
@@ -1008,17 +1065,8 @@ def _syntax_bridge(title: str, kind: str, target: str, base: str = "cpp") -> dic
         "racket": _code(kind, target),
         "target": _code(kind, target),
         "target_label": language,
-        "translation_steps": [
-            f"First identify what the {base_language} code is doing, not just which symbols it uses.",
-            f"Write the same idea using normal {language} syntax and naming.",
-            "Run the smallest version, then change one value and predict the output.",
-            f"Add one short note per important line explaining the {base_language} comparison.",
-        ],
-        "pitfalls": [
-            f"Do not copy {base_language} punctuation when the target language has a different block style.",
-            f"Use the standard {language} library or idiom instead of forcing a literal translation.",
-            "Keep input, calculation, and output separated when the example grows.",
-        ],
+        "translation_steps": translation_steps,
+        "pitfalls": pitfalls,
         "drill": f"Rewrite the {base_language} snippet in {language}, then explain every non-blank line.",
         "today_angle": f"Day topic: {title}. Start from {base_language}, then write the target-language version.",
         "docs": _docs_for(target),
@@ -1036,11 +1084,23 @@ def _goal(title: str, target: str, base: str = "cpp") -> str:
 def _explanation(title: str, kind: str, target: str, base: str = "cpp") -> str:
     language = TARGET_LANGUAGES[target]["name"]
     base_language = TARGET_LANGUAGES[base]["name"]
+    base_kind = _base_kind(kind)
     if target == base:
         return (
             f"{_summary(kind)} This prerequisite track teaches the {base_language} version first. "
             "Focus on what each line does, where the syntax boundaries are, and how the compiler reads the program. "
             "Once this baseline is comfortable, the other language tracks can compare against it directly."
+        )
+    if target == "racket":
+        detail = RACKET_KIND_DETAILS.get(
+            base_kind,
+            "Racket programs are built from expressions. In a parenthesized expression, the first item decides the action and the remaining items are inputs to that action. "
+            "Read each line by asking: what function or special form is first, what values are passed in, and what result or effect happens?"
+        )
+        return (
+            f"{_summary(kind)} Start from the {base_language} snippet, then read the Racket code as expressions instead of C++ statements. "
+            f"{detail} "
+            f"After that, compare each Racket line with the closest {base_language} line so the syntax feels connected, not memorized."
         )
     return (
         f"{_summary(kind)} In this lesson, read the {base_language} snippet first and name the exact idea. "
@@ -1541,13 +1601,63 @@ def _line_note_for_racket(line: str) -> dict[str, str]:
     if not stripped:
         return {"line": "", "plain": "Blank line for readability.", "syntax": "Racket ignores blank lines.", "cpp": "Like a blank line between C++ blocks."}
     if stripped.startswith("#lang"):
-        return {"line": line, "plain": "Selects the Racket language for this file.", "syntax": "#lang usually appears on the first line.", "cpp": "Closest to choosing a compiler language mode."}
+        return {
+            "line": line,
+            "plain": "Selects the Racket language for this file before any code runs.",
+            "syntax": "`#lang racket` is required at the top of a normal Racket file so the reader knows which grammar and libraries to use.",
+            "cpp": "Closest to choosing the .cpp compiler mode plus standard language rules before compiling.",
+        }
     if stripped.startswith(";"):
         return {"line": line, "plain": "A comment for the reader.", "syntax": "A semicolon starts a Racket line comment.", "cpp": "Like // in C++."}
+    if stripped == "(displayln 42)":
+        return {
+            "line": line,
+            "plain": "Prints the number 42, then moves to the next output line.",
+            "syntax": "`displayln` is the function. `42` is the argument. The parentheses are required because Racket writes calls as `(function argument ...)`.",
+            "cpp": "Closest to `std::cout << 42 << std::endl;`.",
+        }
+    if stripped.startswith("(displayln "):
+        return {
+            "line": line,
+            "plain": "Prints one value and adds a newline after it.",
+            "syntax": "`displayln` means display plus newline. The first item after `(` is the function; everything after it is the value expression to print.",
+            "cpp": "Closest to `std::cout << value << std::endl;`.",
+        }
+    if stripped.startswith("(display "):
+        return {
+            "line": line,
+            "plain": "Prints text without automatically moving to the next line.",
+            "syntax": "`display` is like `displayln`, but without the newline. It is useful for prompts before input.",
+            "cpp": "Closest to `std::cout << \"prompt\";` without `std::endl`.",
+        }
     if stripped.startswith("(define ("):
-        return {"line": line, "plain": "Defines a function.", "syntax": "The function name and parameters appear after define.", "cpp": "Similar to return_type name(args), but plain Racket has no parameter types here."}
+        return {
+            "line": line,
+            "plain": "Defines a reusable function.",
+            "syntax": "After `define`, the inner parentheses contain the function name first and then its parameters.",
+            "cpp": "Similar to `return_type name(args)`, but plain Racket has no parameter types here.",
+        }
     if stripped.startswith("(define "):
-        return {"line": line, "plain": "Binds a name to a value.", "syntax": "define names the value produced by the expression.", "cpp": "Closer to const auto name = value; than repeated assignment."}
+        if "(read-line)" in stripped:
+            return {
+                "line": line,
+                "plain": "Reads one line of user input and stores it in a name.",
+                "syntax": "`(read-line)` runs first because it is nested inside `define`; then `define` binds that result to the name.",
+                "cpp": "Closest to declaring a string and then using `std::cin` or `std::getline` to fill it.",
+            }
+        if any(operator in stripped for operator in ("(+ ", "(- ", "(* ", "(/ ")):
+            return {
+                "line": line,
+                "plain": "Binds a name to the result of a calculation.",
+                "syntax": "Racket math is prefix form: `(+ a b)` means `a + b`. The calculation expression produces the value that `define` names.",
+                "cpp": "Closest to `auto name = a + b;`, but the operator goes before the inputs in Racket.",
+            }
+        return {
+            "line": line,
+            "plain": "Binds a name to a value.",
+            "syntax": "`define` names the value produced by the expression. It is usually a binding, not a repeated assignment statement.",
+            "cpp": "Closer to `const auto name = value;` than repeated assignment.",
+        }
     if stripped.startswith("(if"):
         return {"line": line, "plain": "Starts a two-way choice.", "syntax": "Racket if has a test, then result, and else result.", "cpp": "Closest to condition ? a : b."}
     if stripped.startswith("(cond"):
