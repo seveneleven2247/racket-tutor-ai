@@ -34,8 +34,10 @@ JUDGE0_DEFAULT_LANGUAGE_IDS = {
     "cpp": 105,
     "java": 91,
     "python": 109,
+    "r": 99,
 }
 ALLOWED_EXTENSIONS = {
+    "r",
     "rkt",
     "rktl",
     "txt",
@@ -88,6 +90,12 @@ def judge0_language_ids() -> dict[str, int]:
             language_ids["racket"] = int(racket_id)
         except ValueError:
             app.logger.warning("Invalid JUDGE0_RACKET_LANGUAGE_ID value: %s", racket_id)
+    r_id = os.getenv("JUDGE0_R_LANGUAGE_ID", "").strip()
+    if r_id:
+        try:
+            language_ids["r"] = int(r_id)
+        except ValueError:
+            app.logger.warning("Invalid JUDGE0_R_LANGUAGE_ID value: %s", r_id)
     return language_ids
 
 
@@ -300,7 +308,7 @@ def create_user_session_response(user: dict, store: dict):
 
 def sanitize_profile(profile: dict | None) -> dict:
     profile = profile or {}
-    allowed_languages = {"cpp", "racket", "python", "java", "c"}
+    allowed_languages = {"cpp", "racket", "python", "java", "c", "r"}
     known = [item for item in profile.get("knownLanguages", []) if item in allowed_languages]
     raw_base = str(profile.get("baseLanguage") or "").strip().lower()
     language_experience_chosen = bool(profile.get("languageExperienceChosen"))
@@ -399,6 +407,21 @@ def local_line_review(line: str, target_language: str) -> str:
             return "Prints output to the console."
         if "=" in stripped:
             return "Creates or updates a name. Python does not require a declared type here."
+    if target_language == "r":
+        if stripped.startswith("#"):
+            return "Comment line. R ignores it when running the program."
+        if "function(" in stripped:
+            return "Defines a function. In R, functions are values assigned to names, often with `<-`."
+        if stripped.startswith(("if ", "else if", "else")):
+            return "Controls a branch. R uses parentheses for the condition and braces for the body."
+        if stripped.startswith(("for ", "while ", "repeat")):
+            return "Starts a loop. `repeat` runs until a `break` statement stops it."
+        if "cat(" in stripped or "print(" in stripped:
+            return "Prints output to the console. `cat` is usually clearer for labelled homework output."
+        if "readline(" in stripped:
+            return "Reads user input as text. Convert it with functions such as `as.integer` or `as.numeric` before math."
+        if "<-" in stripped:
+            return "Creates or updates a name. R commonly uses `<-` for assignment."
     if target_language in {"c", "cpp", "java"}:
         if stripped.startswith(("//", "/*", "*")):
             return "Comment line. It documents the program and does not execute."
@@ -445,6 +468,8 @@ def local_feedback(lesson: dict, content: str) -> str:
         notes.append("For early C++ foundation lessons, include a small `main` function so the program can run from the command line.")
     if target_language == "java" and "class " not in code and "record " not in code:
         notes.append("For Java, place the code inside a class or record so it matches normal Java structure.")
+    if target_language == "r" and not any(token in code for token in ("<-", "cat(", "print(", "function(")):
+        notes.append("For R, use normal R syntax such as `<-` assignments, `cat(...)` output, or `function(...)` definitions.")
     if target_language not in {"c", "cpp"} and ("#include" in code or "std::" in code):
         notes.append("The submission still contains C++ syntax. Rewrite that part using the target language's normal idioms.")
     if len(lines) < 8:
@@ -478,7 +503,7 @@ def run_with_judge0(target: str, source_code: str, stdin: str = "") -> dict:
         return {
             "available": False,
             "status": "not_supported",
-            "message": f"Judge0 is not configured for {target}. Public Judge0 CE currently covers Python, C, C++, and Java in this app.",
+            "message": f"Judge0 is not configured for {target}. Public Judge0 CE currently covers Python, C, C++, Java, and R in this app.",
         }
     if len(source_code.encode("utf-8")) > 64 * 1024:
         return {
@@ -583,6 +608,11 @@ def target_syntax_checks(target: str, code: str) -> list[tuple[str, bool]]:
             ("Java `main` entry point for runnable samples", "main(" in code),
             ("Java output with `System.out.println(...)`", "System.out.println" in code),
         ],
+        "r": [
+            ("R assignment with `<-` or clear function definitions", "<-" in code or "function(" in code),
+            ("R output with `cat(...)` or `print(...)`", "cat(" in code or "print(" in code),
+            ("R avoids C++ headers and `std::` syntax", "#include" not in code and "std::" not in code),
+        ],
     }
     return checks.get(target, [])
 
@@ -590,36 +620,36 @@ def target_syntax_checks(target: str, code: str) -> list[tuple[str, bool]]:
 def topic_construct_checks(base_kind: str, target: str, code: str) -> list[tuple[str, bool]]:
     lower = code.lower()
     checks = {
-        "output": [("prints visible output", any(token in code for token in ("display", "print(", "printf", "cout", "System.out.println")))],
-        "input": [("reads or simulates input", any(token in code for token in ("read-line", "input(", "scanf", "cin", "Scanner", "read ")))],
+        "output": [("prints visible output", any(token in code for token in ("display", "print(", "printf", "cout", "System.out.println", "cat(")))],
+        "input": [("reads or simulates input", any(token in code for token in ("read-line", "input(", "scanf", "cin", "Scanner", "read ", "readline(", "scan(")))],
         "math": [("uses arithmetic calculation", any(token in code for token in ("+", "-", "*", "/", "%")))],
-        "variable": [("creates named values", bool(re.search(r"(define\s+|=)", code)))],
+        "variable": [("creates named values", bool(re.search(r"(define\s+|=|<-)", code)))],
         "if_statement": [("uses a conditional branch", "if" in lower)],
         "else_if": [("uses multi-branch logic", any(token in lower for token in ("else", "elif", "cond", "case", "switch")))],
         "error_check": [("checks invalid values before calculating", any(token in lower for token in ("if", "error", "invalid", "cannot")))],
-        "while_loop": [("uses while-style repetition", any(token in lower for token in ("while", "let loop", "loop")))],
-        "do_while": [("runs a menu or body at least once", any(token in lower for token in ("do", "while", "menu", "choice", "loop")))],
-        "random_number": [("uses or simulates randomness", any(token in lower for token in ("random", "rand", "rng", "dice")))],
+        "while_loop": [("uses while-style repetition", any(token in lower for token in ("while", "let loop", "loop", "repeat")))],
+        "do_while": [("runs a menu or body at least once", any(token in lower for token in ("do", "while", "menu", "choice", "loop", "repeat", "break")))],
+        "random_number": [("uses or simulates randomness", any(token in lower for token in ("random", "rand", "rng", "dice", "sample")))],
         "for_loop": [("uses counted or sequence repetition", any(token in lower for token in ("for", "range", "in-range")))],
         "nested_for": [("uses nested repetition", len(re.findall(r"\b(for|for\*|while)\b", lower)) >= 2 or "for*" in lower)],
         "function_intro": [("uses or explains a reusable function/helper", any(token in lower for token in ("def ", "define (", "function", "return", "helper")))],
-        "create_function": [("defines a function", any(token in code for token in ("define (", "def ", "function ", "static ", "public static")))],
+        "create_function": [("defines a function", any(token in code for token in ("define (", "def ", "function ", "function(", "static ", "public static")))],
         "call_function": [("calls a function and uses returned value", bool(re.search(r"\w+\s*\(", code)) or bool(re.search(r"\(\w+[!?-]?\s+", code)))],
-        "arrays_intro": [("uses a collection/list/array", any(token in lower for token in ("list", "vector", "array", "[", "{")))],
-        "array_kinds": [("compares or uses collection types", any(token in lower for token in ("list", "vector", "array", "collection")))],
-        "array_declare": [("declares and initializes a collection", any(token in lower for token in ("list", "vector", "array", "[", "{")))],
-        "strings": [("uses string/text operations", any(token in lower for token in ("string", "str", "\"", "append", "length")))],
-        "char_arrays": [("works with characters", any(token in lower for token in ("char", "character", "string-ref", "chars")))],
-        "classes": [("defines a data type/class/struct", any(token in lower for token in ("class", "struct", "record")))],
+        "arrays_intro": [("uses a collection/list/array", any(token in lower for token in ("list", "vector", "array", "[", "{", "c(")))],
+        "array_kinds": [("compares or uses collection types", any(token in lower for token in ("list", "vector", "array", "collection", "c(")))],
+        "array_declare": [("declares and initializes a collection", any(token in lower for token in ("list", "vector", "array", "[", "{", "c(")))],
+        "strings": [("uses string/text operations", any(token in lower for token in ("string", "str", "\"", "append", "length", "paste", "substr")))],
+        "char_arrays": [("works with characters", any(token in lower for token in ("char", "character", "string-ref", "chars", "strsplit", "substr")))],
+        "classes": [("defines a data type/class/struct", any(token in lower for token in ("class", "struct", "record", "list(")))],
         "switch_statement": [("uses exact-case branching", any(token in lower for token in ("switch", "case", "cond")))],
         "multi_arrays": [("uses nested collections or grid logic", any(token in lower for token in ("grid", "row", "column", "matrix", "list", "vector")))],
-        "vectors": [("uses a vector/list-style sequence", any(token in lower for token in ("vector", "list", "array", "append", "push")))],
-        "objects_classes": [("creates object/record values", any(token in lower for token in ("new ", "object", "struct", "class", "record")))],
+        "vectors": [("uses a vector/list-style sequence", any(token in lower for token in ("vector", "list", "array", "append", "push", "c(")))],
+        "objects_classes": [("creates object/record values", any(token in lower for token in ("new ", "object", "struct", "class", "record", "list(")))],
         "recursion": [("uses a function that calls itself", (bool(re.search(r"(define\s+\((\w+)|def\s+(\w+)|\b(\w+)\s*\()", code)) and "return" in lower) or "recursive" in lower)],
         "search_float": [("searches data or uses decimals", any(token in lower for token in ("find", "search", "index", "float", "double", ".")))],
         "combined_if": [("combines conditions", any(token in lower for token in ("&&", "||", " and ", " or ", "and", "or")))],
         "nested_if": [("uses nested or staged decisions", lower.count("if") >= 2 or "cond" in lower)],
-        "for_arrays": [("loops through a collection", any(token in lower for token in ("for", "map", "for/list", "foreach", "for-each")) and any(token in lower for token in ("list", "vector", "array", "[")))],
+        "for_arrays": [("loops through a collection", any(token in lower for token in ("for", "map", "for/list", "foreach", "for-each")) and any(token in lower for token in ("list", "vector", "array", "[", "c(")))],
         "nested_for_multi": [("uses nested loops for rows and columns", len(re.findall(r"\b(for|for\*|while)\b", lower)) >= 2 or ("row" in lower and "col" in lower))],
         "while_validation": [("repeats until input is valid", any(token in lower for token in ("while", "loop", "valid", "invalid")))],
         "do_while_menu": [("uses menu-style repeated choices", any(token in lower for token in ("menu", "choice", "quit", "while", "do")))],
@@ -641,7 +671,7 @@ def analyze_code_submission(lesson: dict, content: str, execution: dict) -> dict
     add_check("Non-empty submission", bool(code), "Upload a file or paste code.")
     add_check("Includes all three homework labels", len(labels) == 3, "Paste or label all three programs as HW Q1, HW Q2, and HW Q3.")
     add_check("Enough code for review", len(lines) >= 6, "Add complete programs, not only one or two lines.")
-    add_check("Has at least one output line", any(token in code for token in ("display", "print(", "printf", "cout", "System.out.println")), "Print the required results so the checker can see behavior.")
+    add_check("Has at least one output line", any(token in code for token in ("display", "print(", "printf", "cout", "System.out.println", "cat(")), "Print the required results so the checker can see behavior.")
     add_check("No obvious C++ leakage in target language", target in {"c", "cpp"} or ("#include" not in code and "std::" not in code), "Rewrite C++ syntax using the target language's normal form.")
 
     for name, passed in target_syntax_checks(target, code):

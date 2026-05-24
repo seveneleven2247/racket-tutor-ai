@@ -31,6 +31,7 @@ TARGET_LANGUAGES = {
     "python": {"id": "python", "name": "Python", "file_ext": "py", "runner": "python3 day01.py"},
     "c": {"id": "c", "name": "C", "file_ext": "c", "runner": "cc day01.c -o day01 && ./day01"},
     "java": {"id": "java", "name": "Java", "file_ext": "java", "runner": "javac Day01.java && java Day01"},
+    "r": {"id": "r", "name": "R", "file_ext": "R", "runner": "Rscript day01.R"},
 }
 
 
@@ -54,6 +55,10 @@ DOCS = {
     "java": [
         {"title": "Dev.java Learn", "url": "https://dev.java/learn/"},
         {"title": "Java API Documentation", "url": "https://docs.oracle.com/en/java/javase/"},
+    ],
+    "r": [
+        {"title": "R Manuals", "url": "https://cran.r-project.org/manuals.html"},
+        {"title": "An Introduction to R", "url": "https://cran.r-project.org/doc/manuals/r-release/R-intro.html"},
     ],
 }
 
@@ -209,6 +214,11 @@ INPUT_TYPE_DETAILS = {
         "`next()` for one word string, and `int[] scores` with separate `nextInt()` calls for array elements. "
         "To output a sentence with variables, join text and values with `+` or use `System.out.printf`. Be careful mixing `nextLine()` with `nextInt()` later because leftover newline characters can be read accidentally."
     ),
+    "r": (
+        "R commonly reads beginner input with `readline()`, which returns text. Convert text with `as.integer(...)` for whole numbers, `as.numeric(...)` for decimals, "
+        "`tolower(...) == \"true\"` for booleans, `substr(text, 1, 1)` for one character, and `scan(text = readline(), what = integer(), quiet = TRUE)` for a vector of integers. "
+        "To output a sentence with variables, use `cat(sprintf(...))` or `paste(...)`. Be careful: R vectors are 1-indexed, so the first item is `scores[1]`, not `scores[0]`."
+    ),
     "racket": RACKET_KIND_DETAILS["input"],
 }
 
@@ -239,6 +249,8 @@ int main(void) {
         System.out.println(42);
     }
 }""",
+        "r": """cat("Hello, R!\\n")
+cat(42, "\\n")""",
     },
     "input": {
         "cpp": """#include <iostream>
@@ -351,6 +363,15 @@ public class Day02 {
             + ". First score: " + scores[0]);
     }
 }""",
+        "r": """name <- readline("Name: ")
+age <- as.integer(readline("Age integer: "))
+price <- as.numeric(readline("Price decimal: "))
+member <- tolower(readline("Member true/false: ")) == "true"
+initial <- substr(readline("Initial character: "), 1, 1)
+scores <- scan(text = readline("Three integer scores: "), what = integer(), quiet = TRUE)
+
+cat(sprintf("%s is %d years old. Price: %.2f. Member: %s. Initial: %s. First score: %d\\n",
+            name, age, price, member, initial, scores[1]))""",
     },
     "math": {
         "cpp": """int subtotal = 80;
@@ -374,6 +395,10 @@ double average = total / 2.0;""",
 int tax = 10;
 double total = subtotal + tax;
 double average = total / 2.0;""",
+        "r": """subtotal <- 80
+tax <- 10
+total <- subtotal + tax
+average <- total / 2.0""",
     },
     "variable": {
         "cpp": """int count = 3;
@@ -393,6 +418,9 @@ char label[] = "book";""",
         "java": """int count = 3;
 double price = 9.99;
 String label = "book";""",
+        "r": """count <- 3
+price <- 9.99
+label <- "book" """,
     },
     "if_statement": {
         "cpp": """if (score >= 60) {
@@ -414,6 +442,10 @@ if (score >= 60) {
         "java": """int score = 72;
 if (score >= 60) {
     System.out.println("pass");
+}""",
+        "r": """score <- 72
+if (score >= 60) {
+    cat("pass\\n")
 }""",
     },
     "else_if": {
@@ -447,6 +479,15 @@ String grade;
 if (score >= 90) grade = "A";
 else if (score >= 80) grade = "B";
 else grade = "Practice";""",
+        "r": """score <- 84
+if (score >= 90) {
+    grade <- "A"
+} else if (score >= 80) {
+    grade <- "B"
+} else {
+    grade <- "Practice"
+}
+cat(grade, "\\n")""",
     },
     "error_check": {
         "cpp": """if (count <= 0) {
@@ -473,6 +514,12 @@ else grade = "Practice";""",
         throw new IllegalArgumentException("count must be positive");
     }
     return total / count;
+}""",
+        "r": """average <- function(total, count) {
+    if (count <= 0) {
+        stop("count must be positive")
+    }
+    total / count
 }""",
     },
     "while_loop": {
@@ -501,6 +548,11 @@ while (n > 0) {
     System.out.println(n);
     n--;
 }""",
+        "r": """n <- 3
+while (n > 0) {
+    cat(n, "\\n")
+    n <- n - 1
+}""",
     },
     "do_while": {
         "cpp": """int choice;
@@ -526,6 +578,12 @@ do {
 do {
     choice = input.nextInt();
 } while (choice != 0);""",
+        "r": """repeat {
+    choice <- 0
+    if (choice == 0) {
+        break
+    }
+}""",
     },
     "random_number": {
         "cpp": """int number = rand() % 10 + 1;""",
@@ -544,6 +602,8 @@ int number = rand() % 10 + 1;""",
 
 Random random = new Random();
 int number = random.nextInt(10) + 1;""",
+        "r": """number <- sample(1:10, 1)
+cat(number, "\\n")""",
     },
     "for_loop": {
         "cpp": """for (int i = 0; i < 5; i++) {
@@ -560,6 +620,9 @@ int number = random.nextInt(10) + 1;""",
 }""",
         "java": """for (int i = 0; i < 5; i++) {
     System.out.println(i);
+}""",
+        "r": """for (i in 0:4) {
+    cat(i, "\\n")
 }""",
     },
     "nested_for": {
@@ -586,6 +649,11 @@ int number = random.nextInt(10) + 1;""",
         System.out.println(row + "," + col);
     }
 }""",
+        "r": """for (row in 0:2) {
+    for (col in 0:2) {
+        cat(row, ",", col, "\\n", sep = "")
+    }
+}""",
     },
     "function_intro": {
         "cpp": """int square(int x) {
@@ -603,6 +671,9 @@ int number = random.nextInt(10) + 1;""",
         "java": """static int square(int x) {
     return x * x;
 }""",
+        "r": """square <- function(x) {
+    x * x
+}""",
     },
     "create_function": {
         "cpp": """double addTax(double amount) {
@@ -619,6 +690,9 @@ int number = random.nextInt(10) + 1;""",
 }""",
         "java": """static double addTax(double amount) {
     return amount * 1.13;
+}""",
+        "r": """add_tax <- function(amount) {
+    amount * 1.13
 }""",
     },
     "call_function": {
@@ -638,6 +712,12 @@ print(result)""",
 printf("%d\\n", result);""",
         "java": """int result = square(5);
 System.out.println(result);""",
+        "r": """square <- function(x) {
+    x * x
+}
+
+result <- square(5)
+cat(result, "\\n")""",
     },
     "arrays_intro": {
         "cpp": """int scores[3] = {90, 85, 100};
@@ -652,6 +732,8 @@ print(scores[0])""",
 printf("%d\\n", scores[0]);""",
         "java": """int[] scores = {90, 85, 100};
 System.out.println(scores[0]);""",
+        "r": """scores <- c(90, 85, 100)
+cat(scores[1], "\\n")""",
     },
     "array_kinds": {
         "cpp": """std::array<int, 3> fixed = {1, 2, 3};
@@ -668,6 +750,9 @@ lookup = {"one": 1}""",
 int dynamic_count = 3;""",
         "java": """int[] fixed = {1, 2, 3};
 java.util.ArrayList<Integer> dynamic = new java.util.ArrayList<>();""",
+        "r": """fixed <- c(1, 2, 3)
+dynamic <- list(1, 2, 3)
+lookup <- c(one = 1)""",
     },
     "array_declare": {
         "cpp": """int values[4] = {0, 1, 2, 3};""",
@@ -681,6 +766,8 @@ names = ["Ada", "Grace"]""",
 char names[2][10] = {"Ada", "Grace"};""",
         "java": """int[] values = {0, 1, 2, 3};
 String[] names = {"Ada", "Grace"};""",
+        "r": """values <- c(0, 1, 2, 3)
+names <- c("Ada", "Grace")""",
     },
     "strings": {
         "cpp": """std::string first = "Ada";
@@ -698,6 +785,9 @@ printf("Hi %s\\n", first);""",
         "java": """String first = "Ada";
 String message = "Hi " + first;
 System.out.println(message);""",
+        "r": """first <- "Ada"
+message <- paste("Hi", first)
+cat(message, "\\n")""",
     },
     "char_arrays": {
         "cpp": """char word[] = {'c', 'o', 'd', 'e', '\\0'};""",
@@ -711,6 +801,8 @@ word = "".join(chars)""",
 printf("%s\\n", word);""",
         "java": """char[] chars = {'c', 'o', 'd', 'e'};
 String word = new String(chars);""",
+        "r": """chars <- strsplit("code", "")[[1]]
+word <- paste(chars, collapse = "")""",
     },
     "classes": {
         "cpp": """class Student {
@@ -734,6 +826,8 @@ public:
     String name;
     int score;
 }""",
+        "r": """student <- list(name = "Ada", score = 95)
+class(student) <- "Student" """,
     },
     "switch_statement": {
         "cpp": """switch (choice) {
@@ -761,6 +855,11 @@ match choice:
     case 1 -> "start";
     default -> "quit";
 };""",
+        "r": """choice <- 1
+label <- switch(as.character(choice),
+                "1" = "start",
+                "quit")
+cat(label, "\\n")""",
     },
     "multi_arrays": {
         "cpp": """int grid[2][3] = {{1, 2, 3}, {4, 5, 6}};""",
@@ -775,6 +874,8 @@ print(grid[1][2])""",
 printf("%d\\n", grid[1][2]);""",
         "java": """int[][] grid = {{1, 2, 3}, {4, 5, 6}};
 System.out.println(grid[1][2]);""",
+        "r": """grid <- matrix(c(1, 2, 3, 4, 5, 6), nrow = 2, byrow = TRUE)
+cat(grid[2, 3], "\\n")""",
     },
     "vectors": {
         "cpp": """std::vector<int> nums = {1, 2};
@@ -794,6 +895,9 @@ nums[size++] = 3;""",
 nums.add(1);
 nums.add(2);
 nums.add(3);""",
+        "r": """nums <- c(1, 2)
+nums <- c(nums, 3)
+cat(nums, "\\n")""",
     },
     "objects_classes": {
         "cpp": """Student ada;
@@ -816,6 +920,9 @@ printf("%d\\n", ada.score);""",
         "java": """Student ada = new Student();
 ada.name = "Ada";
 ada.score = 95;""",
+        "r": """ada <- list(name = "Ada", score = 95)
+class(ada) <- "Student"
+cat(ada$score, "\\n")""",
     },
     "recursion": {
         "cpp": """int fact(int n) {
@@ -839,6 +946,13 @@ ada.score = 95;""",
         "java": """static int fact(int n) {
     if (n == 0) return 1;
     return n * fact(n - 1);
+}""",
+        "r": """fact <- function(n) {
+    if (n == 0) {
+        1
+    } else {
+        n * fact(n - 1)
+    }
 }""",
     },
     "search_float": {
@@ -865,6 +979,9 @@ boolean found = false;
 for (double x : values) {
     if (x == 3.5) found = true;
 }""",
+        "r": """values <- c(2.5, 3.5, 4.0)
+target <- 3.5
+found <- any(values == target)""",
     },
     "combined_if": {
         "cpp": """if (age >= 13 && age <= 19) {
@@ -880,6 +997,8 @@ teen = age >= 13 and age <= 19""",
 int teen = age >= 13 && age <= 19;""",
         "java": """int age = 16;
 boolean teen = age >= 13 && age <= 19;""",
+        "r": """age <- 16
+teen <- age >= 13 && age <= 19""",
     },
     "nested_if": {
         "cpp": """if (loggedIn) {
@@ -913,6 +1032,17 @@ else:
 } else {
     role = "guest";
 }""",
+        "r": """logged_in <- TRUE
+is_admin <- TRUE
+if (logged_in) {
+    if (is_admin) {
+        role <- "admin"
+    } else {
+        role <- "user"
+    }
+} else {
+    role <- "guest"
+}""",
     },
     "for_arrays": {
         "cpp": """for (int i = 0; i < size; i++) {
@@ -937,6 +1067,11 @@ for (int i = 0; i < 3; i++) {
 int total = 0;
 for (int score : scores) {
     total += score;
+}""",
+        "r": """scores <- c(90, 80, 100)
+total <- 0
+for (score in scores) {
+    total <- total + score
 }""",
     },
     "nested_for_multi": {
@@ -971,6 +1106,13 @@ for (int[] row : grid) {
         total += value;
     }
 }""",
+        "r": """grid <- matrix(c(1, 2, 3, 4), nrow = 2, byrow = TRUE)
+total <- 0
+for (row in 1:nrow(grid)) {
+    for (col in 1:ncol(grid)) {
+        total <- total + grid[row, col]
+    }
+}""",
     },
     "while_validation": {
         "cpp": """while (score < 0 || score > 100) {
@@ -995,6 +1137,10 @@ while (score < 0 || score > 100) {
         "java": """int score = -1;
 while (score < 0 || score > 100) {
     score = input.nextInt();
+}""",
+        "r": """score <- -1
+while (score < 0 || score > 100) {
+    score <- 80
 }""",
     },
     "do_while_menu": {
@@ -1024,6 +1170,13 @@ do {
     System.out.println("1) Play  0) Quit");
     choice = input.nextInt();
 } while (choice != 0);""",
+        "r": """repeat {
+    cat("1) Play  0) Quit\\n")
+    choice <- 0
+    if (choice == 0) {
+        break
+    }
+}""",
     },
 }
 
@@ -1151,6 +1304,8 @@ def _example_io(kind: str, target: str) -> dict[str, str]:
             result["output"] = "Name: Age integer: Price decimal: Member 1/0: Initial character: Three integer scores:\nCode is 16 years old. Price: 19.50. Member: 1. Initial: A. First score: 88"
         elif target == "racket":
             result["output"] = "Name: Age integer: Price decimal: Member true/false: Initial character: Three integer scores separated by spaces:\nCode is 16 years old. Price: 19.5. Member: #t. Initial: A. First score: 88"
+        elif target == "r":
+            result["output"] = "Name: Age integer: Price decimal: Member true/false: Initial character: Three integer scores:\nCode is 16 years old. Price: 19.50. Member: TRUE. Initial: A. First score: 88"
     return result
 
 
@@ -1598,6 +1753,7 @@ BASE_COMPARISON_EXAMPLES = {
         "java": "// note",
         "python": "# note",
         "racket": "; note",
+        "r": "# note",
     },
     "language_directive": {
         "cpp": "the compiler mode and .cpp file",
@@ -1605,6 +1761,7 @@ BASE_COMPARISON_EXAMPLES = {
         "java": "the .java file and class name",
         "python": "the .py file and Python interpreter",
         "racket": "#lang racket",
+        "r": "the .R file and Rscript interpreter",
     },
     "import": {
         "cpp": "#include <iostream>",
@@ -1612,6 +1769,7 @@ BASE_COMPARISON_EXAMPLES = {
         "java": "import java.util.Scanner;",
         "python": "import math",
         "racket": "(require racket/list)",
+        "r": "library(stats)",
     },
     "entry": {
         "cpp": "int main() { ... }",
@@ -1619,6 +1777,7 @@ BASE_COMPARISON_EXAMPLES = {
         "java": "public static void main(String[] args) { ... }",
         "python": "top-level code or if __name__ == '__main__':",
         "racket": "top-level expressions after #lang racket",
+        "r": "top-level expressions in an .R script",
     },
     "function_def": {
         "cpp": "return_type name(args) { ... }",
@@ -1626,6 +1785,7 @@ BASE_COMPARISON_EXAMPLES = {
         "java": "static returnType name(args) { ... }",
         "python": "def name(args):",
         "racket": "(define (name args) ...)",
+        "r": "name <- function(args) { ... }",
     },
     "variable": {
         "cpp": "auto name = value;",
@@ -1633,6 +1793,7 @@ BASE_COMPARISON_EXAMPLES = {
         "java": "var name = value;",
         "python": "name = value",
         "racket": "(define name value)",
+        "r": "name <- value",
     },
     "if": {
         "cpp": "if (condition) { ... }",
@@ -1640,6 +1801,7 @@ BASE_COMPARISON_EXAMPLES = {
         "java": "if (condition) { ... }",
         "python": "if condition:",
         "racket": "(if condition then-value else-value)",
+        "r": "if (condition) { ... }",
     },
     "else_if": {
         "cpp": "else if (condition) { ... }",
@@ -1647,6 +1809,7 @@ BASE_COMPARISON_EXAMPLES = {
         "java": "else if (condition) { ... }",
         "python": "elif condition:",
         "racket": "(cond [condition result] [else result])",
+        "r": "else if (condition) { ... }",
     },
     "multi_case": {
         "cpp": "switch (value) { case x: ... }",
@@ -1654,6 +1817,7 @@ BASE_COMPARISON_EXAMPLES = {
         "java": "switch (value) { case x -> ... }",
         "python": "match value:",
         "racket": "(case value [(x) result] [else result])",
+        "r": "switch(as.character(value), \"1\" = result, default)",
     },
     "for_loop": {
         "cpp": "for (int i = 0; i < n; ++i) { ... }",
@@ -1661,6 +1825,7 @@ BASE_COMPARISON_EXAMPLES = {
         "java": "for (int i = 0; i < n; i++) { ... }",
         "python": "for item in items:",
         "racket": "(for ([item items]) ...)",
+        "r": "for (item in items) { ... }",
     },
     "while_loop": {
         "cpp": "while (condition) { ... }",
@@ -1668,6 +1833,7 @@ BASE_COMPARISON_EXAMPLES = {
         "java": "while (condition) { ... }",
         "python": "while condition:",
         "racket": "a named let or recursive helper",
+        "r": "while (condition) { ... } or repeat { ...; break }",
     },
     "local_binding": {
         "cpp": "{ auto name = value; ... }",
@@ -1675,6 +1841,7 @@ BASE_COMPARISON_EXAMPLES = {
         "java": "{ var name = value; ... }",
         "python": "a local name inside an indented block",
         "racket": "(let ([name value]) ...)",
+        "r": "a local name inside a function or block",
     },
     "data_shape": {
         "cpp": "struct Name { ... };",
@@ -1682,6 +1849,7 @@ BASE_COMPARISON_EXAMPLES = {
         "java": "class Name { ... } or record Name(...)",
         "python": "class Name:",
         "racket": "(struct name (fields))",
+        "r": "list(field = value) or a small S3 object",
     },
     "class": {
         "cpp": "class Name { ... };",
@@ -1689,6 +1857,7 @@ BASE_COMPARISON_EXAMPLES = {
         "java": "class Name { ... }",
         "python": "class Name:",
         "racket": "(class object% ...)",
+        "r": "a list with class(object) <- \"Name\"",
     },
     "function_call": {
         "cpp": "name(arg1, arg2)",
@@ -1696,6 +1865,7 @@ BASE_COMPARISON_EXAMPLES = {
         "java": "name(arg1, arg2)",
         "python": "name(arg1, arg2)",
         "racket": "(name arg1 arg2)",
+        "r": "name(arg1, arg2)",
     },
     "block_start": {
         "cpp": "{",
@@ -1703,6 +1873,7 @@ BASE_COMPARISON_EXAMPLES = {
         "java": "{",
         "python": "an indented block after :",
         "racket": "nested parentheses",
+        "r": "{",
     },
     "block_end": {
         "cpp": "}",
@@ -1710,6 +1881,7 @@ BASE_COMPARISON_EXAMPLES = {
         "java": "}",
         "python": "dedenting back to the previous level",
         "racket": "closing parentheses",
+        "r": "}",
     },
     "return": {
         "cpp": "return value;",
@@ -1717,6 +1889,7 @@ BASE_COMPARISON_EXAMPLES = {
         "java": "return value;",
         "python": "return value",
         "racket": "the last expression in a function",
+        "r": "return(value) or the last expression in a function",
     },
     "output": {
         "cpp": "std::cout << value;",
@@ -1724,6 +1897,7 @@ BASE_COMPARISON_EXAMPLES = {
         "java": "System.out.println(value);",
         "python": "print(value)",
         "racket": "(displayln value)",
+        "r": "cat(value, \"\\n\")",
     },
     "statement": {
         "cpp": "statement;",
@@ -1731,13 +1905,14 @@ BASE_COMPARISON_EXAMPLES = {
         "java": "statement;",
         "python": "one logical line, usually no semicolon",
         "racket": "one expression",
+        "r": "one expression, usually no semicolon",
     },
 }
 
 TOKEN_RE = re.compile(
-    r"System\.out\.println|std::boolalpha|std::vector|std::string|std::cout|std::cin|string->number|racket/string|#include|#lang|//|/\*|\*/|==|!=|<=|>=|&&|\|\||::|->|"
+    r"System\.out\.println|std::boolalpha|std::vector|std::string|std::cout|std::cin|string->number|racket/string|as\.integer|as\.numeric|#include|#lang|//|/\*|\*/|<-|==|!=|<=|>=|&&|\|\||::|->|"
     r'"(?:\\.|[^"])*"|\'(?:\\.|[^\'])*\'|<[^>\s]+>|[A-Za-z_][A-Za-z0-9_!?-]*|'
-    r"[0-9]+(?:\.[0-9]+)?|[(){}\[\],;:+\-*/%=<>.]"
+    r"[0-9]+(?:\.[0-9]+)?|[(){}\[\],;:+\-*/%=<>.$]"
 )
 
 RACKET_PHRASES = {
@@ -1847,6 +2022,41 @@ C_LIKE_PHRASES = {
     ")": "Ends parameters, arguments, or a condition.",
 }
 
+R_PHRASES = {
+    "<-": "Assignment operator. It binds the value on the right to the name on the left.",
+    "function": "Creates a function value. In `name <- function(x)`, the function is stored in `name`.",
+    "cat": "Output function. It prints values without adding a newline unless you include `\"\\n\"`.",
+    "sprintf": "Builds formatted text by putting values into placeholders.",
+    "readline": "Reads one line of text from standard input.",
+    "as.integer": "Converts text or a numeric value into a whole number.",
+    "as.numeric": "Converts text into a decimal-capable numeric value.",
+    "tolower": "Converts text to lowercase before comparing it.",
+    "substr": "Extracts part of a string, such as the first character.",
+    "scan": "Reads several values and returns a vector.",
+    "TRUE": "Boolean true value in R.",
+    "FALSE": "Boolean false value in R.",
+    "if": "Starts a conditional branch.",
+    "else": "Fallback branch or else-if branch.",
+    "for": "Starts a loop over a vector or sequence.",
+    "while": "Repeats while a condition is true.",
+    "repeat": "Starts a loop that runs until `break` stops it.",
+    "break": "Stops the nearest loop.",
+    "sample": "Chooses random values from a vector.",
+    "c": "Combines values into a vector.",
+    "list": "Creates a flexible object with named or unnamed items.",
+    "matrix": "Creates a two-dimensional table.",
+    "nrow": "Returns the number of rows in a matrix/data frame.",
+    "ncol": "Returns the number of columns in a matrix/data frame.",
+    "switch": "Chooses one result from exact-match cases.",
+    "class": "Gets or sets an object's class label.",
+    "return": "Returns a value from a function explicitly.",
+    "$": "Accesses a named field inside a list or object.",
+    "[": "Starts vector indexing. R indexes from 1.",
+    "]": "Ends vector indexing.",
+    "{": "Starts a block of expressions.",
+    "}": "Ends a block of expressions.",
+}
+
 def _is_number_token(token: str) -> bool:
     return bool(re.fullmatch(r"[0-9]+(?:\.[0-9]+)?", token))
 
@@ -1867,6 +2077,14 @@ def _phrase_meaning(token: str, target: str, index: int, tokens: list[str]) -> s
         if re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", token):
             return "Name for a value, function, class, or module."
         return "Python syntax symbol."
+    if target == "r":
+        if token in R_PHRASES:
+            return R_PHRASES[token]
+        if re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", token):
+            return "Name for a value, function, vector, list, or object."
+        if token in {"+", "-", "*", "/", "%", "==", "!=", "<", ">", "<=", ">="}:
+            return "Operator. It calculates or compares values."
+        return "R syntax symbol."
     if token in C_LIKE_PHRASES:
         return C_LIKE_PHRASES[token]
     if token in {"+", "-", "*", "/", "%", "==", "!=", "<", ">", "<=", ">=", "&&", "||"}:
@@ -1887,6 +2105,11 @@ def _phrase_breakdown(line: str, target: str) -> list[dict[str, str]]:
     if target == "python" and stripped.startswith("#"):
         return [
             {"phrase": "#", "meaning": "Starts a Python comment."},
+            {"phrase": stripped[1:].strip() or "comment text", "meaning": "Human note for the reader, not code that runs."},
+        ]
+    if target == "r" and stripped.startswith("#"):
+        return [
+            {"phrase": "#", "meaning": "Starts an R comment."},
             {"phrase": stripped[1:].strip() or "comment text", "meaning": "Human note for the reader, not code that runs."},
         ]
     if target in {"c", "cpp", "java"} and stripped.startswith("//"):
@@ -1922,9 +2145,9 @@ def _base_comparison(note: dict[str, str], target: str, base: str) -> str:
         concept = "import"
     elif "entry point" in plain or "main(" in line:
         concept = "entry"
-    elif "defines a function" in plain or line.startswith("def "):
+    elif "defines a function" in plain or ("defines" in plain and "function" in plain) or line.startswith("def "):
         concept = "function_def"
-    elif "binds" in plain or "updates a name" in plain or " = " in line:
+    elif "binds" in plain or "updates a name" in plain or " = " in line or "<-" in line:
         concept = "variable"
     elif "two-way choice" in plain or "starts a condition" in plain or line.startswith("if "):
         concept = "if"
@@ -2082,6 +2305,45 @@ def _line_note_for_python(line: str) -> dict[str, str]:
     return {"line": line, "plain": "A normal Python line.", "syntax": "Use indentation to see the owning block.", "cpp": "Like reading inside C++ braces."}
 
 
+def _line_note_for_r(line: str) -> dict[str, str]:
+    stripped = line.strip()
+    if not stripped:
+        return {"line": "", "plain": "Blank line for readability.", "syntax": "R ignores blank lines.", "cpp": "Like a blank line in C++."}
+    if stripped.startswith("#"):
+        return {"line": line, "plain": "A comment.", "syntax": "R line comments start with #.", "cpp": "Like // in C++."}
+    if stripped.startswith("library("):
+        return {"line": line, "plain": "Imports a package.", "syntax": "library makes package functions available in this script.", "cpp": "Similar purpose to #include."}
+    if "<- function" in stripped or "function(" in stripped:
+        return {"line": line, "plain": "Defines a reusable function.", "syntax": "In R, `name <- function(args)` stores a function in a name.", "cpp": "Similar to return_type name(args) {."}
+    if stripped.startswith("if "):
+        return {"line": line, "plain": "Starts a condition.", "syntax": "The condition goes in parentheses, and braces hold the branch body.", "cpp": "Very close to if (...) { ... }."}
+    if stripped.startswith("} else if") or stripped.startswith("else if"):
+        return {"line": line, "plain": "Checks another condition after the first if fails.", "syntax": "R uses `else if` with braces for an else-if chain.", "cpp": "Same idea as C++ else if."}
+    if stripped.startswith("} else") or stripped.startswith("else"):
+        return {"line": line, "plain": "Handles the remaining case.", "syntax": "The else branch must connect to the previous if block.", "cpp": "Same role as else { ... }."}
+    if stripped.startswith("for "):
+        return {"line": line, "plain": "Starts a loop over a sequence.", "syntax": "`for (item in values)` takes one value at a time from a vector or sequence.", "cpp": "Similar to a range-based for loop."}
+    if stripped.startswith("while "):
+        return {"line": line, "plain": "Starts a while loop.", "syntax": "The body repeats while the condition stays TRUE.", "cpp": "Same role as while (...) { ... }."}
+    if stripped.startswith("repeat"):
+        return {"line": line, "plain": "Starts a loop that runs at least once.", "syntax": "`repeat` continues until a `break` statement stops it.", "cpp": "Closest to a do-while loop pattern."}
+    if stripped.startswith("break"):
+        return {"line": line, "plain": "Stops the nearest loop.", "syntax": "R uses break inside repeat/while/for when the loop should end early.", "cpp": "Same role as C++ break."}
+    if stripped.startswith("return"):
+        return {"line": line, "plain": "Returns a value from a function.", "syntax": "R can return explicitly with `return(value)`, though the last expression can also be returned.", "cpp": "Same role as C++ return value;."}
+    if "cat(" in stripped or "print(" in stripped:
+        return {"line": line, "plain": "Prints output.", "syntax": "`cat` prints clean console text; include `\"\\n\"` when you want a newline.", "cpp": "Similar purpose to std::cout."}
+    if "readline(" in stripped:
+        return {"line": line, "plain": "Reads user input as text.", "syntax": "`readline` returns a string, so numeric input needs `as.integer` or `as.numeric`.", "cpp": "Closest to reading into a string before converting."}
+    if " <- " in stripped or stripped.startswith(("class(", "names(")):
+        return {"line": line, "plain": "Binds or updates a name.", "syntax": "`<-` stores the value on the right into the name or field on the left.", "cpp": "Similar to assignment, but R commonly uses `<-` instead of `=`."}
+    if stripped in {"}", "};"}:
+        return {"line": line, "plain": "Ends a block.", "syntax": "This closes the nearest open brace.", "cpp": "Same as C++."}
+    if stripped.endswith("{"):
+        return {"line": line, "plain": "Starts a block.", "syntax": "Braces group multiple R expressions under a condition, loop, or function.", "cpp": "Same block-reading habit as C++."}
+    return {"line": line, "plain": "A normal R expression.", "syntax": "Read the assignment, function call, or vector operation from left to right.", "cpp": "Use the same role-first reading habit as C++."}
+
+
 def _line_note_for_c_like(line: str, language: str) -> dict[str, str]:
     stripped = line.strip()
     if not stripped:
@@ -2124,6 +2386,8 @@ def _line_notes(code: str, target: str, base: str = "cpp") -> list[dict]:
         notes = [_line_note_for_racket(line) for line in code.splitlines()]
     elif target == "python":
         notes = [_line_note_for_python(line) for line in code.splitlines()]
+    elif target == "r":
+        notes = [_line_note_for_r(line) for line in code.splitlines()]
     else:
         language = TARGET_LANGUAGES[target]["name"]
         notes = [_line_note_for_c_like(line, language) for line in code.splitlines()]

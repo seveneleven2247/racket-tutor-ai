@@ -426,7 +426,7 @@ function resetPrerequisiteChoice() {
 }
 
 function chooseDefaultTarget() {
-  const candidates = ["cpp", "python", "java", "c", "racket"];
+  const candidates = ["cpp", "python", "java", "c", "racket", "r"];
   return candidates.find((id) => id !== state.baseLanguage) || "cpp";
 }
 

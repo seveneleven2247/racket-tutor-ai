@@ -89,7 +89,7 @@
             <p class="eyebrow">Language Experience Check</p>
             <h2>Which one language can you already use?</h2>
             <p>
-              Choose one language as your foundation. The course will use that language to teach the other four. Choose None to start with C++ Foundations.
+              Choose one language as your foundation. The course will use that language to teach the other languages. Choose None to start with C++ Foundations.
             </p>
             <div class="language-experience-grid" aria-label="Known programming languages">
               <label class="language-experience-card">
@@ -111,6 +111,10 @@
               <label class="language-experience-card">
                 <input type="radio" name="baseLanguage" value="racket" data-language-experience />
                 <span>Racket</span>
+              </label>
+              <label class="language-experience-card">
+                <input type="radio" name="baseLanguage" value="r" data-language-experience />
+                <span>R</span>
               </label>
               <label class="language-experience-card none-card">
                 <input type="radio" name="baseLanguage" value="none" id="noneExperience" />
@@ -324,7 +328,7 @@
                 </label>
                 <label>
                   <span>Homework file</span>
-                  <input id="fileInput" name="file" type="file" accept=".rkt,.rktl,.txt,.md,.cpp,.cc,.cxx,.c,.h,.hpp,.py,.java,.json" />
+                  <input id="fileInput" name="file" type="file" accept=".R,.r,.rkt,.rktl,.txt,.md,.cpp,.cc,.cxx,.c,.h,.hpp,.py,.java,.json" />
                 </label>
                 <label>
                   <span>Or paste code</span>

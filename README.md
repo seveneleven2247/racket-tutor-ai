@@ -1,6 +1,6 @@
 # CodeBridge
 
-A 56-day programming-learning website that uses one known language as a bridge to teach C++, C, Java, Python, and Racket.
+A 56-day programming-learning website that uses one known language as a bridge to teach C++, C, Java, Python, Racket, and R.
 
 Features:
 
@@ -8,7 +8,7 @@ Features:
 - C++ syntax bridges, concise explanations, sample code, practice tasks, and daily checklists
 - Browser-local checklist progress
 - Homework upload or pasted-code submission
-- Built-in Judge0 code execution for Python, C, C++, and Java submissions
+- Built-in Judge0 code execution for Python, C, C++, Java, and R submissions
 - Built-in static code checker that verifies labels, target-language syntax, visible output, topic usage, and runner status
 - AI homework review for correctness, style, C++ transfer habits, and next-step improvements
 - Day-by-day guidance based on each user's submissions, checker scores, checklist progress, and repeated habits
@@ -64,6 +64,7 @@ Python: 109
 C: 103
 C++: 105
 Java: 91
+R: 99
 ```
 
 Public Judge0 CE does not currently provide Racket in this app's language list. Racket submissions still receive AI/local feedback. If you self-host a Judge0 image that supports Racket, set:
@@ -72,10 +73,16 @@ Public Judge0 CE does not currently provide Racket in this app's language list. 
 JUDGE0_RACKET_LANGUAGE_ID=your_racket_language_id
 ```
 
+If your Judge0 deployment uses a different R language ID, set:
+
+```bash
+JUDGE0_R_LANGUAGE_ID=your_r_language_id
+```
+
 For a different Judge0 deployment, override multiple IDs:
 
 ```bash
-JUDGE0_LANGUAGE_IDS={"python":109,"c":103,"cpp":105,"java":91,"racket":999}
+JUDGE0_LANGUAGE_IDS={"python":109,"c":103,"cpp":105,"java":91,"r":99,"racket":999}
 ```
 
 Restart the Flask app after changing `.env`:
