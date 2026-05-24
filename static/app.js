@@ -163,7 +163,7 @@ const tourSteps = [
   {
     selector: "#dayList",
     title: "Open a daily lesson",
-    text: "This is the 56-day course list. Scroll the left sidebar to reach every day.",
+    text: "This is the daily course list. Scroll the left sidebar to reach every day.",
     placement: "right",
   },
   {
@@ -637,9 +637,10 @@ function renderLesson() {
   document.title = "CodeBridge";
   document.querySelector(".brand h1").textContent = "CodeBridge";
   if (els.brandSubtitle) {
+    const dayCount = state.lessons.length || 56;
     els.brandSubtitle.textContent = isCppFoundationMode()
-      ? "C++ Foundations · prerequisite track · 56 days"
-      : `${lesson.base_language_name || "Known language"} foundation to ${lesson.target_language_name || "target language"} · 56 days`;
+      ? `C++ Foundations · prerequisite track · ${dayCount} days`
+      : `${lesson.base_language_name || "Known language"} foundation to ${lesson.target_language_name || "target language"} · ${dayCount} days`;
   }
   els.lessonTitle.textContent = lesson.title;
   els.categoryLabel.textContent = lesson.category;

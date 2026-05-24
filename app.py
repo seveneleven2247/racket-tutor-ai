@@ -16,7 +16,7 @@ from flask import Flask, jsonify, make_response, redirect, request, send_from_di
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 
-from course_data import get_language_options, get_lesson, get_lessons, normalize_base_language, normalize_target_language
+from course_data import get_course_length, get_language_options, get_lesson, get_lessons, normalize_base_language, normalize_target_language
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -315,6 +315,7 @@ def sanitize_profile(profile: dict | None) -> dict:
     if "languageExperienceChosen" not in profile and (known or raw_base in allowed_languages):
         language_experience_chosen = True
     target = normalize_target_language(profile.get("targetLanguage", "racket"))
+    max_day = get_course_length(target)
     try:
         active_day = int(profile.get("activeDay", 1))
     except (TypeError, ValueError):
@@ -331,7 +332,7 @@ def sanitize_profile(profile: dict | None) -> dict:
         "baseLanguage": base_language,
         "languageExperienceChosen": language_experience_chosen,
         "targetLanguage": target,
-        "activeDay": max(1, min(active_day, 56)),
+        "activeDay": max(1, min(active_day, max_day)),
         "checklists": checklists,
     }
 
@@ -653,6 +654,16 @@ def topic_construct_checks(base_kind: str, target: str, code: str) -> list[tuple
         "nested_for_multi": [("uses nested loops for rows and columns", len(re.findall(r"\b(for|for\*|while)\b", lower)) >= 2 or ("row" in lower and "col" in lower))],
         "while_validation": [("repeats until input is valid", any(token in lower for token in ("while", "loop", "valid", "invalid")))],
         "do_while_menu": [("uses menu-style repeated choices", any(token in lower for token in ("menu", "choice", "quit", "while", "do")))],
+        "r_data_frame": [("creates and inspects a data frame", "data.frame" in lower and any(token in lower for token in ("nrow", "ncol", "head", "str", "summary")))],
+        "r_missing_types": [("checks missing values or data types", any(token in lower for token in ("is.na", "na.omit", "colsums", "as.numeric", "as.integer", "complete.cases")))],
+        "r_descriptive_stats": [("calculates descriptive statistics", any(token in lower for token in ("mean", "median", "sd", "range", "summary", "quantile")))],
+        "r_grouped_summary": [("uses grouped summaries or tables", any(token in lower for token in ("aggregate", "table", "tapply", "by(")))],
+        "r_graphics": [("creates a statistics graph", any(token in lower for token in ("hist", "boxplot", "plot", "abline", "png", "ggplot")))],
+        "r_distribution_sim": [("uses distributions or simulation", any(token in lower for token in ("rnorm", "qnorm", "replicate", "set.seed", "sample")))],
+        "r_confidence_interval": [("calculates a confidence interval", any(token in lower for token in ("qt", "standard_error", "margin", "lower", "upper", "confidence")))],
+        "r_t_test": [("runs or explains a t-test", "t.test" in lower or "p-value" in lower or "paired" in lower)],
+        "r_regression": [("uses correlation or linear regression", any(token in lower for token in ("lm(", "cor(", "predict", "r-squared", "summary(model")))],
+        "r_chi_square_report": [("uses chi-square test and report wording", "chisq.test" in lower and any(token in lower for token in ("matrix", "table", "p-value", "report")))],
     }
     return checks.get(base_kind, [])
 
@@ -732,6 +743,8 @@ def user_learning_guidance(user: dict, profile_override: dict | None = None) -> 
     target = normalize_target_language(profile.get("targetLanguage", "racket"))
     base = normalize_base_language(profile.get("baseLanguage") or "cpp")
     active_day = int(profile.get("activeDay", 1))
+    course_length = get_course_length(target)
+    active_day = max(1, min(active_day, course_length))
     lesson = get_lesson(active_day, target, base) or get_lesson(1, target, base)
     target_name = lesson.get("target_language_name", "target language")
 
@@ -845,7 +858,7 @@ def build_feedback_prompt(
     base_language_name = lesson.get("base_language_name", "C++")
     target_code = syntax_bridge.get("target") or syntax_bridge.get("racket", "")
     return f"""
-You are a strict but friendly programming teacher. The student knows {base_language_name} and is following a 56-day course to learn {target_language_name}.
+You are a strict but friendly programming teacher. The student knows {base_language_name} and is following a {get_course_length(lesson.get('target_language'))}-day course to learn {target_language_name}.
 
 Today's lesson:
 Day {lesson['day']}: {lesson['title']}
@@ -1199,7 +1212,7 @@ def create_feedback():
         "category": category,
         "message": message,
         "page": page[:500],
-        "day": lesson_day if lesson_day and 1 <= lesson_day <= 56 else None,
+        "day": lesson_day if lesson_day and 1 <= lesson_day <= get_course_length(target) else None,
         "target": target,
         "status": "open",
         "adminNote": "",

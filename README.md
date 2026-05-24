@@ -1,10 +1,10 @@
 # CodeBridge
 
-A 56-day programming-learning website that uses one known language as a bridge to teach C++, C, Java, Python, Racket, and R.
+A programming-learning website that uses one known language as a bridge to teach C++, C, Java, Python, Racket, and R. The core track has 56 days, and the R track adds 10 statistics-focused data-analysis days.
 
 Features:
 
-- 56 daily course categories for each target language
+- 56 daily core course categories for each target language, plus a 10-day R statistics extension
 - C++ syntax bridges, concise explanations, sample code, practice tasks, and daily checklists
 - Browser-local checklist progress
 - Homework upload or pasted-code submission
@@ -168,7 +168,7 @@ Render's persistent disk is important. Without it, `users.json`, `submissions.js
 
 ```text
 app.py              Flask backend
-course_data.py      56-day course generator
+course_data.py      core and R statistics course generator
 static/index.html   Main frontend page
 static/styles.css   Styles
 static/app.js       Frontend behavior

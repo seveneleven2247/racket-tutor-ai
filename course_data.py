@@ -123,6 +123,286 @@ TOPICS = [
 ]
 
 
+R_STATISTICS_TOPICS = [
+    {
+        "title": "R Data Analysis: Import and Inspect Data Frames",
+        "kind": "r_data_frame",
+        "summary": "Start statistics work by putting observations into rows and variables into columns, then inspect the data before calculating anything.",
+        "code": """scores <- data.frame(
+    student = c("Ava", "Ben", "Chen", "Dia", "Eli"),
+    study_hours = c(4, 6, 3, 8, 5),
+    exam_score = c(78, 84, 73, 92, 81)
+)
+
+cat("Rows:", nrow(scores), "\\n")
+cat("Columns:", ncol(scores), "\\n")
+print(head(scores, 3))
+str(scores)""",
+        "output": "Rows: 5\nColumns: 3\nFirst 3 rows show student, study_hours, and exam_score.\nstr() reports column names and data types.",
+        "concept": "Data frames store statistics datasets: each row is one case, and each column is one variable.",
+        "translation": [
+            "Think of a C++ vector of records or a table: each student has related fields.",
+            "In R, `data.frame(...)` creates that table directly with named columns.",
+            "`nrow`, `ncol`, `head`, and `str` are inspection tools. Use them before trusting calculations.",
+        ],
+        "pitfalls": [
+            "Do not calculate before checking row count, column names, and data types.",
+            "Do not confuse rows with columns. In statistics, rows are observations and columns are variables.",
+            "R uses 1-based indexing, so row 1 is the first row.",
+        ],
+    },
+    {
+        "title": "R Data Analysis: Missing Values and Data Types",
+        "kind": "r_missing_types",
+        "summary": "Real statistics data often has missing values and wrong types. Clean them before computing means, tests, or models.",
+        "code": """raw <- data.frame(
+    student = c("Ava", "Ben", "Chen", "Dia", "Eli"),
+    study_hours = c(4, NA, 3, 8, 5),
+    exam_score = c(78, 84, NA, 92, 81),
+    passed = c(TRUE, TRUE, FALSE, TRUE, TRUE)
+)
+
+cat("Missing values by column:\\n")
+print(colSums(is.na(raw)))
+
+clean <- na.omit(raw)
+clean$exam_score <- as.numeric(clean$exam_score)
+print(clean)""",
+        "output": "Missing values by column:\nstudent 0, study_hours 1, exam_score 1, passed 0\nThe cleaned data keeps complete rows and numeric exam_score values.",
+        "concept": "`NA` means missing data. `is.na`, `colSums`, and `na.omit` help you find and handle missing values.",
+        "translation": [
+            "In C++, you might use a sentinel value or optional field. R uses `NA` as the standard missing marker.",
+            "`is.na(raw)` creates TRUE/FALSE checks for every cell.",
+            "`colSums(...)` counts TRUE values by column because TRUE behaves like 1 and FALSE behaves like 0.",
+        ],
+        "pitfalls": [
+            "Do not treat missing data as zero unless the assignment says zero is meaningful.",
+            "Do not ignore data types. A number stored as text can break statistics functions.",
+            "Dropping rows with `na.omit` is simple, but it changes sample size.",
+        ],
+    },
+    {
+        "title": "R Data Analysis: Descriptive Statistics",
+        "kind": "r_descriptive_stats",
+        "summary": "Descriptive statistics summarize one variable with center, spread, and range before any formal inference.",
+        "code": """scores <- c(78, 84, 73, 92, 81, 88, 76)
+
+mean_score <- mean(scores)
+median_score <- median(scores)
+sd_score <- sd(scores)
+score_range <- range(scores)
+
+cat(sprintf("Mean: %.2f\\n", mean_score))
+cat(sprintf("Median: %.2f\\n", median_score))
+cat(sprintf("Standard deviation: %.2f\\n", sd_score))
+cat("Range:", score_range[1], "to", score_range[2], "\\n")""",
+        "output": "Mean: 81.71\nMedian: 81.00\nStandard deviation: about 6.75\nRange: 73 to 92",
+        "concept": "Mean and median describe center. Standard deviation and range describe spread.",
+        "translation": [
+            "A C++ loop can compute totals manually. R gives direct statistics functions such as `mean`, `median`, and `sd`.",
+            "`range(scores)` returns two values: minimum and maximum.",
+            "`sprintf` formats decimal output so results look clean in a statistics report.",
+        ],
+        "pitfalls": [
+            "Do not report only the mean when spread matters.",
+            "Do not round too early. Calculate first, round when printing.",
+            "If data has `NA`, use `mean(scores, na.rm = TRUE)` or clean first.",
+        ],
+    },
+    {
+        "title": "R Data Analysis: Grouped Summaries and Tables",
+        "kind": "r_grouped_summary",
+        "summary": "Statistics often compares groups. Use grouped summaries and cross tables to see patterns before formal tests.",
+        "code": """classes <- data.frame(
+    section = c("A", "A", "A", "B", "B", "B"),
+    exam_score = c(78, 84, 88, 72, 81, 90),
+    passed = c(TRUE, TRUE, TRUE, TRUE, TRUE, TRUE)
+)
+
+section_mean <- aggregate(exam_score ~ section, data = classes, FUN = mean)
+section_sd <- aggregate(exam_score ~ section, data = classes, FUN = sd)
+pass_table <- table(classes$section, classes$passed)
+
+print(section_mean)
+print(section_sd)
+print(pass_table)""",
+        "output": "Section A mean is 83.33. Section B mean is 81.00.\nThe table counts passed status inside each section.",
+        "concept": "`aggregate` calculates a statistic separately for each group. `table` counts category combinations.",
+        "translation": [
+            "In C++, grouped statistics usually means loops plus if statements for each category.",
+            "In R, formulas like `exam_score ~ section` mean: summarize exam_score by section.",
+            "`table(x, y)` builds a contingency table, which is useful for categorical statistics.",
+        ],
+        "pitfalls": [
+            "Do not compare group means without checking group size and spread.",
+            "Do not use numeric summaries for purely categorical variables.",
+            "Make sure the grouping variable is the correct column.",
+        ],
+    },
+    {
+        "title": "R Data Analysis: Statistical Graphics",
+        "kind": "r_graphics",
+        "summary": "Graphs reveal shape, outliers, group differences, and relationships faster than raw numbers.",
+        "code": """scores <- c(78, 84, 73, 92, 81, 88, 76, 95)
+group <- c("A", "A", "A", "A", "B", "B", "B", "B")
+study_hours <- c(4, 6, 3, 8, 5, 7, 4, 9)
+
+png("day61_plots.png", width = 900, height = 300)
+par(mfrow = c(1, 3))
+hist(scores, main = "Exam Scores", xlab = "Score", col = "lightblue")
+boxplot(scores ~ group, main = "Scores by Group", xlab = "Group", ylab = "Score")
+plot(study_hours, scores, main = "Study vs Score", xlab = "Hours", ylab = "Score")
+abline(lm(scores ~ study_hours), col = "red")
+dev.off()
+
+cat("Saved day61_plots.png\\n")""",
+        "output": "Saved day61_plots.png\nThe file contains a histogram, a boxplot, and a scatterplot with a regression line.",
+        "concept": "Use histograms for one numeric variable, boxplots for group comparisons, and scatterplots for two numeric variables.",
+        "translation": [
+            "C++ can print numbers, but statistics needs visual checks. R has plotting functions built in.",
+            "`par(mfrow = c(1, 3))` puts three plots in one row.",
+            "`abline(lm(...))` adds a fitted regression line to the scatterplot.",
+        ],
+        "pitfalls": [
+            "Do not choose a plot before identifying variable types.",
+            "Do not use a line plot for unrelated students unless order matters.",
+            "Always label axes so another reader knows what each number means.",
+        ],
+    },
+    {
+        "title": "R Data Analysis: Probability Distributions and Simulation",
+        "kind": "r_distribution_sim",
+        "summary": "Statistics uses distributions to describe randomness. Simulation helps you see sampling variation.",
+        "code": """set.seed(11)
+sample_means <- replicate(1000, mean(rnorm(30, mean = 70, sd = 10)))
+
+cat(sprintf("Mean of sample means: %.2f\\n", mean(sample_means)))
+cat(sprintf("SD of sample means: %.2f\\n", sd(sample_means)))
+cat(sprintf("Theoretical standard error: %.2f\\n", 10 / sqrt(30)))
+cat(sprintf("97.5th percentile for one score: %.2f\\n", qnorm(0.975, mean = 70, sd = 10)))""",
+        "output": "Mean of sample means is near 70.\nSD of sample means is near 1.83.\n97.5th percentile for one score is about 89.60.",
+        "concept": "`rnorm` simulates normal data, `replicate` repeats an experiment, and `qnorm` finds normal distribution cutoffs.",
+        "translation": [
+            "In C++, simulation means writing loops and random-number setup. R gives direct distribution functions.",
+            "`set.seed` makes random output reproducible for homework checking.",
+            "The standard error is the standard deviation of many sample means.",
+        ],
+        "pitfalls": [
+            "Do not confuse standard deviation of individuals with standard error of a mean.",
+            "Do not omit `set.seed` when you need reproducible simulated results.",
+            "Simulation supports reasoning; it does not replace the formula when the formula is required.",
+        ],
+    },
+    {
+        "title": "R Data Analysis: Confidence Intervals",
+        "kind": "r_confidence_interval",
+        "summary": "A confidence interval estimates a population mean with uncertainty, not just one single sample average.",
+        "code": """scores <- c(78, 84, 73, 92, 81, 88, 76, 95)
+n <- length(scores)
+mean_score <- mean(scores)
+sd_score <- sd(scores)
+standard_error <- sd_score / sqrt(n)
+margin <- qt(0.975, df = n - 1) * standard_error
+lower <- mean_score - margin
+upper <- mean_score + margin
+
+cat(sprintf("Mean: %.2f\\n", mean_score))
+cat(sprintf("95%% CI: %.2f to %.2f\\n", lower, upper))""",
+        "output": "Mean: 83.38\n95% CI: lower bound to upper bound around the sample mean.",
+        "concept": "A confidence interval is mean plus or minus a critical value times standard error.",
+        "translation": [
+            "C++ can calculate the formula step by step. R gives `qt` for the t critical value.",
+            "`df = n - 1` is degrees of freedom for a one-sample t interval.",
+            "`95%%` in `sprintf` prints a literal percent sign.",
+        ],
+        "pitfalls": [
+            "Do not say there is a 95% probability this exact interval contains the mean after it is computed.",
+            "Do not use z critical values for small samples when population SD is unknown.",
+            "Always report sample size with the interval.",
+        ],
+    },
+    {
+        "title": "R Data Analysis: Hypothesis Testing with t.test",
+        "kind": "r_t_test",
+        "summary": "A t-test compares a mean or mean difference against a null hypothesis using sample data.",
+        "code": """before <- c(72, 75, 78, 70, 74, 77)
+after <- c(76, 79, 80, 74, 78, 82)
+
+change <- after - before
+test_result <- t.test(after, before, paired = TRUE)
+
+cat("Mean change:", mean(change), "\\n")
+print(test_result)""",
+        "output": "Mean change: about 3.83\nThe paired t-test output includes t, df, p-value, confidence interval, and mean difference.",
+        "concept": "`t.test(..., paired = TRUE)` compares matched before/after measurements for the same subjects.",
+        "translation": [
+            "C++ can calculate differences, but R's `t.test` also reports p-value and confidence interval.",
+            "`paired = TRUE` matters because each before score belongs to the same student as the after score.",
+            "The p-value measures how surprising the observed change is if the true mean change were zero.",
+        ],
+        "pitfalls": [
+            "Do not use a paired test for unrelated groups.",
+            "Do not write 'proved' when a test is significant. Say the result provides evidence.",
+            "Check the direction of subtraction so the mean change has the intended sign.",
+        ],
+    },
+    {
+        "title": "R Data Analysis: Correlation and Linear Regression",
+        "kind": "r_regression",
+        "summary": "Correlation measures association. Linear regression models a numeric response from an explanatory variable.",
+        "code": """study_hours <- c(2, 3, 4, 5, 6, 7, 8)
+exam_score <- c(68, 72, 78, 81, 85, 89, 94)
+
+cat(sprintf("Correlation: %.3f\\n", cor(study_hours, exam_score)))
+
+model <- lm(exam_score ~ study_hours)
+print(summary(model))
+
+new_student <- data.frame(study_hours = 6.5)
+prediction <- predict(model, new_student)
+cat(sprintf("Predicted score for 6.5 hours: %.2f\\n", prediction))""",
+        "output": "Correlation is strongly positive.\nThe regression summary reports slope, intercept, R-squared, and p-values.\nA prediction is printed for 6.5 study hours.",
+        "concept": "`lm(y ~ x)` fits a line predicting response y from explanatory variable x.",
+        "translation": [
+            "In C++, you would manually compute sums for slope and intercept. R's `lm` fits the model directly.",
+            "The formula `exam_score ~ study_hours` reads as: model exam_score using study_hours.",
+            "`predict` applies the fitted model to a new data frame with the same predictor column name.",
+        ],
+        "pitfalls": [
+            "Correlation is not causation.",
+            "Do not predict far outside the data range without warning.",
+            "Always inspect a scatterplot before trusting a linear model.",
+        ],
+    },
+    {
+        "title": "R Data Analysis: Chi-Square Test and Statistical Report",
+        "kind": "r_chi_square_report",
+        "summary": "A chi-square test checks whether two categorical variables are associated, then you report the result clearly.",
+        "code": """club_table <- matrix(c(18, 12, 10, 20), nrow = 2, byrow = TRUE)
+rownames(club_table) <- c("STEM", "Humanities")
+colnames(club_table) <- c("Club", "NoClub")
+
+test_result <- chisq.test(club_table)
+
+print(club_table)
+print(test_result)
+cat("Report sentence: A chi-square test checked whether subject group and club participation were associated.\\n")""",
+        "output": "The contingency table is printed.\nchisq.test reports X-squared, df, and p-value.\nA report sentence explains the test purpose.",
+        "concept": "`chisq.test` compares observed category counts with expected counts under independence.",
+        "translation": [
+            "In C++, a 2D array can store counts. R's matrix plus `chisq.test` performs the statistical test.",
+            "Rows and columns must have meaningful names so the result is readable.",
+            "A statistics report should name the test, variables, result, and conclusion in plain language.",
+        ],
+        "pitfalls": [
+            "Do not run chi-square on raw percentages; use counts.",
+            "Do not hide the table. Readers need to see the observed counts.",
+            "If expected counts are too small, ask whether Fisher's exact test is more appropriate.",
+        ],
+    },
+]
+
+
 KIND_SUMMARIES = {
     "output": "Start with visible program behavior. You print values first so every later topic has a quick feedback loop.",
     "input": "Read text first, then convert it when the program needs a number, boolean, character, decimal, or array/list.",
@@ -1252,6 +1532,11 @@ def _cpp(kind: str) -> str:
     return SNIPPETS[_base_kind(kind)]["cpp"]
 
 
+def get_course_length(target_language: str | None = None) -> int:
+    target = normalize_target_language(target_language)
+    return len(TOPICS) + len(R_STATISTICS_TOPICS) if target == "r" else len(TOPICS)
+
+
 def _example_io(kind: str, target: str) -> dict[str, str]:
     base_kind = _base_kind(kind)
     language = TARGET_LANGUAGES[target]["name"]
@@ -1744,6 +2029,210 @@ def _assignment(day: int, title: str, target: str, base: str = "cpp") -> str:
         f"Each program must solve its exact numbered homework prompt for '{title}', run successfully by itself, print labelled input values, calculation or decision steps, and the requested result. "
         f"Add short line notes for important syntax and {notes_request}. If your program reads input, put the test input values in the Standard input box before submitting."
     )
+
+
+def _r_statistics_topic(kind: str) -> dict:
+    for topic in R_STATISTICS_TOPICS:
+        if topic["kind"] == kind:
+            return topic
+    raise KeyError(kind)
+
+
+def _statistics_base_code(base: str, kind: str) -> str:
+    examples = {
+        "cpp": """std::vector<double> scores = {78, 84, 73, 92, 81};
+double total = 0;
+for (double score : scores) total += score;
+double mean = total / scores.size();""",
+        "c": """double scores[] = {78, 84, 73, 92, 81};
+double total = 0;
+for (int i = 0; i < 5; i++) total += scores[i];
+double mean = total / 5;""",
+        "java": """double[] scores = {78, 84, 73, 92, 81};
+double total = 0;
+for (double score : scores) total += score;
+double mean = total / scores.length;""",
+        "python": """scores = [78, 84, 73, 92, 81]
+mean_score = sum(scores) / len(scores)
+print(mean_score)""",
+        "racket": """#lang racket
+
+(define scores '(78 84 73 92 81))
+(define mean-score (/ (apply + scores) (length scores)))
+(displayln mean-score)""",
+        "r": """scores <- c(78, 84, 73, 92, 81)
+mean_score <- mean(scores)
+cat(mean_score, "\\n")""",
+    }
+    return examples.get(base, examples["cpp"])
+
+
+def _r_statistics_bridge(day: int, topic: dict, base: str) -> dict:
+    base_language = TARGET_LANGUAGES[base]["name"]
+    base_code = _statistics_base_code(base, topic["kind"])
+    docs = DOCS["r"] + [
+        {"title": "R Data Import/Export", "url": "https://cran.r-project.org/doc/manuals/r-release/R-data.html"},
+        {"title": "R stats Package Index", "url": "https://stat.ethz.ch/R-manual/R-devel/library/stats/html/00Index.html"},
+    ]
+    return {
+        "concept": topic["concept"],
+        "cpp": base_code,
+        "base": base_code,
+        "base_label": base_language,
+        "base_io": {
+            "input": "",
+            "output": "Known-language baseline: store values, loop or call helpers, then print a statistic.",
+        },
+        "racket": topic["code"],
+        "target": topic["code"],
+        "target_label": "R",
+        "target_io": {"input": "", "output": topic["output"]},
+        "translation_steps": topic["translation"],
+        "pitfalls": topic["pitfalls"],
+        "drill": f"Run the R sample, then write a two-sentence statistics interpretation for Day {day:02d}.",
+        "today_angle": f"Statistics application: {topic['summary']}",
+        "docs": docs,
+    }
+
+
+def _r_statistics_homework_prompts(kind: str) -> list[str]:
+    prompts = {
+        "r_data_frame": [
+            "Create a data frame `sleep_study` with students A-F, sleep hours 6, 7, 5, 8, 6, 9, and quiz scores 72, 80, 68, 88, 75, 91. Print row count, column count, first 4 rows, and `str(sleep_study)`.",
+            "Create a data frame `survey` with columns group = Control/Treatment and response = 12, 14, 13, 19, 21, 18. Print the full data frame and explain which column is categorical and which is numeric.",
+            "Create a data frame `library_use` with visit counts 2, 4, 1, 5, 3 and final marks 70, 82, 65, 90, 78. Print `summary(library_use)` and one sentence describing the highest mark.",
+        ],
+        "r_missing_types": [
+            "Create a data frame with heights 160, NA, 172, 168, NA and weights 55, 61, NA, 64, 70. Use `is.na` and `colSums` to print missing counts for each column.",
+            "Create a vector `raw_scores <- c('78', '84', 'missing', '91')`. Convert valid numeric entries to numbers, mark the bad entry as `NA`, and print the cleaned vector.",
+            "Create a data frame with 6 rows and at least two `NA` values. Use `na.omit`, then print before/after row counts and explain how many rows were removed.",
+        ],
+        "r_descriptive_stats": [
+            "Use scores 64, 72, 75, 81, 85, 90, 94. Calculate mean, median, standard deviation, min, max, and range. Print each with a label.",
+            "Use commute times 12, 18, 25, 40, 15, 22, 30. Calculate the five-number summary with `summary`, then print one sentence about spread.",
+            "Use prices 4.50, 5.25, 6.00, 7.75, 9.10. Calculate average price and sample standard deviation, formatted to two decimals.",
+        ],
+        "r_grouped_summary": [
+            "Create a data frame with classes A/A/A/B/B/B and scores 78, 84, 90, 74, 79, 85. Use `aggregate` to print mean score by class.",
+            "Create a data frame with gender labels F, M, F, M, F, M and club TRUE/FALSE values TRUE, TRUE, FALSE, FALSE, TRUE, FALSE. Use `table` to count gender by club.",
+            "Create a data frame with treatment Low/Low/High/High and recovery days 8, 7, 5, 6. Print grouped mean and grouped standard deviation.",
+        ],
+        "r_graphics": [
+            "Create scores 55, 61, 70, 72, 80, 85, 91, 96. Save a histogram to `hw_day61_q1.png` with a clear title and x-axis label.",
+            "Create group labels A/A/A/B/B/B and scores 72, 75, 78, 82, 88, 91. Save a boxplot comparing groups and print the group medians.",
+            "Create hours 1, 2, 3, 4, 5, 6 and marks 60, 65, 70, 78, 85, 88. Save a scatterplot with a red regression line.",
+        ],
+        "r_distribution_sim": [
+            "Set seed 22. Simulate 500 exam scores from a normal distribution with mean 75 and sd 8. Print simulated mean, sd, and the proportion above 85.",
+            "Set seed 33. Simulate 1000 sample means where each sample has n = 25 from N(50, 12). Print the mean and sd of the sample means.",
+            "Use `qnorm` to find the 90th, 95th, and 99th percentiles for a normal distribution with mean 100 and sd 15. Print labelled results.",
+        ],
+        "r_confidence_interval": [
+            "Use scores 82, 79, 88, 91, 85, 77, 90, 86. Manually calculate a 95% t confidence interval for the mean and print lower/upper bounds.",
+            "Use wait times 4.2, 5.1, 3.8, 6.0, 4.9, 5.5. Print sample mean, standard error, margin of error, and 95% confidence interval.",
+            "Use a vector of 10 study-hour values. Build a function `mean_ci` that returns mean, lower bound, and upper bound.",
+        ],
+        "r_t_test": [
+            "Use before scores 70, 72, 68, 75, 74 and after scores 76, 78, 70, 79, 80. Run a paired t-test and print mean change.",
+            "Use group A scores 82, 85, 88, 90 and group B scores 75, 78, 80, 83. Run a two-sample t-test and explain whether the means look different.",
+            "Use sample scores 68, 72, 75, 77, 80, 82. Run a one-sample t-test against mu = 70 and print the p-value with a plain-English conclusion.",
+        ],
+        "r_regression": [
+            "Use hours 2, 3, 4, 5, 6, 7 and marks 65, 70, 76, 82, 86, 91. Fit `lm(marks ~ hours)`, print slope, intercept, and R-squared.",
+            "Use ads 10, 15, 20, 25, 30 and sales 100, 125, 150, 168, 190. Fit a regression and predict sales when ads = 22.",
+            "Create a scatterplot for temperature 12, 15, 18, 21, 24, 27 and ice cream sales 80, 95, 110, 140, 165, 190. Add a fitted line and print correlation.",
+        ],
+        "r_chi_square_report": [
+            "Create a 2x2 table with counts 24, 16, 12, 28 for Method A/B and Pass/Fail. Run `chisq.test` and print the expected counts.",
+            "Create a table for grade level 11/12 and club yes/no with counts 18, 22, 25, 15. Run a chi-square test and write one report sentence.",
+            "Create a 3x2 table for study plan Low/Medium/High by pass/fail counts: 10/20, 18/12, 25/5. Run `chisq.test`, print p-value, and explain the conclusion.",
+        ],
+    }
+    return prompts[kind]
+
+
+def _r_statistics_practice(day: int, title: str, kind: str, base: str) -> list[str]:
+    prompts = _r_statistics_homework_prompts(kind)
+    base_language = TARGET_LANGUAGES[base]["name"]
+    return [
+        f"HW Q1: Program 1 file day{day:02d}_q1.R. Required task: {prompts[0]} Required output: labelled R output plus one statistics interpretation sentence. Include one comment comparing the R data-analysis syntax with {base_language}.",
+        f"HW Q2: Program 2 file day{day:02d}_q2.R. Required task: {prompts[1]} Required output: labelled R output and a short explanation of the variable types or statistical method used.",
+        f"HW Q3: Program 3 file day{day:02d}_q3.R. Required task: {prompts[2]} Required output: labelled R output, a prediction before running the statistic, and a final conclusion after the result.",
+    ]
+
+
+def _r_statistics_checklist(day: int, title: str, base: str) -> list[str]:
+    base_language = TARGET_LANGUAGES[base]["name"]
+    return [
+        f"Read Day {day:02d}: {title}.",
+        f"Compare the {base_language} baseline idea with the R data-analysis sample.",
+        "Type and run the R sample exactly once before modifying it.",
+        "Identify the dataset, variables, sample size, statistic, and output interpretation.",
+        "Complete HW Q1, HW Q2, and HW Q3 as three separate R scripts.",
+        "Submit the scripts with one plain-English statistics conclusion for each program.",
+    ]
+
+
+def _r_statistics_assignment(day: int, title: str, base: str) -> str:
+    base_language = TARGET_LANGUAGES[base]["name"]
+    return (
+        f"Submit three separate R data-analysis programs: day{day:02d}_q1.R, day{day:02d}_q2.R, and day{day:02d}_q3.R. "
+        f"Each program must solve its exact prompt for '{title}', print labelled output, and include one short interpretation written for a statistics class. "
+        f"Also include concise line notes explaining the key R functions and how the workflow differs from {base_language}. "
+        "If a plot is produced, upload the R script and describe the saved image filename in your note."
+    )
+
+
+def _r_statistics_lesson(day: int, base: str = "cpp") -> dict:
+    topic = R_STATISTICS_TOPICS[day - len(TOPICS) - 1]
+    title = topic["title"]
+    kind = topic["kind"]
+    base_language = TARGET_LANGUAGES[base]["name"]
+    code = topic["code"]
+    bridge = _r_statistics_bridge(day, topic, base)
+    lesson = Lesson(
+        day=day,
+        category=f"Day {day:02d} - {title}",
+        week=((day - 1) // 7) + 1,
+        title=title,
+        goal=f"Apply R to a statistics-style data-analysis task: {topic['summary']}",
+        cpp_bridge=(
+            f"Use your {base_language} programming foundation for variables, functions, loops, and arrays. "
+            "Then let R handle the statistics workflow with data frames, vectors, formulas, models, tests, and clear interpretation."
+        ),
+        explanation=(
+            f"{topic['summary']} This is part of the R statistics extension after the 56-day programming core. "
+            "Focus on the full analysis habit: inspect the data, choose the statistic or graph, run the R function, then explain the result in plain English."
+        ),
+        syntax_bridge=bridge,
+        official_docs=bridge["docs"],
+        racket_focus=[
+            "R statistics workflow",
+            f"{base_language} comparison: manual data handling to R analysis functions",
+            "data interpretation",
+            "reproducible labelled output",
+        ],
+        code=code,
+        line_notes=_line_notes(code, "r", base),
+        practice=_r_statistics_practice(day, title, kind, base),
+        checklist=_r_statistics_checklist(day, title, base),
+        assignment=_r_statistics_assignment(day, title, base),
+        grading_rubric=[
+            "Correctness: the R code runs and prints the requested labelled output.",
+            "Data handling: the dataset, variable types, missing values, or groups are handled correctly.",
+            "Statistics method: the selected summary, plot, interval, test, or model matches the question.",
+            "Interpretation: the conclusion uses plain English and does not overclaim.",
+            "Completeness: HW Q1, HW Q2, and HW Q3 are separate, reproducible R scripts.",
+        ],
+    )
+    data = asdict(lesson)
+    data["target_language"] = "r"
+    data["target_language_name"] = "R"
+    data["base_language"] = base
+    data["base_language_name"] = base_language
+    data["topic_kind"] = kind
+    data["base_kind"] = kind
+    return data
 
 
 BASE_COMPARISON_EXAMPLES = {
@@ -2443,7 +2932,10 @@ def _lesson(day: int, target: str, base: str = "cpp") -> dict:
 def get_lessons(target_language: str | None = None, base_language: str | None = None) -> list[dict]:
     target = normalize_target_language(target_language)
     base = normalize_base_language(base_language)
-    return [_lesson(day, target, base) for day in range(1, len(TOPICS) + 1)]
+    lessons = [_lesson(day, target, base) for day in range(1, len(TOPICS) + 1)]
+    if target == "r":
+        lessons.extend(_r_statistics_lesson(day, base) for day in range(len(TOPICS) + 1, get_course_length(target) + 1))
+    return lessons
 
 
 def get_lesson(day: int, target_language: str | None = None, base_language: str | None = None) -> dict | None:
