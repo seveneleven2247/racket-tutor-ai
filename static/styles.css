@@ -689,34 +689,139 @@ form textarea:focus {
 
 .syntax-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+  grid-template-columns: 1fr;
+  gap: 16px;
 }
 
 .syntax-card {
   min-width: 0;
   overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: 8px;
+  border: 1px solid #cadccf;
+  border-radius: 14px;
   background: #fbfdfb;
+  box-shadow: 0 12px 28px rgba(39, 74, 55, 0.08);
+}
+
+.syntax-card:first-child {
+  background: #fcfffd;
+}
+
+.syntax-card:last-child {
+  border-color: #a9cfc3;
+  background: #f7fcfa;
 }
 
 .syntax-card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   border-bottom: 1px solid var(--line);
-  padding: 10px 12px;
+  padding: 12px 14px;
+  background: linear-gradient(90deg, #f2f8f4, #fbfdfb);
   color: var(--green-dark);
   font-size: 13px;
   font-weight: 800;
 }
 
+.syntax-card-head::before {
+  content: "1";
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  flex: 0 0 26px;
+  border-radius: 999px;
+  background: var(--green-dark);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.syntax-card:last-child .syntax-card-head::before {
+  content: "2";
+  background: var(--teal);
+}
+
+.syntax-card-head::after {
+  margin-left: auto;
+  border: 1px solid #bfd9c8;
+  border-radius: 999px;
+  padding: 3px 9px;
+  background: #ffffff;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.syntax-card:first-child .syntax-card-head::after {
+  content: "Baseline";
+}
+
+.syntax-card:last-child .syntax-card-head::after {
+  content: "Translated";
+}
+
 .syntax-card pre {
-  min-height: 180px;
-  max-height: 420px;
-  overflow: auto;
+  min-height: 0;
+  max-height: none;
+  overflow-x: hidden;
+  overflow-y: visible;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
   margin: 0;
-  padding: 14px;
+  padding: 16px;
   background: var(--code-bg);
   color: var(--code-ink);
+}
+
+.syntax-compare-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--green-dark);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.syntax-compare-divider::before,
+.syntax-compare-divider::after {
+  content: "";
+  height: 1px;
+  flex: 1;
+  background: linear-gradient(90deg, transparent, #b9d6c4);
+}
+
+.syntax-compare-divider::after {
+  background: linear-gradient(90deg, #b9d6c4, transparent);
+}
+
+.syntax-compare-divider span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #c8dfd0;
+  border-radius: 999px;
+  padding: 6px 12px;
+  background: #f1f8f4;
+}
+
+.syntax-compare-divider span::before {
+  content: "\2193";
+  color: var(--teal);
+  font-size: 14px;
+  line-height: 1;
+}
+
+.syntax-card code,
+.code-panel code,
+.example-io code,
+.line-note-body code {
+  white-space: inherit;
 }
 
 .bridge-detail-grid {
@@ -805,7 +910,11 @@ form textarea:focus {
 .code-panel pre {
   min-height: 180px;
   max-height: 520px;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
   margin: 0;
   border-radius: 8px;
   padding: 18px;
@@ -841,7 +950,11 @@ form textarea:focus {
 .code-panel .example-io pre {
   min-height: 0;
   max-height: 220px;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
   margin: 0;
   border-radius: 8px;
   padding: 10px;
@@ -892,7 +1005,11 @@ form textarea:focus {
 }
 
 .line-note-body pre {
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
   margin: 0;
   border-radius: 8px;
   padding: 10px;
