@@ -88,6 +88,12 @@ const translations = {
     sampleInput: "Sample Input",
     expectedOutput: "Expected Output / Result",
     sameIdeaTranslated: "Same idea translated below",
+    variableIoEyebrow: "Primitive datatype",
+    variableIoHeading: "Datatype Coding and Output",
+    variableCppCoding: "C++ coding",
+    variableCppOutput: "C++ output",
+    variableTargetCoding: "{language} coding",
+    variableTargetOutput: "{language} output",
     translationSteps: "Translation Steps",
     commonPitfalls: "Common Pitfalls",
     todaysTranslationDrill: "Today's Translation Drill",
@@ -289,6 +295,12 @@ const translations = {
     sampleInput: "示例输入",
     expectedOutput: "预期输出 / 结果",
     sameIdeaTranslated: "同一个思路在下方翻译",
+    variableIoEyebrow: "Primitive datatype",
+    variableIoHeading: "数据类型代码和输出",
+    variableCppCoding: "C++ coding",
+    variableCppOutput: "C++ output",
+    variableTargetCoding: "{language} coding",
+    variableTargetOutput: "{language} output",
     translationSteps: "翻译步骤",
     commonPitfalls: "常见错误",
     todaysTranslationDrill: "今日翻译练习",
@@ -1687,6 +1699,7 @@ function applyStaticTranslations() {
   const headingKeys = [
     "knownLanguageBridge",
     "syntaxBridge",
+    "variableIoHeading",
     "detailedExplanation",
     "sampleCodeAfterSubmission",
     "lineByLineSyntaxNotes",
@@ -1697,6 +1710,8 @@ function applyStaticTranslations() {
   });
   setText("#baseSyntaxLabel", "knownLanguageSyntax");
   setText("#targetSyntaxLabel", "targetSyntax");
+  setText("#variableIoEyebrow", "variableIoEyebrow");
+  setText("#variableIoHeading", "variableIoHeading");
   [els.baseExampleIo, els.targetExampleIo, els.sampleExampleIo].forEach((wrapper) => {
     if (!wrapper) return;
     const blocks = wrapper.querySelectorAll(".example-io-block");
@@ -1865,6 +1880,8 @@ const els = {
   targetExampleInputBlock: document.querySelector("#targetExampleInputBlock"),
   targetExampleInput: document.querySelector("#targetExampleInput"),
   targetExampleOutput: document.querySelector("#targetExampleOutput"),
+  variableIoPanel: document.querySelector("#variableIoPanel"),
+  variableDatatypeList: document.querySelector("#variableDatatypeList"),
   translationSteps: document.querySelector("#translationSteps"),
   pitfallList: document.querySelector("#pitfallList"),
   bridgeDrill: document.querySelector("#bridgeDrill"),
@@ -2546,6 +2563,7 @@ function renderLesson() {
   }
   els.cppBridge.textContent = lesson.cpp_bridge;
   renderSyntaxBridge(lesson);
+  renderVariableIo(lesson);
   els.explanation.textContent = lesson.explanation;
   els.codePanel.hidden = state.unlockedSampleCode?.day !== lesson.day || state.unlockedSampleCode?.target !== state.target;
   els.codeBlock.textContent = els.codePanel.hidden ? "" : state.unlockedSampleCode.code;
@@ -2605,6 +2623,116 @@ function renderExampleIo(wrapper, inputBlock, inputElement, outputElement, io) {
     inputElement.textContent = input;
   }
   outputElement.textContent = output || t("noConsoleOutput");
+}
+
+const PRIMITIVE_DATATYPES = [
+  {
+    title: "integer",
+    cppCoding: "int count = 42;\nstd::cout << count;",
+    cppOutput: "42",
+    targets: {
+      cpp: ["int count = 42;\nstd::cout << count;", "42"],
+      racket: ["(define count 42)\n(displayln count)", "42"],
+      python: ["count = 42\nprint(count)", "42"],
+      c: ["int count = 42;\nprintf(\"%d\\n\", count);", "42"],
+      java: ["int count = 42;\nSystem.out.println(count);", "42"],
+      r: ["count <- 42\nprint(count)", "[1] 42"],
+    },
+  },
+  {
+    title: "decimal",
+    cppCoding: "double price = 9.75;\nstd::cout << price;",
+    cppOutput: "9.75",
+    targets: {
+      cpp: ["double price = 9.75;\nstd::cout << price;", "9.75"],
+      racket: ["(define price 9.75)\n(displayln price)", "9.75"],
+      python: ["price = 9.75\nprint(price)", "9.75"],
+      c: ["double price = 9.75;\nprintf(\"%.2f\\n\", price);", "9.75"],
+      java: ["double price = 9.75;\nSystem.out.println(price);", "9.75"],
+      r: ["price <- 9.75\nprint(price)", "[1] 9.75"],
+    },
+  },
+  {
+    title: "boolean",
+    cppCoding: "bool passed = true;\nstd::cout << std::boolalpha << passed;",
+    cppOutput: "true",
+    targets: {
+      cpp: ["bool passed = true;\nstd::cout << std::boolalpha << passed;", "true"],
+      racket: ["(define passed #t)\n(displayln passed)", "#t"],
+      python: ["passed = True\nprint(passed)", "True"],
+      c: ["int passed = 1;\nprintf(\"%s\\n\", passed ? \"true\" : \"false\");", "true"],
+      java: ["boolean passed = true;\nSystem.out.println(passed);", "true"],
+      r: ["passed <- TRUE\nprint(passed)", "[1] TRUE"],
+    },
+  },
+  {
+    title: "character",
+    cppCoding: "char grade = 'A';\nstd::cout << grade;",
+    cppOutput: "A",
+    targets: {
+      cpp: ["char grade = 'A';\nstd::cout << grade;", "A"],
+      racket: ["(define grade #\\A)\n(displayln grade)", "#\\A"],
+      python: ["grade = 'A'\nprint(grade)", "A"],
+      c: ["char grade = 'A';\nprintf(\"%c\\n\", grade);", "A"],
+      java: ["char grade = 'A';\nSystem.out.println(grade);", "A"],
+      r: ["grade <- \"A\"\nprint(grade)", "[1] \"A\""],
+    },
+  },
+  {
+    title: "string",
+    cppCoding: "std::string name = \"Ada\";\nstd::cout << name;",
+    cppOutput: "Ada",
+    targets: {
+      cpp: ["std::string name = \"Ada\";\nstd::cout << name;", "Ada"],
+      racket: ["(define name \"Ada\")\n(displayln name)", "Ada"],
+      python: ["name = \"Ada\"\nprint(name)", "Ada"],
+      c: ["char name[] = \"Ada\";\nprintf(\"%s\\n\", name);", "Ada"],
+      java: ["String name = \"Ada\";\nSystem.out.println(name);", "Ada"],
+      r: ["name <- \"Ada\"\nprint(name)", "[1] \"Ada\""],
+    },
+  },
+];
+
+function primitiveTargetExample(example, target) {
+  return example.targets[target] || example.targets.racket || example.targets.cpp;
+}
+
+function appendDatatypeRow(parent, label, value, code = false) {
+  const row = document.createElement("div");
+  row.className = "variable-datatype-row";
+  const labelEl = document.createElement("span");
+  labelEl.textContent = label;
+  const valueEl = code ? document.createElement("pre") : document.createElement("p");
+  if (code) {
+    const codeEl = document.createElement("code");
+    codeEl.textContent = value;
+    valueEl.appendChild(codeEl);
+  } else {
+    valueEl.textContent = value;
+  }
+  row.append(labelEl, valueEl);
+  parent.appendChild(row);
+}
+
+function renderVariableIo(lesson) {
+  if (!els.variableIoPanel || !els.variableDatatypeList) return;
+  const target = lesson.target_language || state.target || "racket";
+  const targetName = lesson.target_language_name || t("target");
+
+  els.variableDatatypeList.innerHTML = "";
+  for (const example of PRIMITIVE_DATATYPES) {
+    const [targetCoding, targetOutput] = primitiveTargetExample(example, target);
+    const card = document.createElement("article");
+    card.className = "variable-datatype-card";
+    const title = document.createElement("h4");
+    title.textContent = example.title;
+    card.appendChild(title);
+    appendDatatypeRow(card, t("variableCppCoding"), example.cppCoding, true);
+    appendDatatypeRow(card, t("variableCppOutput"), example.cppOutput);
+    appendDatatypeRow(card, t("variableTargetCoding", { language: targetName }), targetCoding, true);
+    appendDatatypeRow(card, t("variableTargetOutput", { language: targetName }), targetOutput);
+    els.variableDatatypeList.appendChild(card);
+  }
 }
 
 function renderSyntaxBridge(lesson) {

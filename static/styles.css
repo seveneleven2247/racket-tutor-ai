@@ -895,6 +895,77 @@ form textarea:focus {
   color: #44351b;
 }
 
+.variable-io-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.variable-datatype-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.variable-datatype-card {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #c8ddd2;
+  border-radius: 8px;
+  background: #fbfdfb;
+}
+
+.variable-datatype-card h4 {
+  margin: 0;
+  border-bottom: 1px solid var(--line);
+  padding: 12px 14px;
+  background: #f4faf6;
+  color: var(--green-dark);
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.variable-datatype-row {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  border-bottom: 1px solid var(--line);
+  padding: 12px 14px;
+}
+
+.variable-datatype-row:last-child {
+  border-bottom: 0;
+}
+
+.variable-datatype-row > span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.variable-datatype-row p {
+  overflow-wrap: anywhere;
+  margin: 0;
+  color: #26372f;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.variable-datatype-row pre {
+  overflow-x: hidden;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  margin: 0;
+  border-radius: 8px;
+  padding: 10px;
+  background: var(--code-bg);
+  color: var(--code-ink);
+  font-size: 13px;
+}
+
 .ai-review-status {
   display: flex;
   flex-direction: column;
@@ -1920,7 +1991,8 @@ textarea {
   }
 
   .syntax-grid,
-  .bridge-detail-grid {
+  .bridge-detail-grid,
+  .variable-datatype-list {
     grid-template-columns: 1fr;
   }
 
@@ -1976,6 +2048,10 @@ textarea {
   }
 
   .line-note {
+    grid-template-columns: 1fr;
+  }
+
+  .variable-datatype-row {
     grid-template-columns: 1fr;
   }
 
