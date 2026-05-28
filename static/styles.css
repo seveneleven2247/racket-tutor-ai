@@ -11,6 +11,9 @@
   --teal: #176b74;
   --red: #a33b2d;
   --yellow: #b17912;
+  --orange: #d97706;
+  --orange-soft: #fff4e5;
+  --orange-line: #f0b35a;
   --code-bg: #17211d;
   --code-ink: #e9f3ec;
   --shadow: 0 18px 50px rgba(35, 54, 44, 0.11);
@@ -322,6 +325,22 @@ form textarea:focus {
   background: #edf7f1;
 }
 
+.day-card.weakest {
+  border-color: var(--orange-line);
+  background: var(--orange-soft);
+  box-shadow: inset 4px 0 0 var(--orange);
+}
+
+.day-card.weakest .day-number {
+  background: var(--orange);
+  color: white;
+}
+
+.day-card.weakest.active {
+  border-color: var(--orange);
+  background: #ffedd5;
+}
+
 .day-card.locked {
   cursor: not-allowed;
   opacity: 0.55;
@@ -370,6 +389,10 @@ form textarea:focus {
 
 .done-dot.complete {
   background: var(--green);
+}
+
+.day-card.weakest .done-dot {
+  background: var(--orange);
 }
 
 .main {
@@ -1248,6 +1271,13 @@ textarea {
 
 .guidance-section .rubric-list li {
   margin: 6px 0;
+}
+
+#weakestKnowledgeText {
+  border-left: 4px solid var(--orange);
+  padding-left: 10px;
+  color: #7c3d00;
+  font-weight: 700;
 }
 
 .feedback-launcher {

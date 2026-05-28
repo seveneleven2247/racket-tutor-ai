@@ -1834,6 +1834,8 @@ def _localized_input_detail(target: str, ui_language: str = "en") -> str:
     language = normalize_ui_language(ui_language)
     if language == "en":
         return INPUT_TYPE_DETAILS.get(target, "")
+    if target == "racket":
+        return _localized_racket_detail("input", language)
     return LOCALIZED_INPUT_DETAILS.get(language, {}).get(target, INPUT_TYPE_DETAILS.get(target, ""))
 
 
@@ -1847,6 +1849,1160 @@ def _localized_racket_detail(base_kind: str, ui_language: str = "en") -> str:
         )
     details = LOCALIZED_RACKET_DETAILS.get(language, {})
     return details.get(base_kind) or details.get("default") or _localized_racket_detail(base_kind, "en")
+
+
+LOCALIZED_TOPIC_TITLES = {
+    "zh": {
+        "output": "输出",
+        "input": "输入",
+        "math": "数学计算",
+        "variable": "声明并初始化变量",
+        "if_statement": "if 条件语句",
+        "else_if": "else-if 多分支语句",
+        "error_check": "错误检查",
+        "while_loop": "while 循环",
+        "do_while": "do-while 循环",
+        "random_number": "随机数",
+        "for_loop": "for 循环",
+        "nested_for": "嵌套 for 循环",
+        "function_intro": "什么是方法或函数？",
+        "create_function": "创建函数",
+        "call_function": "使用并调用函数",
+        "arrays_intro": "什么是数组？",
+        "array_kinds": "数组的不同类型",
+        "array_declare": "声明并初始化数组",
+        "strings": "创建字符串",
+        "char_arrays": "字符数组",
+        "classes": "类",
+        "switch_statement": "switch 语句",
+        "multi_arrays": "多维数组",
+        "vectors": "向量",
+        "objects_classes": "对象和类",
+        "recursion": "递归",
+        "search_float": "搜索和浮点值",
+        "combined_if": "组合条件与 if",
+        "nested_if": "嵌套 if 语句",
+        "for_arrays": "结合 for 循环和数组",
+        "nested_for_multi": "结合嵌套 for 循环和多维数组",
+        "while_validation": "结合 while 循环和输入验证",
+        "do_while_menu": "结合 do-while 循环和菜单",
+        "review_basics": "复习：输出、输入、变量和数学",
+        "review_conditions": "复习：条件和错误检查",
+        "review_loops": "复习：循环模式",
+        "review_functions": "复习：函数和调用",
+        "review_arrays_strings": "复习：数组和字符串",
+        "review_objects": "复习：类和对象",
+        "review_search_recursion": "复习：搜索、浮点值和递归",
+        "project_guess": "小项目：猜数字游戏",
+        "project_grade": "小项目：成绩计算器",
+        "project_pattern": "小项目：图案打印器",
+        "project_array_stats": "小项目：数组统计",
+        "project_text": "小项目：文本分析器",
+        "project_student": "小项目：学生类",
+        "project_menu": "小项目：菜单驱动应用",
+        "debug_io_types": "调试：输出、输入和类型",
+        "testing_math_conditions": "测试：数学和条件",
+        "testing_loops": "测试：循环和错误检查",
+        "testing_functions": "测试：函数",
+        "testing_collections": "测试：数组、字符串和向量",
+        "integrated_table": "综合练习：数据表",
+        "integrated_records": "综合练习：可搜索记录",
+        "capstone_build": "最终项目构建",
+        "capstone_review": "最终项目复习和下一步",
+    },
+    "ja": {
+        "output": "出力",
+        "input": "入力",
+        "math": "数学計算",
+        "variable": "変数の宣言と初期化",
+        "if_statement": "if 文",
+        "else_if": "else-if 文",
+        "error_check": "エラーチェック",
+        "while_loop": "while ループ",
+        "do_while": "do-while ループ",
+        "random_number": "乱数",
+        "for_loop": "for ループ",
+        "nested_for": "ネストした for ループ",
+        "function_intro": "メソッドや関数とは？",
+        "create_function": "関数を作成する",
+        "call_function": "関数を使って呼び出す",
+        "arrays_intro": "配列とは？",
+        "array_kinds": "配列の種類",
+        "array_declare": "配列の宣言と初期化",
+        "strings": "文字列を作成する",
+        "char_arrays": "文字配列",
+        "classes": "クラス",
+        "switch_statement": "switch 文",
+        "multi_arrays": "多次元配列",
+        "vectors": "ベクター",
+        "objects_classes": "オブジェクトとクラス",
+        "recursion": "再帰",
+        "search_float": "検索と浮動小数点値",
+        "combined_if": "条件を if と組み合わせる",
+        "nested_if": "ネストした if 文",
+        "for_arrays": "for ループと配列を組み合わせる",
+        "nested_for_multi": "ネストした for ループと多次元配列を組み合わせる",
+        "while_validation": "while ループと入力検証を組み合わせる",
+        "do_while_menu": "do-while ループとメニューを組み合わせる",
+        "review_basics": "復習：出力、入力、変数、数学",
+        "review_conditions": "復習：条件とエラーチェック",
+        "review_loops": "復習：ループパターン",
+        "review_functions": "復習：関数と呼び出し",
+        "review_arrays_strings": "復習：配列と文字列",
+        "review_objects": "復習：クラスとオブジェクト",
+        "review_search_recursion": "復習：検索、浮動小数点、再帰",
+        "project_guess": "ミニプロジェクト：数当てゲーム",
+        "project_grade": "ミニプロジェクト：成績計算機",
+        "project_pattern": "ミニプロジェクト：パターンプリンタ",
+        "project_array_stats": "ミニプロジェクト：配列統計",
+        "project_text": "ミニプロジェクト：テキスト分析",
+        "project_student": "ミニプロジェクト：学生クラス",
+        "project_menu": "ミニプロジェクト：メニュー式アプリ",
+        "debug_io_types": "デバッグ：出力、入力、型",
+        "testing_math_conditions": "テスト：数学と条件",
+        "testing_loops": "テスト：ループとエラーチェック",
+        "testing_functions": "テスト：関数",
+        "testing_collections": "テスト：配列、文字列、ベクター",
+        "integrated_table": "総合練習：データ表",
+        "integrated_records": "総合練習：検索可能なレコード",
+        "capstone_build": "総仕上げプロジェクト構築",
+        "capstone_review": "総仕上げ復習と次のステップ",
+    },
+    "ko": {
+        "output": "출력",
+        "input": "입력",
+        "math": "수학 계산",
+        "variable": "변수 선언과 초기화",
+        "if_statement": "if 문",
+        "else_if": "else-if 문",
+        "error_check": "오류 검사",
+        "while_loop": "while 반복문",
+        "do_while": "do-while 반복문",
+        "random_number": "난수",
+        "for_loop": "for 반복문",
+        "nested_for": "중첩 for 반복문",
+        "function_intro": "메서드 또는 함수란?",
+        "create_function": "함수 만들기",
+        "call_function": "함수 사용과 호출",
+        "arrays_intro": "배열이란?",
+        "array_kinds": "배열의 여러 종류",
+        "array_declare": "배열 선언과 초기화",
+        "strings": "문자열 만들기",
+        "char_arrays": "문자 배열",
+        "classes": "클래스",
+        "switch_statement": "switch 문",
+        "multi_arrays": "다차원 배열",
+        "vectors": "벡터",
+        "objects_classes": "객체와 클래스",
+        "recursion": "재귀",
+        "search_float": "검색과 부동소수점 값",
+        "combined_if": "조건을 if와 결합하기",
+        "nested_if": "중첩 if 문",
+        "for_arrays": "for 반복문과 배열 결합",
+        "nested_for_multi": "중첩 for 반복문과 다차원 배열 결합",
+        "while_validation": "while 반복문과 입력 검증 결합",
+        "do_while_menu": "do-while 반복문과 메뉴 결합",
+        "review_basics": "복습: 출력, 입력, 변수, 수학",
+        "review_conditions": "복습: 조건과 오류 검사",
+        "review_loops": "복습: 반복문 패턴",
+        "review_functions": "복습: 함수와 호출",
+        "review_arrays_strings": "복습: 배열과 문자열",
+        "review_objects": "복습: 클래스와 객체",
+        "review_search_recursion": "복습: 검색, 부동소수점, 재귀",
+        "project_guess": "미니 프로젝트: 숫자 맞히기 게임",
+        "project_grade": "미니 프로젝트: 성적 계산기",
+        "project_pattern": "미니 프로젝트: 패턴 출력기",
+        "project_array_stats": "미니 프로젝트: 배열 통계",
+        "project_text": "미니 프로젝트: 텍스트 분석기",
+        "project_student": "미니 프로젝트: 학생 클래스",
+        "project_menu": "미니 프로젝트: 메뉴 기반 앱",
+        "debug_io_types": "디버깅: 출력, 입력, 타입",
+        "testing_math_conditions": "테스트: 수학과 조건",
+        "testing_loops": "테스트: 반복문과 오류 검사",
+        "testing_functions": "테스트: 함수",
+        "testing_collections": "테스트: 배열, 문자열, 벡터",
+        "integrated_table": "통합 연습: 데이터 표",
+        "integrated_records": "통합 연습: 검색 가능한 기록",
+        "capstone_build": "최종 프로젝트 만들기",
+        "capstone_review": "최종 프로젝트 복습과 다음 단계",
+    },
+    "fr": {
+        "output": "Sortie",
+        "input": "Entrée",
+        "math": "Calcul mathématique",
+        "variable": "Déclarer et initialiser une variable",
+        "if_statement": "Instruction if",
+        "else_if": "Instruction else-if",
+        "error_check": "Vérification des erreurs",
+        "while_loop": "Boucles while",
+        "do_while": "Boucle do-while",
+        "random_number": "Nombre aléatoire",
+        "for_loop": "Boucles for",
+        "nested_for": "Boucles for imbriquées",
+        "function_intro": "Qu'est-ce qu'une méthode ou une fonction ?",
+        "create_function": "Créer des fonctions",
+        "call_function": "Utiliser et appeler des fonctions",
+        "arrays_intro": "Qu'est-ce qu'un tableau ?",
+        "array_kinds": "Différents types de tableaux",
+        "array_declare": "Déclarer et initialiser des tableaux",
+        "strings": "Créer des chaînes",
+        "char_arrays": "Tableaux de caractères",
+        "classes": "Classes",
+        "switch_statement": "Instruction switch",
+        "multi_arrays": "Tableaux à plusieurs dimensions",
+        "vectors": "Vecteurs",
+        "objects_classes": "Objets et classes",
+        "recursion": "Récursivité",
+        "search_float": "Recherche et valeurs flottantes",
+        "combined_if": "Combiner des conditions avec if",
+        "nested_if": "Instruction if imbriquée",
+        "for_arrays": "Combiner boucles for et tableaux",
+        "nested_for_multi": "Combiner boucles for imbriquées et tableaux multidimensionnels",
+        "while_validation": "Combiner boucles while et validation d'entrée",
+        "do_while_menu": "Combiner boucles do-while et menus",
+        "review_basics": "Révision : sortie, entrée, variables et maths",
+        "review_conditions": "Révision : conditions et vérifications d'erreurs",
+        "review_loops": "Révision : modèles de boucles",
+        "review_functions": "Révision : fonctions et appels",
+        "review_arrays_strings": "Révision : tableaux et chaînes",
+        "review_objects": "Révision : classes et objets",
+        "review_search_recursion": "Révision : recherche, flottants et récursivité",
+        "project_guess": "Mini-projet : jeu de devinette",
+        "project_grade": "Mini-projet : calculateur de notes",
+        "project_pattern": "Mini-projet : imprimante de motifs",
+        "project_array_stats": "Mini-projet : statistiques de tableau",
+        "project_text": "Mini-projet : analyseur de texte",
+        "project_student": "Mini-projet : classe Student",
+        "project_menu": "Mini-projet : application à menu",
+        "debug_io_types": "Débogage : sortie, entrée et types",
+        "testing_math_conditions": "Tests : maths et conditions",
+        "testing_loops": "Tests : boucles et vérifications d'erreurs",
+        "testing_functions": "Tests : fonctions",
+        "testing_collections": "Tests : tableaux, chaînes et vecteurs",
+        "integrated_table": "Pratique intégrée : table de données",
+        "integrated_records": "Pratique intégrée : enregistrements recherchables",
+        "capstone_build": "Construction du projet final",
+        "capstone_review": "Révision finale et prochaines étapes",
+    },
+}
+
+
+LOCALIZED_R_STATS_TITLES = {
+    "zh": {
+        "r_data_frame": "R 数据分析：导入并检查数据框",
+        "r_missing_types": "R 数据分析：缺失值和数据类型",
+        "r_descriptive_stats": "R 数据分析：描述性统计",
+        "r_grouped_summary": "R 数据分析：分组汇总和表格",
+        "r_graphics": "R 数据分析：统计图形",
+        "r_distribution_sim": "R 数据分析：概率分布和模拟",
+        "r_confidence_interval": "R 数据分析：置信区间",
+        "r_t_test": "R 数据分析：使用 t.test 做假设检验",
+        "r_regression": "R 数据分析：相关和线性回归",
+        "r_chi_square_report": "R 数据分析：卡方检验和统计报告",
+    },
+    "ja": {
+        "r_data_frame": "R データ分析：データフレームの読み込みと確認",
+        "r_missing_types": "R データ分析：欠損値とデータ型",
+        "r_descriptive_stats": "R データ分析：記述統計",
+        "r_grouped_summary": "R データ分析：グループ集計と表",
+        "r_graphics": "R データ分析：統計グラフ",
+        "r_distribution_sim": "R データ分析：確率分布とシミュレーション",
+        "r_confidence_interval": "R データ分析：信頼区間",
+        "r_t_test": "R データ分析：t.test による仮説検定",
+        "r_regression": "R データ分析：相関と線形回帰",
+        "r_chi_square_report": "R データ分析：カイ二乗検定と統計レポート",
+    },
+    "ko": {
+        "r_data_frame": "R 데이터 분석: 데이터 프레임 가져오기와 점검",
+        "r_missing_types": "R 데이터 분석: 결측값과 데이터 타입",
+        "r_descriptive_stats": "R 데이터 분석: 기술통계",
+        "r_grouped_summary": "R 데이터 분석: 그룹 요약과 표",
+        "r_graphics": "R 데이터 분석: 통계 그래프",
+        "r_distribution_sim": "R 데이터 분석: 확률분포와 시뮬레이션",
+        "r_confidence_interval": "R 데이터 분석: 신뢰구간",
+        "r_t_test": "R 데이터 분석: t.test를 이용한 가설검정",
+        "r_regression": "R 데이터 분석: 상관과 선형회귀",
+        "r_chi_square_report": "R 데이터 분석: 카이제곱 검정과 통계 보고서",
+    },
+    "fr": {
+        "r_data_frame": "Analyse de données R : importer et inspecter des data frames",
+        "r_missing_types": "Analyse de données R : valeurs manquantes et types",
+        "r_descriptive_stats": "Analyse de données R : statistiques descriptives",
+        "r_grouped_summary": "Analyse de données R : résumés groupés et tableaux",
+        "r_graphics": "Analyse de données R : graphiques statistiques",
+        "r_distribution_sim": "Analyse de données R : distributions et simulation",
+        "r_confidence_interval": "Analyse de données R : intervalles de confiance",
+        "r_t_test": "Analyse de données R : tests d'hypothèse avec t.test",
+        "r_regression": "Analyse de données R : corrélation et régression linéaire",
+        "r_chi_square_report": "Analyse de données R : test du chi carré et rapport statistique",
+    },
+}
+
+
+LOCALIZED_LESSON_TEMPLATES = {
+    "zh": {
+        "category": "第 {day:02d} 天 - {title}",
+        "goal_foundation": "先建立 {base_language} 中“{title}”的基础，再开始学习其他目标语言。",
+        "goal_target": "通过和你已经理解的 {base_language} 版本直接对比，学习 {language} 中的“{title}”。",
+        "goal_r_stats": "把 R 用在统计式数据分析任务中：{summary}",
+        "bridge_foundation": "这是后续语言对比前需要掌握的 {base_language} 基础。",
+        "bridge_target": "把 {base_language} 片段当作熟悉的基准，再比较 {language} 如何用自己的语法、命名和标准库表达同一个想法。",
+        "bridge_r_stats": "使用你在 {base_language} 中学过的变量、函数、循环和数组基础，然后让 R 处理数据框、向量、公式、模型、检验和清晰解释。",
+        "concept_foundation": "{base_language} 基础：{title}。",
+        "concept_target": "{title}：把 {base_language} 模式翻译成 {language}。",
+        "concept_r_stats": "{title}：用 R 完成统计数据分析流程。",
+        "angle_foundation": "预备 {base_language} 主题：{title}。先建立基准，再学习另一门语言。",
+        "angle_target": "今日主题：{title}。先从 {base_language} 出发，再写出目标语言版本。",
+        "angle_r_stats": "统计应用：{summary}",
+        "drill_foundation": "输入这段 {base_language} 代码，运行它，然后用中文解释每一行非空代码。",
+        "drill_target": "把 {base_language} 片段改写成 {language}，然后逐行解释目标语言代码。",
+        "drill_r_stats": "运行 R 示例，然后为第 {day:02d} 天写两句统计解释。",
+        "focus_syntax": "{language} 语法",
+        "focus_comparison": "{base_language} 对比：{topic}",
+        "focus_line": "逐行解释",
+        "focus_example": "小型可运行示例",
+        "focus_racket_shape": "Racket 表达式形状：(function argument ...)",
+        "focus_racket_displayln": "`displayln` 打印一个值并换行",
+        "focus_racket_lang": "`#lang racket` 选择文件使用的语言",
+        "focus_r_stats": "R 统计分析流程",
+        "focus_r_stats_compare": "{base_language} 对比：从手动数据处理到 R 分析函数",
+        "focus_r_stats_interpretation": "数据解释",
+        "focus_r_stats_output": "可复现的带标签输出",
+        "compare_note": "加入一句简短注释，对比主要语法和 {base_language}。",
+        "explain_note": "加入一句简短注释，解释最重要的 {language} 语法行。",
+        "practice_1": "作业 Q1：程序 1 文件 day{day:02d}_q1.{ext}。目标：完成一个最小可运行例子。任务：{summary} 必须使用今天的 {language} 语法，打印带标签的输入、处理步骤和最终结果。提交代码中保留 `HW Q1` 标签。{note}",
+        "practice_2": "作业 Q2：程序 2 文件 day{day:02d}_q2.{ext}。目标：写一个不同于 Q1 的程序。任务：换一组值、输入或场景再次练习“{title}”。输出要让别人能看清每个值和结果。提交代码中保留 `HW Q2` 标签。{note}",
+        "practice_3": "作业 Q3：程序 3 文件 day{day:02d}_q3.{ext}。目标：加入解释习惯。任务：在最终输出前写一条预测注释，然后打印实际结果。提交代码中保留 `HW Q3` 标签。{note}",
+        "practice_r_1": "作业 Q1：程序 1 文件 day{day:02d}_q1.R。任务：{summary} 打印带标签的 R 输出，并写一句统计解释。提交代码中保留 `HW Q1` 标签。",
+        "practice_r_2": "作业 Q2：程序 2 文件 day{day:02d}_q2.R。任务：换一组小数据重复本课统计流程。输出要说明变量类型、统计方法或图表目的。提交代码中保留 `HW Q2` 标签。",
+        "practice_r_3": "作业 Q3：程序 3 文件 day{day:02d}_q3.R。任务：先写预测，再运行统计函数或图形代码，最后写出结论。提交代码中保留 `HW Q3` 标签。",
+        "check_read": "阅读第 {day:02d} 天：{title}。",
+        "check_compare": "对比 {base_language} 片段和 {language} 片段。",
+        "check_explain": "阅读 {language} 片段，并解释每一行重要代码。",
+        "check_type_run": "手动输入示例代码并运行一次。",
+        "check_mark": "标出输入、处理和输出行（如果存在）。",
+        "check_homework": "完成三个具体作业程序：HW Q1、HW Q2 和 HW Q3。",
+        "check_submit_compare": "提交三个程序，并附上简短的 {base_language} 对比笔记。",
+        "check_submit_explain": "提交三个程序，并附上简短的 {language} 逐行笔记。",
+        "check_r_identify": "找出数据集、变量、样本量、统计量和输出解释。",
+        "check_r_submit": "提交三个 R 脚本，并为每个程序写一句统计结论。",
+        "assignment": "提交三个不同程序：day{day:02d}_q1.{ext}、day{day:02d}_q2.{ext} 和 day{day:02d}_q3.{ext}。如果粘贴代码，请按顺序用清楚标签分开：`HW Q1`、`HW Q2`、`HW Q3`。每个程序必须围绕“{title}”完成当天主题，能独立运行，并打印带标签的输入值、处理步骤和结果。请为重要语法加入简短逐行笔记。{notes_request} 如果程序读取输入，提交前把测试输入放进标准输入框。",
+        "assignment_compare": "同时说明目标语言语法和 {base_language} 写法的区别。",
+        "assignment_explain": "同时逐行说明重要的 {base_language} 语法。",
+        "assignment_r": "提交三个独立的 R 数据分析程序：day{day:02d}_q1.R、day{day:02d}_q2.R 和 day{day:02d}_q3.R。每个程序必须围绕“{title}”完成统计任务，打印带标签的输出，并写一句面向统计课的解释。如果生成图形，请说明保存的图片文件名。",
+        "rubric_correct": "正确性：代码能运行，并符合任务要求。",
+        "rubric_syntax": "{language} 语法：代码使用正常的 {language} 结构和命名。",
+        "rubric_transfer": "{base_language} 迁移：笔记清楚说明从 {base_language} 到目标语言改变了什么。",
+        "rubric_baseline": "{language} 基础：笔记清楚说明每一行重要代码做什么。",
+        "rubric_complete": "完整性：包含三个分开的作业程序。",
+        "rubric_clarity": "清晰度：逐行注释简短且准确。",
+        "rubric_r_data": "数据处理：数据集、变量类型、缺失值或分组处理正确。",
+        "rubric_r_method": "统计方法：所选汇总、图表、区间、检验或模型符合问题。",
+        "rubric_r_interpret": "解释：结论使用清楚中文，并且不过度推断。",
+        "step_foundation": [
+            "从上到下阅读 {base_language} 示例，找出输出、输入和处理行。",
+            "标出语法部分：头部、主函数、声明、语句、代码块和分号。",
+            "先运行最小版本，再改一个值并预测新结果。",
+            "为每一行重要代码写一句中文说明，给后续语言建立清楚基准。",
+        ],
+        "step_target": [
+            "先判断 {base_language} 代码在做什么，而不只是看符号。",
+            "用正常的 {language} 语法和命名写出同一个想法。",
+            "运行最小版本，再改一个值并预测输出。",
+            "为每一行重要代码写一句说明，指出它和 {base_language} 的对应关系。",
+        ],
+        "step_input": [
+            "先说出每个输入变量的数据类型。",
+            "写出 {language} 中读取字符串、整数、小数、布尔值、字符和数组/列表的形式。",
+            "明确指出数字输入在哪里被转换。",
+            "构造包含文字和变量的一句输出，并检查空格与格式。",
+        ],
+        "step_r": [
+            "先检查数据的行、列、变量名和类型。",
+            "选择与问题匹配的 R 函数、图表、检验或模型。",
+            "运行代码后检查带标签的输出。",
+            "用一句清楚的统计语言解释结果。",
+        ],
+        "pitfall_foundation": [
+            "不要跳过主函数、头文件或分号，除非你能解释它们为什么存在。",
+            "不要只背语法；把每一行和具体程序动作联系起来。",
+            "保持例子足够小，这样错误信息能指向一个概念。",
+        ],
+        "pitfall_target": [
+            "不要把 {base_language} 标点硬搬到目标语言中。",
+            "使用 {language} 的标准库或惯用写法，不要强行逐字符翻译。",
+            "例子变大时，仍要分清输入、计算和输出。",
+        ],
+        "pitfall_input": [
+            "键盘输入一开始通常是字符，不要在解析成数字前用于数学计算。",
+            "布尔输入的写法要统一，例如 true/false 或 1/0。",
+            "字符输入要注意空输入或旧空白。",
+            "数组/列表输入通常需要重复读取或拆分一整行。",
+        ],
+        "pitfall_r": [
+            "不要在检查行数、列名和类型之前就计算。",
+            "不要把缺失值当成 0，除非题目明确说明。",
+            "不要只报告数字；还要写一句解释。",
+        ],
+        "io_no_input": "这个示例不需要输入。",
+        "io_no_output": "这个示例没有控制台输出。",
+        "io_depends": "结果取决于这个练习片段打印的值。",
+        "io_baseline": "已知语言基准：存储数据、循环或调用辅助函数，然后打印一个统计量。",
+        "io_r_output": "输出会显示本课统计结果；请检查标签、数值和解释。",
+        "line_plain": "{role}。请先判断这一行在程序中的作用。",
+        "line_syntax": "关注本行的关键字、函数名、括号、运算符、缩进或分号。",
+        "line_compare_same": "这是 {base_language} 的基准写法；先说明它做什么，再学习另一门语言。",
+        "line_compare_target": "把这一行和 {base_language} 中相同角色的写法对比。",
+        "line_compare_example": "在 {base_language} 中，最接近的形式是 `{example}`。",
+        "phrase_string": "字符串/文本字面量：程序会使用这些字符。",
+        "phrase_number": "数字字面量：程序会使用这个具体数值。",
+        "phrase_operator": "运算符：用于计算或比较值。",
+        "phrase_name": "名称：可以表示变量、函数、类型或类。",
+        "phrase_symbol": "语法符号：帮助组织这一行代码。",
+        "phrase_comment_mark": "注释标记：后面的文字给人阅读，不会运行。",
+        "phrase_comment_text": "给读者看的说明文字。",
+        "phrase_more": "这一行后面还有更多同类片段。",
+    },
+    "ja": {
+        "category": "{day:02d}日目 - {title}",
+        "goal_foundation": "別の目標言語へ進む前に、{base_language} の「{title}」の基礎を作ります。",
+        "goal_target": "すでに理解している {base_language} 版と直接比べながら、{language} の「{title}」を学びます。",
+        "goal_r_stats": "R を統計型のデータ分析タスクに使います：{summary}",
+        "bridge_foundation": "これは後の言語比較に必要な {base_language} の基礎です。",
+        "bridge_target": "{base_language} のスニペットを慣れた基準にし、{language} が同じ考え方を独自の構文、命名、標準ライブラリでどう表すかを比べます。",
+        "bridge_r_stats": "{base_language} で学んだ変数、関数、ループ、配列の基礎を使い、データフレーム、ベクター、式、モデル、検定、明確な解釈は R に任せます。",
+        "concept_foundation": "{base_language} 基礎：{title}。",
+        "concept_target": "{title}：{base_language} のパターンを {language} に翻訳します。",
+        "concept_r_stats": "{title}：R で統計データ分析の流れを完成させます。",
+        "angle_foundation": "前提 {base_language} トピック：{title}。別の言語へ進む前に基準を作ります。",
+        "angle_target": "今日のトピック：{title}。{base_language} から始め、目標言語版を書きます。",
+        "angle_r_stats": "統計での利用：{summary}",
+        "drill_foundation": "{base_language} のスニペットを入力して実行し、空でない各行を日本語で説明します。",
+        "drill_target": "{base_language} のスニペットを {language} で書き直し、目標言語のコードを行ごとに説明します。",
+        "drill_r_stats": "R サンプルを実行し、{day:02d}日目の統計解釈を 2 文で書きます。",
+        "focus_syntax": "{language} 構文",
+        "focus_comparison": "{base_language} との比較：{topic}",
+        "focus_line": "行ごとの説明",
+        "focus_example": "小さな実行可能例",
+        "focus_racket_shape": "Racket 式の形：(function argument ...)",
+        "focus_racket_displayln": "`displayln` は値を出力して改行します",
+        "focus_racket_lang": "`#lang racket` はファイルの言語を選びます",
+        "focus_r_stats": "R の統計分析ワークフロー",
+        "focus_r_stats_compare": "{base_language} との比較：手作業のデータ処理から R の分析関数へ",
+        "focus_r_stats_interpretation": "データの解釈",
+        "focus_r_stats_output": "再現可能なラベル付き出力",
+        "compare_note": "主な構文を {base_language} と比べる短いコメントを 1 つ入れてください。",
+        "explain_note": "最も重要な {language} 構文行を説明する短いコメントを 1 つ入れてください。",
+        "practice_1": "課題 Q1：プログラム 1 ファイル day{day:02d}_q1.{ext}。目標：最小の実行可能例を完成させます。タスク：{summary} 今日の {language} 構文を使い、ラベル付き入力、処理手順、最終結果を出力してください。提出コードには `HW Q1` ラベルを残してください。{note}",
+        "practice_2": "課題 Q2：プログラム 2 ファイル day{day:02d}_q2.{ext}。目標：Q1 と違うプログラムを書きます。タスク：別の値、入力、場面で「{title}」をもう一度練習します。各値と結果が分かる出力にしてください。提出コードには `HW Q2` ラベルを残してください。{note}",
+        "practice_3": "課題 Q3：プログラム 3 ファイル day{day:02d}_q3.{ext}。目標：説明する習慣を加えます。タスク：最終出力の前に予測コメントを書き、実際の結果を出力します。提出コードには `HW Q3` ラベルを残してください。{note}",
+        "practice_r_1": "課題 Q1：プログラム 1 ファイル day{day:02d}_q1.R。タスク：{summary} ラベル付きの R 出力と統計的な解釈文を 1 つ出してください。提出コードには `HW Q1` ラベルを残してください。",
+        "practice_r_2": "課題 Q2：プログラム 2 ファイル day{day:02d}_q2.R。タスク：別の小さなデータで本課の統計手順をくり返します。変数型、統計手法、またはグラフの目的を説明してください。提出コードには `HW Q2` ラベルを残してください。",
+        "practice_r_3": "課題 Q3：プログラム 3 ファイル day{day:02d}_q3.R。タスク：先に予測を書き、統計関数またはグラフコードを実行し、最後に結論を書きます。提出コードには `HW Q3` ラベルを残してください。",
+        "check_read": "{day:02d}日目「{title}」を読みます。",
+        "check_compare": "{base_language} スニペットと {language} スニペットを比べます。",
+        "check_explain": "{language} スニペットを読み、重要な各行を説明します。",
+        "check_type_run": "サンプルを手で入力し、一度実行します。",
+        "check_mark": "入力、処理、出力の行があれば印を付けます。",
+        "check_homework": "3 つの具体的な課題プログラム HW Q1、HW Q2、HW Q3 を完成させます。",
+        "check_submit_compare": "3 つのプログラムと、短い {base_language} 比較メモを提出します。",
+        "check_submit_explain": "3 つのプログラムと、短い {language} 行ごとのメモを提出します。",
+        "check_r_identify": "データセット、変数、標本サイズ、統計量、出力の解釈を特定します。",
+        "check_r_submit": "3 つの R スクリプトと、各プログラムの統計的結論を提出します。",
+        "assignment": "3 つの異なるプログラム day{day:02d}_q1.{ext}、day{day:02d}_q2.{ext}、day{day:02d}_q3.{ext} を提出してください。コードを貼り付ける場合は、`HW Q1`、`HW Q2`、`HW Q3` の明確なラベルで順番に分けてください。各プログラムは「{title}」の今日のテーマを扱い、単独で実行でき、ラベル付き入力値、処理手順、結果を出力する必要があります。重要な構文には短い行ごとのメモを加えてください。{notes_request} 入力を読むプログラムでは、提出前に標準入力欄へテスト入力を入れてください。",
+        "assignment_compare": "目標言語の構文が {base_language} の書き方とどう違うかも説明してください。",
+        "assignment_explain": "重要な {base_language} 構文も行ごとに説明してください。",
+        "assignment_r": "3 つの独立した R データ分析プログラム day{day:02d}_q1.R、day{day:02d}_q2.R、day{day:02d}_q3.R を提出してください。各プログラムは「{title}」の統計タスクを行い、ラベル付き出力と統計授業向けの短い解釈を含めます。グラフを作る場合は、保存した画像ファイル名も説明してください。",
+        "rubric_correct": "正確性：コードが実行でき、課題に合っている。",
+        "rubric_syntax": "{language} 構文：通常の {language} 構造と命名を使っている。",
+        "rubric_transfer": "{base_language} からの移行：何が変わったかをメモで明確に説明している。",
+        "rubric_baseline": "{language} 基礎：重要な各行が何をするかを明確に説明している。",
+        "rubric_complete": "完全性：3 つの別々の課題プログラムが含まれている。",
+        "rubric_clarity": "明確さ：行ごとのコメントが短く正確である。",
+        "rubric_r_data": "データ処理：データセット、変数型、欠損値、グループを正しく扱っている。",
+        "rubric_r_method": "統計手法：選んだ要約、グラフ、区間、検定、モデルが問題に合っている。",
+        "rubric_r_interpret": "解釈：結論が明確な日本語で、言い過ぎていない。",
+        "step_foundation": [
+            "{base_language} の例を上から下まで読み、出力、入力、処理の行を見つけます。",
+            "ヘッダー、main 関数、宣言、文、ブロック、セミコロンを印付けします。",
+            "最小版を先に実行し、値を 1 つ変えて結果を予測します。",
+            "後の言語比較のために、重要な各行を日本語で短く説明します。",
+        ],
+        "step_target": [
+            "{base_language} コードが何をしているかを先に判断します。",
+            "同じ考え方を通常の {language} 構文と命名で書きます。",
+            "最小版を実行し、値を 1 つ変えて出力を予測します。",
+            "重要な各行について、{base_language} との対応を短く書きます。",
+        ],
+        "step_input": [
+            "各入力変数のデータ型を先に言います。",
+            "{language} で文字列、整数、小数、真偽値、文字、配列/リストを読む形を書きます。",
+            "数値入力がどこで変換されるかを明確に示します。",
+            "文字と変数を含む 1 文の出力を作り、空白と形式を確認します。",
+        ],
+        "step_r": [
+            "行数、列数、変数名、型を先に確認します。",
+            "問題に合う R 関数、グラフ、検定、モデルを選びます。",
+            "コード実行後、ラベル付き出力を確認します。",
+            "結果を統計の言葉で 1 文説明します。",
+        ],
+        "pitfall_foundation": [
+            "main、ヘッダー、セミコロンを説明できるまで飛ばさないでください。",
+            "構文だけを暗記せず、各行を具体的な動作と結び付けてください。",
+            "エラーが 1 つの概念を指すよう、例は小さく保ちます。",
+        ],
+        "pitfall_target": [
+            "{base_language} の句読点を目標言語へそのまま持ち込まないでください。",
+            "無理な逐語訳ではなく、{language} の標準ライブラリや慣用表現を使います。",
+            "例が大きくなっても、入力、計算、出力を分けて考えます。",
+        ],
+        "pitfall_input": [
+            "キーボード入力は最初は文字なので、数値として解析する前に計算に使わないでください。",
+            "真偽値入力は true/false か 1/0 かを統一してください。",
+            "文字入力では空入力や残った空白に注意します。",
+            "配列/リスト入力では、反復読み取りや 1 行の分割が必要になることが多いです。",
+        ],
+        "pitfall_r": [
+            "行数、列名、型を確認する前に計算しないでください。",
+            "課題が明記しない限り、欠損値を 0 として扱わないでください。",
+            "数値だけで終わらず、解釈文も書いてください。",
+        ],
+        "io_no_input": "この例に入力はありません。",
+        "io_no_output": "この例にコンソール出力はありません。",
+        "io_depends": "結果はこの練習片が出力する値によって変わります。",
+        "io_baseline": "既知言語の基準：値を保存し、ループまたは補助関数を使い、統計量を出力します。",
+        "io_r_output": "出力には本課の統計結果が表示されます。ラベル、数値、解釈を確認してください。",
+        "line_plain": "{role}。まずこの行がプログラム内で果たす役割を判断します。",
+        "line_syntax": "この行のキーワード、関数名、括弧、演算子、インデント、セミコロンに注目します。",
+        "line_compare_same": "これは {base_language} の基準形です。別の言語へ進む前に、この行が何をするか説明します。",
+        "line_compare_target": "この行を {base_language} の同じ役割の書き方と比べます。",
+        "line_compare_example": "{base_language} で最も近い形は `{example}` です。",
+        "phrase_string": "文字列/テキストリテラル：プログラムはこれらの文字を使います。",
+        "phrase_number": "数値リテラル：プログラムはこの具体的な数値を使います。",
+        "phrase_operator": "演算子：値を計算または比較します。",
+        "phrase_name": "名前：変数、関数、型、クラスを表すことがあります。",
+        "phrase_symbol": "構文記号：この行の構造を作ります。",
+        "phrase_comment_mark": "コメント記号：後ろの文字は人間向けで、実行されません。",
+        "phrase_comment_text": "読者向けの説明文です。",
+        "phrase_more": "この行には同じパターンの続きがあります。",
+    },
+    "ko": {
+        "category": "{day:02d}일차 - {title}",
+        "goal_foundation": "다른 목표 언어를 시작하기 전에 {base_language}의 “{title}” 기초를 만듭니다.",
+        "goal_target": "이미 이해한 {base_language} 버전과 직접 비교하면서 {language}의 “{title}”을 배웁니다.",
+        "goal_r_stats": "R을 통계식 데이터 분석 작업에 적용합니다: {summary}",
+        "bridge_foundation": "이것은 이후 언어 비교에 필요한 {base_language} 기초입니다.",
+        "bridge_target": "{base_language} 조각을 익숙한 기준으로 삼고, {language}가 같은 아이디어를 자기 문법, 이름짓기, 표준 라이브러리로 어떻게 표현하는지 비교합니다.",
+        "bridge_r_stats": "{base_language}에서 배운 변수, 함수, 반복문, 배열 기초를 사용하고, 데이터 프레임, 벡터, 공식, 모델, 검정, 명확한 해석은 R에 맡깁니다.",
+        "concept_foundation": "{base_language} 기초: {title}.",
+        "concept_target": "{title}: {base_language} 패턴을 {language}로 번역합니다.",
+        "concept_r_stats": "{title}: R로 통계 데이터 분석 흐름을 완성합니다.",
+        "angle_foundation": "선수 {base_language} 주제: {title}. 다른 언어로 가기 전에 기준을 만듭니다.",
+        "angle_target": "오늘의 주제: {title}. {base_language}에서 시작해 목표 언어 버전을 작성합니다.",
+        "angle_r_stats": "통계 적용: {summary}",
+        "drill_foundation": "{base_language} 조각을 입력해 실행한 뒤, 비어 있지 않은 각 줄을 한국어로 설명합니다.",
+        "drill_target": "{base_language} 조각을 {language}로 다시 쓰고, 목표 언어 코드를 줄별로 설명합니다.",
+        "drill_r_stats": "R 예제를 실행한 뒤 {day:02d}일차에 대한 두 문장의 통계 해석을 작성합니다.",
+        "focus_syntax": "{language} 문법",
+        "focus_comparison": "{base_language} 비교: {topic}",
+        "focus_line": "줄별 설명",
+        "focus_example": "작은 실행 가능 예제",
+        "focus_racket_shape": "Racket 표현식 형태: (function argument ...)",
+        "focus_racket_displayln": "`displayln`은 값을 출력하고 줄을 바꿉니다",
+        "focus_racket_lang": "`#lang racket`은 파일의 언어를 선택합니다",
+        "focus_r_stats": "R 통계 분석 흐름",
+        "focus_r_stats_compare": "{base_language} 비교: 수동 데이터 처리에서 R 분석 함수로",
+        "focus_r_stats_interpretation": "데이터 해석",
+        "focus_r_stats_output": "재현 가능한 라벨 출력",
+        "compare_note": "주요 문법을 {base_language}와 비교하는 짧은 주석을 하나 넣으세요.",
+        "explain_note": "가장 중요한 {language} 문법 줄을 설명하는 짧은 주석을 하나 넣으세요.",
+        "practice_1": "과제 Q1: 프로그램 1 파일 day{day:02d}_q1.{ext}. 목표: 최소 실행 가능 예제를 완성합니다. 작업: {summary} 오늘의 {language} 문법을 사용하고 라벨이 있는 입력, 처리 단계, 최종 결과를 출력하세요. 제출 코드에는 `HW Q1` 라벨을 남기세요. {note}",
+        "practice_2": "과제 Q2: 프로그램 2 파일 day{day:02d}_q2.{ext}. 목표: Q1과 다른 프로그램을 작성합니다. 작업: 다른 값, 입력, 상황으로 “{title}”을 다시 연습합니다. 각 값과 결과가 보이도록 출력하세요. 제출 코드에는 `HW Q2` 라벨을 남기세요. {note}",
+        "practice_3": "과제 Q3: 프로그램 3 파일 day{day:02d}_q3.{ext}. 목표: 설명 습관을 추가합니다. 작업: 최종 출력 전에 예측 주석을 쓰고 실제 결과를 출력합니다. 제출 코드에는 `HW Q3` 라벨을 남기세요. {note}",
+        "practice_r_1": "과제 Q1: 프로그램 1 파일 day{day:02d}_q1.R. 작업: {summary} 라벨이 있는 R 출력과 통계 해석 문장 하나를 출력하세요. 제출 코드에는 `HW Q1` 라벨을 남기세요.",
+        "practice_r_2": "과제 Q2: 프로그램 2 파일 day{day:02d}_q2.R. 작업: 다른 작은 데이터로 이번 통계 흐름을 반복합니다. 변수 타입, 통계 방법, 그래프 목적을 설명하세요. 제출 코드에는 `HW Q2` 라벨을 남기세요.",
+        "practice_r_3": "과제 Q3: 프로그램 3 파일 day{day:02d}_q3.R. 작업: 먼저 예측을 쓰고, 통계 함수나 그래프 코드를 실행한 뒤 결론을 작성합니다. 제출 코드에는 `HW Q3` 라벨을 남기세요.",
+        "check_read": "{day:02d}일차: {title}을 읽습니다.",
+        "check_compare": "{base_language} 조각과 {language} 조각을 비교합니다.",
+        "check_explain": "{language} 조각을 읽고 중요한 각 줄을 설명합니다.",
+        "check_type_run": "예제 코드를 직접 입력하고 한 번 실행합니다.",
+        "check_mark": "입력, 처리, 출력 줄이 있으면 표시합니다.",
+        "check_homework": "세 가지 구체적인 과제 프로그램 HW Q1, HW Q2, HW Q3를 완성합니다.",
+        "check_submit_compare": "세 프로그램과 짧은 {base_language} 비교 노트를 제출합니다.",
+        "check_submit_explain": "세 프로그램과 짧은 {language} 줄별 노트를 제출합니다.",
+        "check_r_identify": "데이터셋, 변수, 표본 크기, 통계량, 출력 해석을 찾습니다.",
+        "check_r_submit": "세 개의 R 스크립트와 각 프로그램의 통계 결론을 제출합니다.",
+        "assignment": "세 개의 서로 다른 프로그램 day{day:02d}_q1.{ext}, day{day:02d}_q2.{ext}, day{day:02d}_q3.{ext}를 제출하세요. 코드를 붙여넣는 경우 `HW Q1`, `HW Q2`, `HW Q3` 라벨로 순서대로 분리하세요. 각 프로그램은 “{title}”의 오늘 주제를 다루고, 독립적으로 실행되며, 라벨이 있는 입력값, 처리 단계, 결과를 출력해야 합니다. 중요한 문법에는 짧은 줄별 노트를 추가하세요. {notes_request} 입력을 읽는 프로그램은 제출 전에 표준 입력 칸에 테스트 입력을 넣으세요.",
+        "assignment_compare": "목표 언어 문법이 {base_language} 작성 방식과 어떻게 다른지도 설명하세요.",
+        "assignment_explain": "중요한 {base_language} 문법도 줄별로 설명하세요.",
+        "assignment_r": "세 개의 독립적인 R 데이터 분석 프로그램 day{day:02d}_q1.R, day{day:02d}_q2.R, day{day:02d}_q3.R을 제출하세요. 각 프로그램은 “{title}”의 통계 작업을 수행하고 라벨 출력과 통계 수업용 짧은 해석을 포함해야 합니다. 그래프를 만들면 저장한 이미지 파일명도 설명하세요.",
+        "rubric_correct": "정확성: 코드가 실행되고 과제 요구와 맞습니다.",
+        "rubric_syntax": "{language} 문법: 정상적인 {language} 구조와 이름짓기를 사용합니다.",
+        "rubric_transfer": "{base_language} 전이: 노트가 {base_language}에서 무엇이 바뀌었는지 명확히 설명합니다.",
+        "rubric_baseline": "{language} 기초: 노트가 중요한 각 줄이 무엇을 하는지 명확히 설명합니다.",
+        "rubric_complete": "완성도: 세 개의 별도 과제 프로그램이 포함됩니다.",
+        "rubric_clarity": "명확성: 줄별 주석이 짧고 정확합니다.",
+        "rubric_r_data": "데이터 처리: 데이터셋, 변수 타입, 결측값 또는 그룹 처리가 정확합니다.",
+        "rubric_r_method": "통계 방법: 선택한 요약, 그래프, 구간, 검정 또는 모델이 문제에 맞습니다.",
+        "rubric_r_interpret": "해석: 결론이 명확한 한국어이며 과장하지 않습니다.",
+        "step_foundation": [
+            "{base_language} 예제를 위에서 아래로 읽고 출력, 입력, 처리 줄을 찾습니다.",
+            "헤더, main 함수, 선언, 문장, 블록, 세미콜론을 표시합니다.",
+            "가장 작은 버전을 먼저 실행한 뒤 값 하나를 바꾸고 결과를 예측합니다.",
+            "다음 언어 비교를 위해 중요한 각 줄을 한국어로 짧게 설명합니다.",
+        ],
+        "step_target": [
+            "{base_language} 코드가 무엇을 하는지 먼저 판단합니다.",
+            "같은 아이디어를 정상적인 {language} 문법과 이름으로 작성합니다.",
+            "가장 작은 버전을 실행하고 값 하나를 바꿔 출력을 예측합니다.",
+            "중요한 각 줄에 대해 {base_language}와의 대응을 짧게 씁니다.",
+        ],
+        "step_input": [
+            "각 입력 변수의 데이터 타입을 먼저 말합니다.",
+            "{language}에서 문자열, 정수, 소수, 불리언, 문자, 배열/리스트를 읽는 형태를 씁니다.",
+            "숫자 입력이 어디서 변환되는지 명확히 표시합니다.",
+            "문자와 변수를 포함한 출력 문장 하나를 만들고 공백과 형식을 확인합니다.",
+        ],
+        "step_r": [
+            "행 수, 열 수, 변수명, 타입을 먼저 확인합니다.",
+            "문제에 맞는 R 함수, 그래프, 검정 또는 모델을 선택합니다.",
+            "코드 실행 후 라벨이 있는 출력을 확인합니다.",
+            "결과를 통계 언어로 한 문장 설명합니다.",
+        ],
+        "pitfall_foundation": [
+            "main, 헤더, 세미콜론을 설명할 수 있을 때까지 건너뛰지 마세요.",
+            "문법만 외우지 말고 각 줄을 실제 프로그램 동작과 연결하세요.",
+            "오류가 한 개념을 가리키도록 예제를 작게 유지하세요.",
+        ],
+        "pitfall_target": [
+            "{base_language} 구두점을 목표 언어에 그대로 옮기지 마세요.",
+            "강제 직역 대신 {language}의 표준 라이브러리나 관용 표현을 사용하세요.",
+            "예제가 커져도 입력, 계산, 출력을 분리하세요.",
+        ],
+        "pitfall_input": [
+            "키보드 입력은 처음에는 문자이므로 숫자로 해석하기 전에는 계산에 쓰지 마세요.",
+            "불리언 입력 표기는 true/false 또는 1/0 중 하나로 통일하세요.",
+            "문자 입력에서는 빈 입력이나 남은 공백을 조심하세요.",
+            "배열/리스트 입력은 반복 읽기나 한 줄 분할이 필요한 경우가 많습니다.",
+        ],
+        "pitfall_r": [
+            "행 수, 열 이름, 타입을 확인하기 전에 계산하지 마세요.",
+            "과제가 명시하지 않는 한 결측값을 0으로 다루지 마세요.",
+            "숫자만 보고하지 말고 해석 문장도 쓰세요.",
+        ],
+        "io_no_input": "이 예제에는 입력이 없습니다.",
+        "io_no_output": "이 예제에는 콘솔 출력이 없습니다.",
+        "io_depends": "결과는 이 연습 조각이 출력하는 값에 따라 달라집니다.",
+        "io_baseline": "알고 있는 언어 기준: 값을 저장하고 반복문이나 도우미 함수를 사용한 뒤 통계량을 출력합니다.",
+        "io_r_output": "출력에는 이번 수업의 통계 결과가 표시됩니다. 라벨, 값, 해석을 확인하세요.",
+        "line_plain": "{role}. 먼저 이 줄이 프로그램에서 맡는 역할을 판단하세요.",
+        "line_syntax": "이 줄의 키워드, 함수명, 괄호, 연산자, 들여쓰기 또는 세미콜론에 집중하세요.",
+        "line_compare_same": "이것은 {base_language} 기준 형태입니다. 다른 언어로 가기 전에 이 줄이 무엇을 하는지 설명하세요.",
+        "line_compare_target": "이 줄을 {base_language}의 같은 역할을 하는 형태와 비교하세요.",
+        "line_compare_example": "{base_language}에서 가장 가까운 형태는 `{example}`입니다.",
+        "phrase_string": "문자열/텍스트 리터럴: 프로그램이 이 문자들을 사용합니다.",
+        "phrase_number": "숫자 리터럴: 프로그램이 이 구체적인 숫자를 사용합니다.",
+        "phrase_operator": "연산자: 값을 계산하거나 비교합니다.",
+        "phrase_name": "이름: 변수, 함수, 타입 또는 클래스를 나타낼 수 있습니다.",
+        "phrase_symbol": "문법 기호: 이 줄의 구조를 만듭니다.",
+        "phrase_comment_mark": "주석 표시: 뒤의 글은 사람을 위한 설명이며 실행되지 않습니다.",
+        "phrase_comment_text": "읽는 사람을 위한 설명입니다.",
+        "phrase_more": "이 줄에는 같은 패턴의 내용이 더 이어집니다.",
+    },
+    "fr": {
+        "category": "Jour {day:02d} - {title}",
+        "goal_foundation": "Construire la base {base_language} pour « {title} » avant de commencer un autre langage cible.",
+        "goal_target": "Apprendre « {title} » en {language} en le comparant directement avec la version {base_language} que vous comprenez déjà.",
+        "goal_r_stats": "Appliquer R à une tâche d'analyse statistique : {summary}",
+        "bridge_foundation": "C'est la base {base_language} à maîtriser avant les comparaisons avec d'autres langages.",
+        "bridge_target": "Utilisez l'extrait {base_language} comme repère familier, puis comparez la manière dont {language} exprime la même idée avec sa syntaxe, ses noms et sa bibliothèque standard.",
+        "bridge_r_stats": "Utilisez vos bases {base_language} sur variables, fonctions, boucles et tableaux, puis laissez R gérer data frames, vecteurs, formules, modèles, tests et interprétation claire.",
+        "concept_foundation": "Base {base_language} : {title}.",
+        "concept_target": "{title} : traduire le modèle {base_language} en {language}.",
+        "concept_r_stats": "{title} : réaliser le flux d'analyse statistique avec R.",
+        "angle_foundation": "Sujet préalable {base_language} : {title}. Construisez cette base avant de passer à un autre langage.",
+        "angle_target": "Sujet du jour : {title}. Partez de {base_language}, puis écrivez la version en langage cible.",
+        "angle_r_stats": "Application statistique : {summary}",
+        "drill_foundation": "Tapez l'extrait {base_language}, exécutez-le, puis expliquez chaque ligne non vide en français.",
+        "drill_target": "Réécrivez l'extrait {base_language} en {language}, puis expliquez chaque ligne du langage cible.",
+        "drill_r_stats": "Exécutez l'exemple R, puis écrivez deux phrases d'interprétation statistique pour le jour {day:02d}.",
+        "focus_syntax": "Syntaxe {language}",
+        "focus_comparison": "Comparaison {base_language} : {topic}",
+        "focus_line": "Explication ligne par ligne",
+        "focus_example": "Petit exemple exécutable",
+        "focus_racket_shape": "Forme d'expression Racket : (function argument ...)",
+        "focus_racket_displayln": "`displayln` affiche une valeur puis ajoute un retour à la ligne",
+        "focus_racket_lang": "`#lang racket` choisit le langage du fichier",
+        "focus_r_stats": "Flux d'analyse statistique en R",
+        "focus_r_stats_compare": "Comparaison {base_language} : du traitement manuel des données aux fonctions d'analyse R",
+        "focus_r_stats_interpretation": "Interprétation des données",
+        "focus_r_stats_output": "Sortie étiquetée et reproductible",
+        "compare_note": "Ajoutez un court commentaire comparant la syntaxe principale avec {base_language}.",
+        "explain_note": "Ajoutez un court commentaire expliquant la ligne de syntaxe {language} la plus importante.",
+        "practice_1": "Devoir Q1 : programme 1, fichier day{day:02d}_q1.{ext}. Objectif : produire un exemple minimal exécutable. Tâche : {summary} Utilisez la syntaxe {language} du jour et affichez des entrées, étapes et résultats étiquetés. Gardez l'étiquette `HW Q1` dans le code soumis. {note}",
+        "practice_2": "Devoir Q2 : programme 2, fichier day{day:02d}_q2.{ext}. Objectif : écrire un programme différent de Q1. Tâche : refaire « {title} » avec d'autres valeurs, entrées ou scénario. La sortie doit montrer chaque valeur et résultat. Gardez l'étiquette `HW Q2` dans le code soumis. {note}",
+        "practice_3": "Devoir Q3 : programme 3, fichier day{day:02d}_q3.{ext}. Objectif : ajouter une habitude d'explication. Tâche : écrire un commentaire de prédiction avant la sortie finale, puis afficher le résultat réel. Gardez l'étiquette `HW Q3` dans le code soumis. {note}",
+        "practice_r_1": "Devoir Q1 : programme 1, fichier day{day:02d}_q1.R. Tâche : {summary} Affichez une sortie R étiquetée et une phrase d'interprétation statistique. Gardez l'étiquette `HW Q1` dans le code soumis.",
+        "practice_r_2": "Devoir Q2 : programme 2, fichier day{day:02d}_q2.R. Tâche : répéter le flux statistique de la leçon avec un autre petit jeu de données. Expliquez les types de variables, la méthode statistique ou le but du graphique. Gardez l'étiquette `HW Q2` dans le code soumis.",
+        "practice_r_3": "Devoir Q3 : programme 3, fichier day{day:02d}_q3.R. Tâche : écrire une prédiction, exécuter la fonction statistique ou le graphique, puis conclure. Gardez l'étiquette `HW Q3` dans le code soumis.",
+        "check_read": "Lire le jour {day:02d} : {title}.",
+        "check_compare": "Comparer l'extrait {base_language} avec l'extrait {language}.",
+        "check_explain": "Lire l'extrait {language} et expliquer chaque ligne importante.",
+        "check_type_run": "Taper l'exemple à la main et l'exécuter une fois.",
+        "check_mark": "Marquer les lignes d'entrée, de traitement et de sortie si elles existent.",
+        "check_homework": "Terminer les trois programmes concrets : HW Q1, HW Q2 et HW Q3.",
+        "check_submit_compare": "Soumettre les trois programmes avec de courtes notes de comparaison {base_language}.",
+        "check_submit_explain": "Soumettre les trois programmes avec de courtes notes ligne par ligne en {language}.",
+        "check_r_identify": "Identifier le jeu de données, les variables, la taille d'échantillon, la statistique et l'interprétation.",
+        "check_r_submit": "Soumettre les trois scripts R avec une conclusion statistique claire pour chacun.",
+        "assignment": "Soumettez trois programmes différents : day{day:02d}_q1.{ext}, day{day:02d}_q2.{ext} et day{day:02d}_q3.{ext}. Si vous collez le code, séparez-le dans l'ordre avec les étiquettes `HW Q1`, `HW Q2`, `HW Q3`. Chaque programme doit traiter le thème du jour « {title} », s'exécuter seul et afficher les valeurs d'entrée, les étapes et le résultat avec des étiquettes. Ajoutez de courtes notes ligne par ligne pour la syntaxe importante. {notes_request} Si le programme lit une entrée, placez les valeurs de test dans la zone d'entrée standard avant de soumettre.",
+        "assignment_compare": "Expliquez aussi comment la syntaxe du langage cible diffère de {base_language}.",
+        "assignment_explain": "Expliquez aussi ligne par ligne la syntaxe {base_language} importante.",
+        "assignment_r": "Soumettez trois programmes R d'analyse de données séparés : day{day:02d}_q1.R, day{day:02d}_q2.R et day{day:02d}_q3.R. Chaque programme doit traiter la tâche statistique « {title} », afficher une sortie étiquetée et inclure une courte interprétation pour un cours de statistique. Si un graphique est produit, indiquez le nom du fichier image enregistré.",
+        "rubric_correct": "Exactitude : le code s'exécute et correspond au devoir.",
+        "rubric_syntax": "Syntaxe {language} : le code utilise une structure et des noms normaux en {language}.",
+        "rubric_transfer": "Transfert depuis {base_language} : les notes expliquent clairement ce qui a changé.",
+        "rubric_baseline": "Base {language} : les notes expliquent clairement ce que fait chaque ligne importante.",
+        "rubric_complete": "Complétude : les trois programmes de devoir séparés sont inclus.",
+        "rubric_clarity": "Clarté : les commentaires ligne par ligne sont courts et exacts.",
+        "rubric_r_data": "Gestion des données : jeu de données, types de variables, valeurs manquantes ou groupes sont traités correctement.",
+        "rubric_r_method": "Méthode statistique : résumé, graphique, intervalle, test ou modèle correspond à la question.",
+        "rubric_r_interpret": "Interprétation : la conclusion est en français clair et ne surinterprète pas.",
+        "step_foundation": [
+            "Lire l'exemple {base_language} de haut en bas et repérer les lignes de sortie, d'entrée et de traitement.",
+            "Marquer les éléments de syntaxe : en-tête, fonction main, déclarations, instructions, blocs et points-virgules.",
+            "Exécuter d'abord la plus petite version, puis changer une valeur et prédire le résultat.",
+            "Écrire une courte note en français pour chaque ligne importante afin de créer une base claire.",
+        ],
+        "step_target": [
+            "Identifier d'abord ce que fait le code {base_language}, pas seulement les symboles utilisés.",
+            "Écrire la même idée avec la syntaxe et les noms normaux de {language}.",
+            "Exécuter la plus petite version, puis changer une valeur et prédire la sortie.",
+            "Ajouter une courte note par ligne importante en expliquant le lien avec {base_language}.",
+        ],
+        "step_input": [
+            "Nommer d'abord le type de chaque variable d'entrée.",
+            "Écrire la forme d'entrée en {language} pour texte, entier, décimal, booléen, caractère et tableau/liste.",
+            "Montrer exactement où l'entrée numérique est convertie.",
+            "Construire une phrase de sortie avec texte et variables, puis vérifier espaces et format.",
+        ],
+        "step_r": [
+            "Inspecter d'abord lignes, colonnes, noms de variables et types.",
+            "Choisir la fonction R, le graphique, le test ou le modèle adapté à la question.",
+            "Après exécution, vérifier la sortie étiquetée.",
+            "Expliquer le résultat en une phrase statistique claire.",
+        ],
+        "pitfall_foundation": [
+            "Ne sautez pas main, les en-têtes ou les points-virgules avant de pouvoir les expliquer.",
+            "Ne mémorisez pas seulement la syntaxe ; reliez chaque ligne à une action concrète.",
+            "Gardez les exemples assez petits pour qu'une erreur pointe vers un concept.",
+        ],
+        "pitfall_target": [
+            "Ne copiez pas la ponctuation {base_language} quand le langage cible a un autre style.",
+            "Utilisez la bibliothèque ou l'idiome standard de {language} au lieu d'une traduction forcée.",
+            "Quand l'exemple grandit, séparez encore entrée, calcul et sortie.",
+        ],
+        "pitfall_input": [
+            "Une entrée clavier commence comme caractères ; ne l'utilisez pas en calcul avant conversion.",
+            "L'écriture des booléens doit être cohérente : true/false, 1/0 ou autre.",
+            "L'entrée d'un caractère doit gérer les entrées vides ou les anciens espaces.",
+            "L'entrée de tableau/liste demande souvent des lectures répétées ou le découpage d'une ligne.",
+        ],
+        "pitfall_r": [
+            "Ne calculez pas avant de vérifier nombre de lignes, noms de colonnes et types.",
+            "Ne traitez pas les valeurs manquantes comme zéro sauf si le devoir le demande.",
+            "Ne donnez pas seulement un nombre ; écrivez aussi une interprétation.",
+        ],
+        "io_no_input": "Aucune entrée pour cet exemple.",
+        "io_no_output": "Aucune sortie console pour cet exemple.",
+        "io_depends": "Le résultat dépend des valeurs affichées par ce fragment d'exercice.",
+        "io_baseline": "Base du langage connu : stocker les valeurs, boucler ou appeler des aides, puis afficher une statistique.",
+        "io_r_output": "La sortie affiche le résultat statistique de la leçon ; vérifiez les étiquettes, valeurs et interprétation.",
+        "line_plain": "{role}. Commencez par identifier le rôle de cette ligne dans le programme.",
+        "line_syntax": "Observez mot-clé, nom de fonction, parenthèses, opérateurs, indentation ou point-virgule.",
+        "line_compare_same": "C'est la forme de base en {base_language} ; expliquez ce que fait cette ligne avant de passer à un autre langage.",
+        "line_compare_target": "Comparez cette ligne avec la forme {base_language} qui joue le même rôle.",
+        "line_compare_example": "En {base_language}, la forme la plus proche est `{example}`.",
+        "phrase_string": "Littéral texte/chaîne : le programme utilise ces caractères exacts.",
+        "phrase_number": "Littéral numérique : le programme utilise cette valeur précise.",
+        "phrase_operator": "Opérateur : il calcule ou compare des valeurs.",
+        "phrase_name": "Nom : peut désigner une variable, une fonction, un type ou une classe.",
+        "phrase_symbol": "Symbole de syntaxe : il structure cette ligne.",
+        "phrase_comment_mark": "Marqueur de commentaire : le texte suivant est lu par l'humain et ne s'exécute pas.",
+        "phrase_comment_text": "Texte explicatif pour le lecteur.",
+        "phrase_more": "D'autres éléments continuent le même modèle sur cette ligne.",
+    },
+}
+
+
+LOCALIZED_LINE_ROLE_LABELS = {
+    "zh": {
+        "blank": "空行", "comment": "注释", "language_directive": "语言声明", "import": "导入库",
+        "entry": "程序入口", "function_def": "函数定义", "variable": "名称绑定或赋值",
+        "if": "条件分支", "else_if": "多分支条件", "multi_case": "精确匹配分支",
+        "for_loop": "for 循环", "while_loop": "while 风格循环", "local_binding": "局部绑定",
+        "data_shape": "数据结构", "class": "类定义", "block_start": "代码块开始",
+        "block_end": "代码块结束", "return": "返回语句", "output": "输出语句",
+        "function_call": "函数调用或特殊形式", "statement": "普通语句", "normal": "普通代码行",
+    },
+    "ja": {
+        "blank": "空行", "comment": "コメント", "language_directive": "言語指定", "import": "ライブラリの読み込み",
+        "entry": "プログラムの入口", "function_def": "関数定義", "variable": "名前の束縛または代入",
+        "if": "条件分岐", "else_if": "複数分岐の条件", "multi_case": "完全一致分岐",
+        "for_loop": "for ループ", "while_loop": "while 形式のループ", "local_binding": "ローカル束縛",
+        "data_shape": "データ構造", "class": "クラス定義", "block_start": "ブロック開始",
+        "block_end": "ブロック終了", "return": "return 文", "output": "出力文",
+        "function_call": "関数呼び出しまたは特殊形式", "statement": "通常の文", "normal": "通常のコード行",
+    },
+    "ko": {
+        "blank": "빈 줄", "comment": "주석", "language_directive": "언어 지시문", "import": "라이브러리 가져오기",
+        "entry": "프로그램 시작점", "function_def": "함수 정의", "variable": "이름 바인딩 또는 대입",
+        "if": "조건 분기", "else_if": "다중 조건 분기", "multi_case": "정확한 값 분기",
+        "for_loop": "for 반복문", "while_loop": "while 형태 반복문", "local_binding": "지역 바인딩",
+        "data_shape": "데이터 구조", "class": "클래스 정의", "block_start": "블록 시작",
+        "block_end": "블록 끝", "return": "반환문", "output": "출력문",
+        "function_call": "함수 호출 또는 특수 형식", "statement": "일반 문장", "normal": "일반 코드 줄",
+    },
+    "fr": {
+        "blank": "Ligne vide", "comment": "Commentaire", "language_directive": "Directive de langage", "import": "Import de bibliothèque",
+        "entry": "Point d'entrée", "function_def": "Définition de fonction", "variable": "Liaison ou affectation de nom",
+        "if": "Branche conditionnelle", "else_if": "Condition à plusieurs branches", "multi_case": "Branche par valeur exacte",
+        "for_loop": "Boucle for", "while_loop": "Boucle de type while", "local_binding": "Liaison locale",
+        "data_shape": "Structure de données", "class": "Définition de classe", "block_start": "Début de bloc",
+        "block_end": "Fin de bloc", "return": "Instruction de retour", "output": "Instruction de sortie",
+        "function_call": "Appel de fonction ou forme spéciale", "statement": "Instruction normale", "normal": "Ligne de code normale",
+    },
+}
+
+
+def _lesson_templates(ui_language: str) -> dict:
+    return LOCALIZED_LESSON_TEMPLATES[normalize_ui_language(ui_language)]
+
+
+def _localized_title(title: str, kind: str, ui_language: str) -> str:
+    language = normalize_ui_language(ui_language)
+    if language == "en":
+        return title
+    if kind.startswith("r_"):
+        return LOCALIZED_R_STATS_TITLES.get(language, {}).get(kind, title)
+    return LOCALIZED_TOPIC_TITLES.get(language, {}).get(kind, title)
+
+
+def _localized_kind_summary(kind: str, ui_language: str) -> str:
+    language = normalize_ui_language(ui_language)
+    if language == "en":
+        return _summary(kind) if not kind.startswith("r_") else _r_statistics_topic(kind)["summary"]
+    if kind.startswith("r_"):
+        return LOCALIZED_R_STATS_SUMMARIES.get(language, {}).get(kind, _r_statistics_topic(kind)["summary"])
+    return _localized_summary(kind, language)
+
+
+def _format_localized_items(items: list[str], **values) -> list[str]:
+    return [item.format(**values) for item in items]
+
+
+def _localized_focus(title: str, kind: str, target: str, base: str, ui_language: str) -> list[str]:
+    language = normalize_ui_language(ui_language)
+    if language == "en":
+        return _focus(title, kind, target, base)
+    templates = _lesson_templates(language)
+    target_language = TARGET_LANGUAGES[target]["name"]
+    base_language = TARGET_LANGUAGES[base]["name"]
+    topic = _localized_title(title, kind, language).lower()
+    if kind.startswith("r_"):
+        return [
+            templates["focus_r_stats"],
+            templates["focus_r_stats_compare"].format(base_language=base_language),
+            templates["focus_r_stats_interpretation"],
+            templates["focus_r_stats_output"],
+        ]
+    focus = [
+        templates["focus_syntax"].format(language=target_language),
+        templates["focus_comparison"].format(base_language=base_language, topic=topic),
+        templates["focus_line"],
+        templates["focus_example"],
+    ]
+    if target == "racket":
+        focus.insert(1, templates["focus_racket_shape"])
+        if _base_kind(kind) == "output":
+            focus.insert(2, templates["focus_racket_displayln"])
+            focus.insert(3, templates["focus_racket_lang"])
+    return focus
+
+
+LOCALIZED_EXAMPLE_META_PHRASES = {
+    "zh": {
+        "No console output yet.": "这个片段暂时没有控制台输出。",
+        "Computed values:": "计算得到的值：",
+        "Stored values:": "已保存的值：",
+        "Example call:": "示例调用：",
+        "Invalid count path runs.": "无效 count 分支会运行。",
+        "raise an error": "会抛出错误",
+        "returns -1.0 in this simplified sample.": "在这个简化示例中返回 -1.0。",
+        "Body runs once, then stops because choice is 0.": "循环体先运行一次，然后因为 choice 是 0 而停止。",
+        "Random output from 1 to 10.": "1 到 10 之间的随机输出。",
+        "Fixed sequence:": "固定序列：",
+        "Dynamic sequence starts as": "动态序列开始为",
+        "Student object/record stores name and score.": "Student 对象/记录会保存姓名和分数。",
+        "Invalid values are rejected.": "无效值会被拒绝。",
+        "Accepted score =": "接受的分数 =",
+        "Then the loop stops.": "然后循环停止。",
+    },
+    "ja": {
+        "No console output yet.": "この断片にはまだコンソール出力がありません。",
+        "Computed values:": "計算された値：",
+        "Stored values:": "保存された値：",
+        "Example call:": "呼び出し例：",
+        "Invalid count path runs.": "無効な count の分岐が実行されます。",
+        "raise an error": "エラーを発生させます",
+        "returns -1.0 in this simplified sample.": "この簡略例では -1.0 を返します。",
+        "Body runs once, then stops because choice is 0.": "本体は一度実行され、choice が 0 なので停止します。",
+        "Random output from 1 to 10.": "1 から 10 までのランダム出力。",
+        "Fixed sequence:": "固定シーケンス：",
+        "Dynamic sequence starts as": "動的シーケンスの開始値：",
+        "Student object/record stores name and score.": "Student オブジェクト/レコードは名前と点数を保存します。",
+        "Invalid values are rejected.": "無効な値は拒否されます。",
+        "Accepted score =": "受け入れられた点数 =",
+        "Then the loop stops.": "その後ループは停止します。",
+    },
+    "ko": {
+        "No console output yet.": "이 조각에는 아직 콘솔 출력이 없습니다.",
+        "Computed values:": "계산된 값:",
+        "Stored values:": "저장된 값:",
+        "Example call:": "예시 호출:",
+        "Invalid count path runs.": "잘못된 count 분기가 실행됩니다.",
+        "raise an error": "오류를 발생시킵니다",
+        "returns -1.0 in this simplified sample.": "이 단순화된 예시에서는 -1.0을 반환합니다.",
+        "Body runs once, then stops because choice is 0.": "본문이 한 번 실행된 뒤 choice가 0이어서 멈춥니다.",
+        "Random output from 1 to 10.": "1부터 10까지의 무작위 출력.",
+        "Fixed sequence:": "고정 시퀀스:",
+        "Dynamic sequence starts as": "동적 시퀀스 시작값:",
+        "Student object/record stores name and score.": "Student 객체/레코드는 이름과 점수를 저장합니다.",
+        "Invalid values are rejected.": "잘못된 값은 거부됩니다.",
+        "Accepted score =": "허용된 점수 =",
+        "Then the loop stops.": "그다음 반복이 멈춥니다.",
+    },
+    "fr": {
+        "No console output yet.": "Ce fragment n'a pas encore de sortie console.",
+        "Computed values:": "Valeurs calculées :",
+        "Stored values:": "Valeurs stockées :",
+        "Example call:": "Appel exemple :",
+        "Invalid count path runs.": "La branche de count invalide s'exécute.",
+        "raise an error": "déclenchent une erreur",
+        "returns -1.0 in this simplified sample.": "renvoie -1.0 dans cet exemple simplifié.",
+        "Body runs once, then stops because choice is 0.": "Le corps s'exécute une fois, puis s'arrête car choice vaut 0.",
+        "Random output from 1 to 10.": "Sortie aléatoire de 1 à 10.",
+        "Fixed sequence:": "Séquence fixe :",
+        "Dynamic sequence starts as": "La séquence dynamique commence par",
+        "Student object/record stores name and score.": "L'objet/enregistrement Student stocke le nom et le score.",
+        "Invalid values are rejected.": "Les valeurs invalides sont rejetées.",
+        "Accepted score =": "Score accepté =",
+        "Then the loop stops.": "Puis la boucle s'arrête.",
+    },
+}
+
+
+def _localized_example_meta_text(value: str, ui_language: str) -> str:
+    text = str(value or "")
+    for source, replacement in LOCALIZED_EXAMPLE_META_PHRASES.get(normalize_ui_language(ui_language), {}).items():
+        text = text.replace(source, replacement)
+    return text
+
+
+def _localized_example_io(io: dict | None, kind: str, ui_language: str) -> dict:
+    if not io:
+        return {}
+    language = normalize_ui_language(ui_language)
+    if language == "en":
+        return dict(io)
+    templates = _lesson_templates(language)
+    result = dict(io)
+    if result.get("input") == "No input for this sample.":
+        result["input"] = templates["io_no_input"]
+    output = str(result.get("output") or "")
+    if output == "Result depends on the values printed by this practice fragment.":
+        result["output"] = templates["io_depends"]
+    elif output.startswith("Known-language baseline:"):
+        result["output"] = templates["io_baseline"]
+    elif kind.startswith("r_"):
+        result["output"] = templates["io_r_output"]
+    result["input"] = _localized_example_meta_text(result.get("input", ""), language)
+    result["output"] = _localized_example_meta_text(result.get("output", ""), language)
+    return result
+
+
+def _localized_syntax_bridge(bridge: dict, title: str, kind: str, target: str, base: str, ui_language: str, day: int = 0) -> dict:
+    language = normalize_ui_language(ui_language)
+    if language == "en":
+        return bridge
+    templates = _lesson_templates(language)
+    bridge = dict(bridge)
+    target_language = TARGET_LANGUAGES[target]["name"]
+    base_language = TARGET_LANGUAGES[base]["name"]
+    localized_title = _localized_title(title, kind, language)
+    summary = _localized_kind_summary(kind, language)
+    values = {
+        "title": localized_title,
+        "language": target_language,
+        "base_language": base_language,
+        "summary": summary,
+    }
+    if kind.startswith("r_"):
+        bridge["concept"] = templates["concept_r_stats"].format(**values)
+        bridge["today_angle"] = templates["angle_r_stats"].format(**values)
+        bridge["translation_steps"] = _format_localized_items(templates["step_r"], **values)
+        bridge["pitfalls"] = _format_localized_items(templates["pitfall_r"], **values)
+        bridge["drill"] = templates["drill_r_stats"].format(day=day, **values)
+    elif target == base:
+        bridge["concept"] = templates["concept_foundation"].format(**values)
+        bridge["today_angle"] = templates["angle_foundation"].format(**values)
+        bridge["translation_steps"] = _format_localized_items(
+            templates["step_input" if _base_kind(kind) == "input" else "step_foundation"],
+            **values,
+        )
+        bridge["pitfalls"] = _format_localized_items(
+            templates["pitfall_input" if _base_kind(kind) == "input" else "pitfall_foundation"],
+            **values,
+        )
+        bridge["drill"] = templates["drill_foundation"].format(**values)
+    else:
+        bridge["concept"] = templates["concept_target"].format(**values)
+        bridge["today_angle"] = templates["angle_target"].format(**values)
+        bridge["translation_steps"] = _format_localized_items(
+            templates["step_input" if _base_kind(kind) == "input" else "step_target"],
+            **values,
+        )
+        bridge["pitfalls"] = _format_localized_items(
+            templates["pitfall_input" if _base_kind(kind) == "input" else "pitfall_target"],
+            **values,
+        )
+        bridge["drill"] = templates["drill_target"].format(**values)
+    bridge["base_io"] = _localized_example_io(bridge.get("base_io"), kind, language)
+    bridge["target_io"] = _localized_example_io(bridge.get("target_io"), kind, language)
+    return bridge
+
+
+def _localized_practice(day: int, title: str, kind: str, target: str, base: str, ui_language: str) -> list[str]:
+    language = normalize_ui_language(ui_language)
+    if language == "en":
+        if kind.startswith("r_"):
+            return _r_statistics_practice(day, title, kind, base)
+        return _practice(day, title, kind, target, base)
+    templates = _lesson_templates(language)
+    target_language = TARGET_LANGUAGES[target]["name"]
+    base_language = TARGET_LANGUAGES[base]["name"]
+    ext = TARGET_LANGUAGES[target]["file_ext"]
+    localized_title = _localized_title(title, kind, language)
+    summary = _localized_kind_summary(kind, language)
+    if kind.startswith("r_"):
+        return [
+            templates["practice_r_1"].format(day=day, summary=summary),
+            templates["practice_r_2"].format(day=day),
+            templates["practice_r_3"].format(day=day),
+        ]
+    note = (
+        templates["compare_note"].format(base_language=base_language)
+        if target != base
+        else templates["explain_note"].format(language=target_language)
+    )
+    return [
+        templates["practice_1"].format(day=day, ext=ext, summary=summary, language=target_language, note=note),
+        templates["practice_2"].format(day=day, ext=ext, title=localized_title, note=note),
+        templates["practice_3"].format(day=day, ext=ext, note=note),
+    ]
+
+
+def _localized_checklist(day: int, title: str, kind: str, target: str, base: str, ui_language: str) -> list[str]:
+    language = normalize_ui_language(ui_language)
+    if language == "en":
+        if kind.startswith("r_"):
+            return _r_statistics_checklist(day, title, base)
+        return _checklist(day, title, target, base)
+    templates = _lesson_templates(language)
+    target_language = TARGET_LANGUAGES[target]["name"]
+    base_language = TARGET_LANGUAGES[base]["name"]
+    localized_title = _localized_title(title, kind, language)
+    if kind.startswith("r_"):
+        return [
+            templates["check_read"].format(day=day, title=localized_title),
+            templates["check_compare"].format(base_language=base_language, language="R"),
+            templates["check_type_run"],
+            templates["check_r_identify"],
+            templates["check_homework"],
+            templates["check_r_submit"],
+        ]
+    return [
+        templates["check_read"].format(day=day, title=localized_title),
+        (
+            templates["check_compare"].format(base_language=base_language, language=target_language)
+            if target != base
+            else templates["check_explain"].format(language=target_language)
+        ),
+        templates["check_type_run"],
+        templates["check_mark"],
+        templates["check_homework"],
+        (
+            templates["check_submit_compare"].format(base_language=base_language)
+            if target != base
+            else templates["check_submit_explain"].format(language=target_language)
+        ),
+    ]
+
+
+def _localized_rubric(target: str, base: str, kind: str, ui_language: str) -> list[str]:
+    language = normalize_ui_language(ui_language)
+    if language == "en":
+        if kind.startswith("r_"):
+            return [
+                "Correctness: the R code runs and prints the requested labelled output.",
+                "Data handling: the dataset, variable types, missing values, or groups are handled correctly.",
+                "Statistics method: the selected summary, plot, interval, test, or model matches the question.",
+                "Interpretation: the conclusion uses plain English and does not overclaim.",
+                "Completeness: HW Q1, HW Q2, and HW Q3 are separate, reproducible R scripts.",
+            ]
+        return _rubric(target, base)
+    templates = _lesson_templates(language)
+    target_language = TARGET_LANGUAGES[target]["name"]
+    base_language = TARGET_LANGUAGES[base]["name"]
+    if kind.startswith("r_"):
+        return [
+            templates["rubric_correct"],
+            templates["rubric_r_data"],
+            templates["rubric_r_method"],
+            templates["rubric_r_interpret"],
+            templates["rubric_complete"],
+        ]
+    return [
+        templates["rubric_correct"],
+        templates["rubric_syntax"].format(language=target_language),
+        (
+            templates["rubric_transfer"].format(base_language=base_language)
+            if target != base
+            else templates["rubric_baseline"].format(language=target_language)
+        ),
+        templates["rubric_complete"],
+        templates["rubric_clarity"],
+    ]
+
+
+def _localized_assignment(day: int, title: str, kind: str, target: str, base: str, ui_language: str) -> str:
+    language = normalize_ui_language(ui_language)
+    if language == "en":
+        if kind.startswith("r_"):
+            return _r_statistics_assignment(day, title, base)
+        return _assignment(day, title, target, base)
+    templates = _lesson_templates(language)
+    ext = TARGET_LANGUAGES[target]["file_ext"]
+    base_language = TARGET_LANGUAGES[base]["name"]
+    localized_title = _localized_title(title, kind, language)
+    if kind.startswith("r_"):
+        return templates["assignment_r"].format(day=day, title=localized_title)
+    notes_request = (
+        templates["assignment_compare"].format(base_language=base_language)
+        if target != base
+        else templates["assignment_explain"].format(base_language=base_language)
+    )
+    return templates["assignment"].format(day=day, ext=ext, title=localized_title, notes_request=notes_request)
 
 
 def _code(kind: str, target: str) -> str:
@@ -2534,44 +3690,45 @@ def _r_statistics_lesson(day: int, base: str = "cpp", ui_language: str = "en") -
     base_language = TARGET_LANGUAGES[base]["name"]
     code = topic["code"]
     bridge = _r_statistics_bridge(day, topic, base)
+    bridge = _localized_syntax_bridge(bridge, title, kind, "r", base, ui_language, day)
+    localized_title = _localized_title(title, kind, ui_language)
+    localized_summary = _localized_kind_summary(kind, ui_language)
     explanation = (
         f"{topic['summary']} This is part of the R statistics extension after the 56-day programming core. "
         "Focus on the full analysis habit: inspect the data, choose the statistic or graph, run the R function, then explain the result in plain English."
     )
     if ui_language != "en":
-        summary = LOCALIZED_R_STATS_SUMMARIES.get(ui_language, {}).get(kind, topic["summary"])
-        explanation = LOCALIZED_EXPLANATION_TEMPLATES[ui_language]["r_stats"].format(summary=summary)
+        explanation = LOCALIZED_EXPLANATION_TEMPLATES[ui_language]["r_stats"].format(summary=localized_summary)
     lesson = Lesson(
         day=day,
-        category=f"Day {day:02d} - {title}",
+        category=(
+            f"Day {day:02d} - {title}"
+            if ui_language == "en"
+            else _lesson_templates(ui_language)["category"].format(day=day, title=localized_title)
+        ),
         week=((day - 1) // 7) + 1,
-        title=title,
-        goal=f"Apply R to a statistics-style data-analysis task: {topic['summary']}",
+        title=localized_title,
+        goal=(
+            f"Apply R to a statistics-style data-analysis task: {topic['summary']}"
+            if ui_language == "en"
+            else _lesson_templates(ui_language)["goal_r_stats"].format(summary=localized_summary)
+        ),
         cpp_bridge=(
             f"Use your {base_language} programming foundation for variables, functions, loops, and arrays. "
             "Then let R handle the statistics workflow with data frames, vectors, formulas, models, tests, and clear interpretation."
+            if ui_language == "en"
+            else _lesson_templates(ui_language)["bridge_r_stats"].format(base_language=base_language)
         ),
         explanation=explanation,
         syntax_bridge=bridge,
         official_docs=bridge["docs"],
-        racket_focus=[
-            "R statistics workflow",
-            f"{base_language} comparison: manual data handling to R analysis functions",
-            "data interpretation",
-            "reproducible labelled output",
-        ],
+        racket_focus=_localized_focus(title, kind, "r", base, ui_language),
         code=code,
-        line_notes=_line_notes(code, "r", base),
-        practice=_r_statistics_practice(day, title, kind, base),
-        checklist=_r_statistics_checklist(day, title, base),
-        assignment=_r_statistics_assignment(day, title, base),
-        grading_rubric=[
-            "Correctness: the R code runs and prints the requested labelled output.",
-            "Data handling: the dataset, variable types, missing values, or groups are handled correctly.",
-            "Statistics method: the selected summary, plot, interval, test, or model matches the question.",
-            "Interpretation: the conclusion uses plain English and does not overclaim.",
-            "Completeness: HW Q1, HW Q2, and HW Q3 are separate, reproducible R scripts.",
-        ],
+        line_notes=_localized_line_notes(_line_notes(code, "r", base), "r", base, ui_language),
+        practice=_localized_practice(day, title, kind, "r", base, ui_language),
+        checklist=_localized_checklist(day, title, kind, "r", base, ui_language),
+        assignment=_localized_assignment(day, title, kind, "r", base, ui_language),
+        grading_rubric=_localized_rubric("r", base, kind, ui_language),
     )
     data = asdict(lesson)
     data["target_language"] = "r"
@@ -2965,57 +4122,61 @@ def _phrase_breakdown(line: str, target: str) -> list[dict[str, str]]:
     return phrases
 
 
-def _base_comparison(note: dict[str, str], target: str, base: str) -> str:
-    base_language = TARGET_LANGUAGES[base]["name"]
-    target_language = TARGET_LANGUAGES[target]["name"]
+def _line_note_concept(note: dict[str, str], target: str) -> str:
     line = note.get("line", "").strip()
     plain = note.get("plain", "").lower()
     syntax = note.get("syntax", "").lower()
 
     if not line:
-        concept = "blank"
-    elif line.startswith("#lang"):
-        concept = "language_directive"
-    elif "comment" in plain:
-        concept = "comment"
-    elif "imports" in plain or "include" in line or line.startswith("import "):
-        concept = "import"
-    elif "entry point" in plain or "main(" in line:
-        concept = "entry"
-    elif "defines a function" in plain or ("defines" in plain and "function" in plain) or line.startswith("def "):
-        concept = "function_def"
-    elif "binds" in plain or "updates a name" in plain or " = " in line or "<-" in line:
-        concept = "variable"
-    elif "two-way choice" in plain or "starts a condition" in plain or line.startswith("if "):
-        concept = "if"
-    elif "else-if" in syntax or line.startswith("elif ") or line.startswith("else"):
-        concept = "else_if"
-    elif "multi-case" in plain or "exact-value" in plain or "switch" in plain:
-        concept = "multi_case"
-    elif "for loop" in plain or line.startswith("for "):
-        concept = "for_loop"
-    elif "while loop" in plain or line.startswith("while ") or line.startswith("do "):
-        concept = "while_loop"
-    elif "local names" in plain or line.startswith("(let"):
-        concept = "local_binding"
-    elif "data shape" in plain or line.startswith("(struct"):
-        concept = "data_shape"
-    elif "class" in plain:
-        concept = "class"
-    elif "starts a block" in plain:
-        concept = "block_start"
-    elif "ends a block" in plain:
-        concept = "block_end"
-    elif "returns" in plain or line.startswith("return"):
-        concept = "return"
-    elif "prints" in plain or "displayln" in line or "print(" in line or "printf" in line or "System.out.println" in line:
-        concept = "output"
-    elif "function call" in plain or line.startswith("("):
-        concept = "function_call"
-    elif "statement" in plain:
-        concept = "statement"
-    else:
-        concept = "normal"
+        return "blank"
+    if line.startswith("#lang"):
+        return "language_directive"
+    if "comment" in plain:
+        return "comment"
+    if "imports" in plain or "include" in line or line.startswith("import "):
+        return "import"
+    if "entry point" in plain or "main(" in line:
+        return "entry"
+    if "defines a function" in plain or ("defines" in plain and "function" in plain) or line.startswith("def "):
+        return "function_def"
+    if "binds" in plain or "updates a name" in plain or " = " in line or "<-" in line:
+        return "variable"
+    if "two-way choice" in plain or "starts a condition" in plain or line.startswith("if "):
+        return "if"
+    if "else-if" in syntax or line.startswith("elif ") or line.startswith("else"):
+        return "else_if"
+    if "multi-case" in plain or "exact-value" in plain or "switch" in plain:
+        return "multi_case"
+    if "for loop" in plain or line.startswith("for "):
+        return "for_loop"
+    if "while loop" in plain or line.startswith("while ") or line.startswith("do "):
+        return "while_loop"
+    if "local names" in plain or line.startswith("(let"):
+        return "local_binding"
+    if "data shape" in plain or line.startswith("(struct"):
+        return "data_shape"
+    if "class" in plain:
+        return "class"
+    if "starts a block" in plain:
+        return "block_start"
+    if "ends a block" in plain:
+        return "block_end"
+    if "returns" in plain or line.startswith("return"):
+        return "return"
+    if "prints" in plain or "displayln" in line or "print(" in line or "printf" in line or "System.out.println" in line:
+        return "output"
+    if "function call" in plain or line.startswith("("):
+        return "function_call"
+    if "statement" in plain:
+        return "statement"
+    return "normal"
+
+
+def _base_comparison(note: dict[str, str], target: str, base: str) -> str:
+    base_language = TARGET_LANGUAGES[base]["name"]
+    target_language = TARGET_LANGUAGES[target]["name"]
+    line = note.get("line", "").strip()
+    concept = _line_note_concept(note, target)
 
     if concept == "blank":
         return f"Blank lines serve the same readability role in {base_language}."
@@ -3238,35 +4399,111 @@ def _line_notes(code: str, target: str, base: str = "cpp") -> list[dict]:
     ]
 
 
+def _localized_phrase_breakdown(phrases: list[dict[str, str]], ui_language: str) -> list[dict[str, str]]:
+    language = normalize_ui_language(ui_language)
+    if language == "en":
+        return phrases
+    templates = _lesson_templates(language)
+    localized = []
+    for item in phrases:
+        phrase = item.get("phrase", "")
+        if phrase == "...":
+            meaning = templates["phrase_more"]
+        elif phrase in {";", "#", "//"}:
+            meaning = templates["phrase_comment_mark"]
+        elif _is_number_token(phrase):
+            meaning = templates["phrase_number"]
+        elif phrase.startswith('"') or phrase.startswith("'"):
+            meaning = templates["phrase_string"]
+        elif phrase in {"+", "-", "*", "/", "%", "==", "!=", "<", ">", "<=", ">=", "&&", "||", "<-"}:
+            meaning = templates["phrase_operator"]
+        elif re.fullmatch(r"[A-Za-z_][A-Za-z0-9_!?-]*", phrase):
+            meaning = templates["phrase_name"]
+        elif phrase and phrase not in {"(", ")", "{", "}", "[", "]", ",", ";", ":", ".", "="}:
+            meaning = templates["phrase_comment_text"] if "comment" in item.get("meaning", "").lower() else templates["phrase_symbol"]
+        else:
+            meaning = templates["phrase_symbol"]
+        localized.append({"phrase": phrase, "meaning": meaning})
+    return localized
+
+
+def _localized_line_notes(notes: list[dict], target: str, base: str, ui_language: str) -> list[dict]:
+    language = normalize_ui_language(ui_language)
+    if language == "en":
+        return notes
+    templates = _lesson_templates(language)
+    labels = LOCALIZED_LINE_ROLE_LABELS.get(language, {})
+    base_language = TARGET_LANGUAGES[base]["name"]
+    localized = []
+    for note in notes:
+        concept = _line_note_concept(note, target)
+        role = labels.get(concept, labels.get("normal", "Code line"))
+        example = BASE_COMPARISON_EXAMPLES.get(concept, {}).get(base)
+        if concept == "blank":
+            comparison = templates["line_compare_same"].format(base_language=base_language)
+        elif target == base:
+            comparison = templates["line_compare_same"].format(base_language=base_language)
+        elif example:
+            comparison = templates["line_compare_example"].format(base_language=base_language, example=example)
+        else:
+            comparison = templates["line_compare_target"].format(base_language=base_language)
+        localized.append({
+            **note,
+            "plain": templates["line_plain"].format(role=role),
+            "syntax": templates["line_syntax"],
+            "cpp": comparison,
+            "phrases": _localized_phrase_breakdown(note.get("phrases", []), language),
+        })
+    return localized
+
+
 def _lesson(day: int, target: str, base: str = "cpp", ui_language: str = "en") -> dict:
     ui_language = normalize_ui_language(ui_language)
     title, kind = TOPICS[day - 1]
     language = TARGET_LANGUAGES[target]["name"]
     base_language = TARGET_LANGUAGES[base]["name"]
     code = _code(kind, target)
-    bridge = _syntax_bridge(title, kind, target, base)
-    lesson = Lesson(
-        day=day,
-        category=f"Day {day:02d} - {title}",
-        week=((day - 1) // 7) + 1,
-        title=title,
-        goal=_goal(title, target, base),
-        cpp_bridge=(
+    bridge = _localized_syntax_bridge(_syntax_bridge(title, kind, target, base), title, kind, target, base, ui_language, day)
+    localized_title = _localized_title(title, kind, ui_language)
+    templates = _lesson_templates(ui_language) if ui_language != "en" else None
+    if ui_language == "en":
+        category = f"Day {day:02d} - {title}"
+        goal = _goal(title, target, base)
+        cpp_bridge = (
             f"This is the prerequisite {base_language} baseline for later language comparison."
             if target == base
             else f"Use the {base_language} snippet as the familiar baseline. Then compare how {language} expresses "
             "the same idea through its own syntax, naming, and standard library."
-        ),
+        )
+    else:
+        category = templates["category"].format(day=day, title=localized_title)
+        goal = (
+            templates["goal_foundation"].format(base_language=base_language, title=localized_title)
+            if target == base
+            else templates["goal_target"].format(base_language=base_language, language=language, title=localized_title)
+        )
+        cpp_bridge = (
+            templates["bridge_foundation"].format(base_language=base_language)
+            if target == base
+            else templates["bridge_target"].format(base_language=base_language, language=language)
+        )
+    lesson = Lesson(
+        day=day,
+        category=category,
+        week=((day - 1) // 7) + 1,
+        title=localized_title,
+        goal=goal,
+        cpp_bridge=cpp_bridge,
         explanation=_explanation(title, kind, target, base, ui_language),
         syntax_bridge=bridge,
         official_docs=bridge["docs"],
-        racket_focus=_focus(title, kind, target, base),
+        racket_focus=_localized_focus(title, kind, target, base, ui_language),
         code=code,
-        line_notes=_line_notes(code, target, base),
-        practice=_practice(day, title, kind, target, base),
-        checklist=_checklist(day, title, target, base),
-        assignment=_assignment(day, title, target, base),
-        grading_rubric=_rubric(target, base),
+        line_notes=_localized_line_notes(_line_notes(code, target, base), target, base, ui_language),
+        practice=_localized_practice(day, title, kind, target, base, ui_language),
+        checklist=_localized_checklist(day, title, kind, target, base, ui_language),
+        assignment=_localized_assignment(day, title, kind, target, base, ui_language),
+        grading_rubric=_localized_rubric(target, base, kind, ui_language),
     )
     data = asdict(lesson)
     data["target_language"] = target

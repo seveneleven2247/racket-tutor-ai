@@ -188,6 +188,7 @@ const translations = {
     popQuizSchedule: "POP Quiz Schedule",
     noPopQuizSchedule: "Submit homework to generate spaced POP quiz dates.",
     quizDue: "Due {date}: Day {day} after {interval} day(s)",
+    weakestKnowledgeDetail: "Day {day}: {title} · mastery {rating}/5 · {label}",
     viewSubmittedProgramAndReview: "View submitted program and review",
     submittedProgram: "Submitted Program",
     judge0RunResult: "Judge0 Run Result",
@@ -261,9 +262,9 @@ const translations = {
     createAccount: "创建账号",
     languageExperienceCheck: "语言经验检查",
     languageExperienceTitle: "你已经会哪一门编程语言？",
-    languageExperienceBody: "选择一门语言作为基础。课程会用这门语言帮助你学习其他语言。选择 None 则从 C++ 基础开始。",
+    languageExperienceBody: "选择一门语言作为基础。课程会用这门语言帮助你学习其他语言。选择无则从 C++ 基础开始。",
     knownProgrammingLanguages: "已掌握的编程语言",
-    none: "None",
+    none: "无",
     continue: "继续",
     previousDay: "上一天",
     nextDay: "下一天",
@@ -334,7 +335,7 @@ const translations = {
     loginButton: "登录",
     creatingAccount: "正在创建账号...",
     loggingIn: "正在登录...",
-    chooseLanguageOrNone: "继续前请选择一门语言或 None。",
+    chooseLanguageOrNone: "继续前请选择一门语言或无。",
     aiReviewConnected: "AI 批改已连接",
     aiReviewConnectedBody: "提交后会收到更深入的段落级批改和逐行改进建议，即使代码很短也会批改。",
     noConsoleOutput: "这个示例没有控制台输出。",
@@ -384,6 +385,7 @@ const translations = {
     popQuizSchedule: "POP 小测安排",
     noPopQuizSchedule: "提交作业后会生成间隔复习小测日期。",
     quizDue: "{date} 到期：第 {day} 天，间隔 {interval} 天后",
+    weakestKnowledgeDetail: "第 {day} 天：{title} · 掌握度 {rating}/5 · {label}",
     viewSubmittedProgramAndReview: "查看提交程序和批改",
     submittedProgram: "提交的程序",
     judge0RunResult: "Judge0 运行结果",
@@ -415,7 +417,7 @@ const translations = {
     tourAccountTitle: "账号工具",
     tourAccountText: "这里保存你的进度。你可以重新打开教程、修改密码、退出登录，管理员也可以查看用户和反馈。",
     tourFoundationTitle: "选择你的基础语言",
-    tourFoundationText: "注册后，选择一门你已经会的语言。如果想从 C++ 基础开始，请选择 None。",
+    tourFoundationText: "注册后，选择一门你已经会的语言。如果想从 C++ 基础开始，请选择无。",
     tourTargetTitle: "选择目标语言",
     tourTargetText: "用这个菜单切换 CodeBridge 接下来教你的语言。",
     tourDayListTitle: "打开每日课程",
@@ -427,7 +429,7 @@ const translations = {
     tourSubmitTitle: "提交作业",
     tourSubmitText: "上传文件或粘贴代码。提交后查看反馈，并和示例代码对比。",
     tourFeedbackTitle: "发送网站反馈",
-    tourFeedbackText: "如果有内容损坏或令人困惑，用这个按钮把信息发给网站 owner。",
+    tourFeedbackText: "如果有内容损坏或令人困惑，用这个按钮把信息发给网站所有者。",
   },
   fr: {
     htmlLang: "fr",
@@ -457,9 +459,9 @@ const translations = {
     createAccount: "Créer un compte",
     languageExperienceCheck: "Vérification de l'expérience",
     languageExperienceTitle: "Quel langage savez-vous déjà utiliser ?",
-    languageExperienceBody: "Choisissez un langage comme base. Le cours utilisera ce langage pour enseigner les autres. Choisissez None pour commencer par les bases C++.",
+    languageExperienceBody: "Choisissez un langage comme base. Le cours utilisera ce langage pour enseigner les autres. Choisissez Aucun pour commencer par les bases C++.",
     knownProgrammingLanguages: "Langages de programmation connus",
-    none: "None",
+    none: "Aucun",
     continue: "Continuer",
     previousDay: "Jour précédent",
     nextDay: "Jour suivant",
@@ -530,7 +532,7 @@ const translations = {
     loginButton: "Se connecter",
     creatingAccount: "Création du compte...",
     loggingIn: "Connexion...",
-    chooseLanguageOrNone: "Choisissez un langage ou None avant de continuer.",
+    chooseLanguageOrNone: "Choisissez un langage ou Aucun avant de continuer.",
     aiReviewConnected: "Correction IA connectée",
     aiReviewConnectedBody: "Les soumissions reçoivent une correction plus approfondie et des suggestions ligne par ligne, même pour un code court.",
     noConsoleOutput: "Aucune sortie console pour cet exemple.",
@@ -580,6 +582,7 @@ const translations = {
     popQuizSchedule: "Calendrier des quiz POP",
     noPopQuizSchedule: "Soumettez un devoir pour générer des dates de quiz espacées.",
     quizDue: "À faire le {date} : jour {day} après {interval} jour(s)",
+    weakestKnowledgeDetail: "Jour {day} : {title} · maîtrise {rating}/5 · {label}",
     viewSubmittedProgramAndReview: "Voir le programme soumis et la correction",
     submittedProgram: "Programme soumis",
     judge0RunResult: "Résultat Judge0",
@@ -611,7 +614,7 @@ const translations = {
     tourAccountTitle: "Outils du compte",
     tourAccountText: "Cette zone enregistre votre progression. Vous pouvez rouvrir ce tutoriel, changer le mot de passe, vous déconnecter, et les administrateurs peuvent consulter les utilisateurs et les commentaires.",
     tourFoundationTitle: "Choisir votre base",
-    tourFoundationText: "Après l'inscription, choisissez le langage que vous connaissez déjà. Choisissez None si vous voulez commencer par les bases C++.",
+    tourFoundationText: "Après l'inscription, choisissez le langage que vous connaissez déjà. Choisissez Aucun si vous voulez commencer par les bases C++.",
     tourTargetTitle: "Choisir un langage cible",
     tourTargetText: "Utilisez ce menu pour changer le langage que CodeBridge vous enseigne ensuite.",
     tourDayListTitle: "Ouvrir une leçon quotidienne",
@@ -653,9 +656,9 @@ const translations = {
     createAccount: "계정 만들기",
     languageExperienceCheck: "언어 경험 확인",
     languageExperienceTitle: "이미 사용할 수 있는 프로그래밍 언어는 무엇인가요?",
-    languageExperienceBody: "기초로 삼을 언어 하나를 선택하세요. 이 과정은 그 언어를 사용해 다른 언어를 가르칩니다. C++ 기초부터 시작하려면 None을 선택하세요.",
+    languageExperienceBody: "기초로 삼을 언어 하나를 선택하세요. 이 과정은 그 언어를 사용해 다른 언어를 가르칩니다. C++ 기초부터 시작하려면 없음을 선택하세요.",
     knownProgrammingLanguages: "알고 있는 프로그래밍 언어",
-    none: "None",
+    none: "없음",
     continue: "계속",
     previousDay: "이전 날짜",
     nextDay: "다음 날짜",
@@ -726,7 +729,7 @@ const translations = {
     loginButton: "로그인",
     creatingAccount: "계정 생성 중...",
     loggingIn: "로그인 중...",
-    chooseLanguageOrNone: "계속하기 전에 언어 하나 또는 None을 선택하세요.",
+    chooseLanguageOrNone: "계속하기 전에 언어 하나 또는 없음을 선택하세요.",
     aiReviewConnected: "AI 검토 연결됨",
     aiReviewConnectedBody: "제출물은 짧은 코드라도 더 깊은 문단별 검토와 줄별 개선 제안을 받습니다.",
     noConsoleOutput: "이 예시에는 콘솔 출력이 없습니다.",
@@ -776,6 +779,7 @@ const translations = {
     popQuizSchedule: "POP 퀴즈 일정",
     noPopQuizSchedule: "숙제를 제출하면 간격 반복 POP 퀴즈 날짜가 생성됩니다.",
     quizDue: "{date} 마감: {interval}일 후 {day}일차",
+    weakestKnowledgeDetail: "{day}일차: {title} · 숙련도 {rating}/5 · {label}",
     viewSubmittedProgramAndReview: "제출 프로그램 및 검토 보기",
     submittedProgram: "제출한 프로그램",
     judge0RunResult: "Judge0 실행 결과",
@@ -807,7 +811,7 @@ const translations = {
     tourAccountTitle: "계정 도구",
     tourAccountText: "이 영역은 진행 상황을 저장합니다. 튜토리얼을 다시 열고, 비밀번호를 바꾸고, 로그아웃할 수 있으며 관리자는 사용자와 피드백을 확인할 수 있습니다.",
     tourFoundationTitle: "기초 언어 선택",
-    tourFoundationText: "가입 후 이미 알고 있는 언어 하나를 선택하세요. C++ 기초부터 시작하려면 None을 선택하세요.",
+    tourFoundationText: "가입 후 이미 알고 있는 언어 하나를 선택하세요. C++ 기초부터 시작하려면 없음을 선택하세요.",
     tourTargetTitle: "목표 언어 선택",
     tourTargetText: "이 메뉴로 CodeBridge가 다음에 가르칠 언어를 전환하세요.",
     tourDayListTitle: "일일 강의 열기",
@@ -849,9 +853,9 @@ const translations = {
     createAccount: "アカウント作成",
     languageExperienceCheck: "言語経験チェック",
     languageExperienceTitle: "すでに使えるプログラミング言語はどれですか？",
-    languageExperienceBody: "基礎にする言語を 1 つ選んでください。このコースはその言語を使って他の言語を教えます。C++ 基礎から始める場合は None を選んでください。",
+    languageExperienceBody: "基礎にする言語を 1 つ選んでください。このコースはその言語を使って他の言語を教えます。C++ 基礎から始める場合はなしを選んでください。",
     knownProgrammingLanguages: "知っているプログラミング言語",
-    none: "None",
+    none: "なし",
     continue: "続ける",
     previousDay: "前の日",
     nextDay: "次の日",
@@ -922,7 +926,7 @@ const translations = {
     loginButton: "ログイン",
     creatingAccount: "アカウントを作成中...",
     loggingIn: "ログイン中...",
-    chooseLanguageOrNone: "続ける前に言語を 1 つ、または None を選んでください。",
+    chooseLanguageOrNone: "続ける前に言語を 1 つ、またはなしを選んでください。",
     aiReviewConnected: "AI レビュー接続済み",
     aiReviewConnectedBody: "提出物には、短いコードでも段落単位の詳しいレビューと行ごとの改善提案が届きます。",
     noConsoleOutput: "この例にはコンソール出力がありません。",
@@ -972,6 +976,7 @@ const translations = {
     popQuizSchedule: "POP クイズ予定",
     noPopQuizSchedule: "宿題を提出すると、間隔復習用の POP クイズ日程が生成されます。",
     quizDue: "{date} 期限: {interval} 日後の {day} 日目",
+    weakestKnowledgeDetail: "{day}日目：{title} · 習熟度 {rating}/5 · {label}",
     viewSubmittedProgramAndReview: "提出プログラムとレビューを見る",
     submittedProgram: "提出プログラム",
     judge0RunResult: "Judge0 実行結果",
@@ -1003,7 +1008,7 @@ const translations = {
     tourAccountTitle: "アカウントツール",
     tourAccountText: "ここに進捗が保存されます。チュートリアルを再度開いたり、パスワードを変更したり、ログアウトできます。管理者はユーザーとフィードバックを確認できます。",
     tourFoundationTitle: "基礎を選択",
-    tourFoundationText: "登録後、すでに知っている言語を 1 つ選んでください。C++ 基礎から始めたい場合は None を選んでください。",
+    tourFoundationText: "登録後、すでに知っている言語を 1 つ選んでください。C++ 基礎から始めたい場合はなしを選んでください。",
     tourTargetTitle: "目標言語を選択",
     tourTargetText: "このメニューで CodeBridge が次に教える言語を切り替えます。",
     tourDayListTitle: "毎日のレッスンを開く",
@@ -1696,11 +1701,12 @@ function applyStaticTranslations() {
   setText("#refreshGuidance", "refresh");
   setText("#resetChecklist", "reset");
   setText("#refreshSubmissions", "refresh");
-  const guidanceHeadings = document.querySelectorAll(".guidance-section h4");
-  const guidanceKeys = ["today", "learningHabits", "focusAreas", "nextStudyBlock"];
-  guidanceHeadings.forEach((heading, index) => {
-    if (guidanceKeys[index]) heading.textContent = t(guidanceKeys[index]);
-  });
+  setText("#weakestKnowledgeHeading", "weakestKnowledge");
+  setText("#popQuizHeading", "popQuizSchedule");
+  setText("#guidanceTodayHeading", "today");
+  setText("#guidanceHabitsHeading", "learningHabits");
+  setText("#guidanceFocusHeading", "focusAreas");
+  setText("#guidanceNextHeading", "nextStudyBlock");
   setText('label span:has(+ #studentName)', "name");
   setPlaceholder("#studentName", "optional");
   setText('label span:has(+ #fileInput)', "homeworkFile");
@@ -1853,6 +1859,8 @@ const els = {
   resetChecklist: document.querySelector("#resetChecklist"),
   guidancePanel: document.querySelector("#guidancePanel"),
   guidanceSummary: document.querySelector("#guidanceSummary"),
+  weakestKnowledgeText: document.querySelector("#weakestKnowledgeText"),
+  popQuizList: document.querySelector("#popQuizList"),
   guidanceToday: document.querySelector("#guidanceToday"),
   guidanceHabits: document.querySelector("#guidanceHabits"),
   guidanceFocus: document.querySelector("#guidanceFocus"),
@@ -2082,6 +2090,43 @@ function masteryRatingLabel(item) {
   const label = item.masteryLabel || item.codeCheck?.masteryLabel;
   if (rating === undefined || rating === null || rating === "") return t("unknown");
   return label ? `${rating}/5 · ${label}` : `${rating}/5`;
+}
+
+function renderWeakestKnowledge(weakest) {
+  state.weakestDay = weakest?.day ? Number(weakest.day) : null;
+  state.masteryByDay = new Map((state.mastery?.lessons || []).map((item) => [Number(item.day), item]));
+  if (!els.weakestKnowledgeText) return;
+  if (!weakest?.day) {
+    els.weakestKnowledgeText.textContent = t("noWeakestKnowledge");
+    return;
+  }
+  els.weakestKnowledgeText.textContent = t("weakestKnowledgeDetail", {
+    day: padDay(weakest.day),
+    title: weakest.title || "",
+    rating: weakest.rating ?? "?",
+    label: weakest.label || t("unrated"),
+  });
+}
+
+function renderPopQuizSchedule(schedule) {
+  state.popQuizSchedule = Array.isArray(schedule) ? schedule : [];
+  if (!els.popQuizList) return;
+  els.popQuizList.innerHTML = "";
+  if (!state.popQuizSchedule.length) {
+    const li = document.createElement("li");
+    li.textContent = t("noPopQuizSchedule");
+    els.popQuizList.appendChild(li);
+    return;
+  }
+  for (const quiz of state.popQuizSchedule.slice(0, 6)) {
+    const li = document.createElement("li");
+    li.textContent = t("quizDue", {
+      date: `${quiz.date || ""} ${quiz.time || ""}`.trim(),
+      day: padDay(quiz.day),
+      interval: quiz.intervalDays ?? "",
+    });
+    els.popQuizList.appendChild(li);
+  }
 }
 
 function isLessonUnlocked(day) {
@@ -2376,12 +2421,13 @@ function renderDayList() {
     button.type = "button";
     button.disabled = !unlocked;
     button.title = unlocked ? "" : t("lessonLockedTitle", { day: padDay(lesson.day - 1) });
-    button.className = `day-card${lesson.day === state.activeDay ? " active" : ""}${!unlocked ? " locked" : ""}`;
+    const isWeakest = Number(state.weakestDay) === Number(lesson.day);
+    button.className = `day-card${lesson.day === state.activeDay ? " active" : ""}${!unlocked ? " locked" : ""}${isWeakest ? " weakest" : ""}`;
     button.innerHTML = `
       <span class="day-number">${padDay(lesson.day)}</span>
       <span>
         <strong>${lesson.title}</strong>
-        <span>${lesson.category}${submitted ? ` · ${t("submitted")}` : ""}</span>
+        <span>${lesson.category}${submitted ? ` · ${t("submitted")}` : ""}${isWeakest ? ` · ${t("weakestKnowledge")}` : ""}</span>
       </span>
       <span class="done-dot${done || submitted ? " complete" : ""}" aria-hidden="true"></span>
     `;
@@ -2425,6 +2471,8 @@ function renderLesson() {
   els.dayMetric.textContent = padDay(lesson.day);
   els.checkMetric.textContent = `${done}/${lesson.checklist.length}`;
   els.weekMetric.textContent = lesson.week;
+  const mastery = state.masteryByDay.get(Number(lesson.day));
+  els.masteryMetric.textContent = mastery ? `${mastery.rating}/5` : "--";
   if (els.unlockNotice) {
     const submittedToday = hasSubmitted(lesson.day);
     const finalDay = lesson.day === state.lessons.length;
@@ -2689,7 +2737,8 @@ function renderLanguageOptions() {
 }
 
 async function loadSubmissions() {
-  const response = await fetch("/api/submissions", { headers: accessHeaders() });
+  const params = new URLSearchParams({ uiLanguage: state.uiLanguage });
+  const response = await fetch(`/api/submissions?${params.toString()}`, { headers: accessHeaders() });
   if (!response.ok) return;
   const data = await response.json();
   state.submittedLessons = new Set(
@@ -2795,11 +2844,17 @@ async function loadGuidance() {
       day: String(state.activeDay),
       target: state.target,
       base: state.baseLanguage || "cpp",
+      uiLanguage: state.uiLanguage,
     });
     const response = await fetch(`/api/guidance?${params.toString()}`, { headers: accessHeaders() });
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || t("guidanceFailed"));
     const guidance = data.guidance || {};
+    state.mastery = guidance.mastery || {};
+    renderWeakestKnowledge(guidance.weakestKnowledge);
+    renderPopQuizSchedule(guidance.popQuizSchedule);
+    renderDayList();
+    renderLesson();
     els.guidanceSummary.textContent = guidance.summary || t("noGuidance");
     renderGuidanceList(els.guidanceToday, guidance.today);
     renderGuidanceList(els.guidanceHabits, guidance.habits);
@@ -2807,6 +2862,8 @@ async function loadGuidance() {
     renderGuidanceList(els.guidanceNext, guidance.nextSteps);
   } catch (error) {
     els.guidanceSummary.textContent = error.message;
+    renderWeakestKnowledge(null);
+    renderPopQuizSchedule([]);
     renderGuidanceList(els.guidanceToday, []);
     renderGuidanceList(els.guidanceHabits, []);
     renderGuidanceList(els.guidanceFocus, []);
@@ -2821,6 +2878,7 @@ async function submitAssignment(event) {
   formData.set("day", lesson.day);
   formData.set("target", state.target);
   formData.set("base", state.baseLanguage || "cpp");
+  formData.set("uiLanguage", state.uiLanguage);
 
   els.submitButton.disabled = true;
   els.submitButton.textContent = t("reviewing");
