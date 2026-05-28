@@ -25,8 +25,15 @@ const state = {
   masteryByDay: new Map(),
   weakestDay: null,
   popQuizSchedule: [],
+  nextPopQuiz: null,
+  popQuizDays: new Map(),
+  popQuizPolicy: null,
   aiReviewEnabled: false,
 };
+
+function browserTimeZone() {
+  return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+}
 
 const UI_LANGUAGES = {
   en: "English",
@@ -187,7 +194,11 @@ const translations = {
     noWeakestKnowledge: "No rated homework yet.",
     popQuizSchedule: "POP Quiz Schedule",
     noPopQuizSchedule: "Submit homework to generate spaced POP quiz dates.",
-    quizDue: "Due {date}: Day {day} after {interval} day(s)",
+    popQuizPolicy: "Fixed at {time}. Memory-curve checkpoints: {intervals} day(s) after homework.",
+    popQuizDueNow: "Due now",
+    popQuizTag: "POP quiz",
+    reinforceTag: "Needs reinforcement",
+    quizDue: "{status} {date}: Day {day} after {interval} day(s)",
     weakestKnowledgeDetail: "Day {day}: {title} · mastery {rating}/5 · {label}",
     viewSubmittedProgramAndReview: "View submitted program and review",
     submittedProgram: "Submitted Program",
@@ -384,7 +395,11 @@ const translations = {
     noWeakestKnowledge: "还没有评分作业。",
     popQuizSchedule: "POP 小测安排",
     noPopQuizSchedule: "提交作业后会生成间隔复习小测日期。",
-    quizDue: "{date} 到期：第 {day} 天，间隔 {interval} 天后",
+    popQuizPolicy: "固定时间 {time}。记忆曲线节点：作业后第 {intervals} 天。",
+    popQuizDueNow: "现在到期",
+    popQuizTag: "POP 小测",
+    reinforceTag: "需要加强",
+    quizDue: "{status} {date}：第 {day} 天，间隔 {interval} 天后",
     weakestKnowledgeDetail: "第 {day} 天：{title} · 掌握度 {rating}/5 · {label}",
     viewSubmittedProgramAndReview: "查看提交程序和批改",
     submittedProgram: "提交的程序",
@@ -581,7 +596,11 @@ const translations = {
     noWeakestKnowledge: "Aucun devoir noté pour le moment.",
     popQuizSchedule: "Calendrier des quiz POP",
     noPopQuizSchedule: "Soumettez un devoir pour générer des dates de quiz espacées.",
-    quizDue: "À faire le {date} : jour {day} après {interval} jour(s)",
+    popQuizPolicy: "Heure fixe {time}. Points de courbe de mémoire : {intervals} jour(s) après le devoir.",
+    popQuizDueNow: "À faire maintenant",
+    popQuizTag: "Quiz POP",
+    reinforceTag: "À renforcer",
+    quizDue: "{status} {date} : jour {day} après {interval} jour(s)",
     weakestKnowledgeDetail: "Jour {day} : {title} · maîtrise {rating}/5 · {label}",
     viewSubmittedProgramAndReview: "Voir le programme soumis et la correction",
     submittedProgram: "Programme soumis",
@@ -778,7 +797,11 @@ const translations = {
     noWeakestKnowledge: "아직 평가된 숙제가 없습니다.",
     popQuizSchedule: "POP 퀴즈 일정",
     noPopQuizSchedule: "숙제를 제출하면 간격 반복 POP 퀴즈 날짜가 생성됩니다.",
-    quizDue: "{date} 마감: {interval}일 후 {day}일차",
+    popQuizPolicy: "고정 시간 {time}. 기억 곡선 체크포인트: 숙제 후 {intervals}일.",
+    popQuizDueNow: "지금 마감",
+    popQuizTag: "POP 퀴즈",
+    reinforceTag: "강화 필요",
+    quizDue: "{status} {date}: {interval}일 후 {day}일차",
     weakestKnowledgeDetail: "{day}일차: {title} · 숙련도 {rating}/5 · {label}",
     viewSubmittedProgramAndReview: "제출 프로그램 및 검토 보기",
     submittedProgram: "제출한 프로그램",
@@ -975,7 +998,11 @@ const translations = {
     noWeakestKnowledge: "まだ評価済みの宿題はありません。",
     popQuizSchedule: "POP クイズ予定",
     noPopQuizSchedule: "宿題を提出すると、間隔復習用の POP クイズ日程が生成されます。",
-    quizDue: "{date} 期限: {interval} 日後の {day} 日目",
+    popQuizPolicy: "固定時刻 {time}。記憶曲線チェックポイント：宿題後 {intervals} 日。",
+    popQuizDueNow: "期限中",
+    popQuizTag: "POP クイズ",
+    reinforceTag: "補強が必要",
+    quizDue: "{status} {date}: {interval} 日後の {day} 日目",
     weakestKnowledgeDetail: "{day}日目：{title} · 習熟度 {rating}/5 · {label}",
     viewSubmittedProgramAndReview: "提出プログラムとレビューを見る",
     submittedProgram: "提出プログラム",
@@ -1987,6 +2014,7 @@ function profilePayload() {
     languageExperienceChosen: state.languageExperienceChosen,
     targetLanguage: state.target,
     uiLanguage: state.uiLanguage,
+    timeZone: browserTimeZone(),
     activeDay: state.activeDay,
     checklists: collectChecklistState(),
   };
@@ -1999,6 +2027,7 @@ function emptyProfilePayload() {
     languageExperienceChosen: false,
     targetLanguage: "racket",
     uiLanguage: state.uiLanguage,
+    timeZone: browserTimeZone(),
     activeDay: 1,
     checklists: {},
   };
@@ -2095,6 +2124,7 @@ function masteryRatingLabel(item) {
 function renderWeakestKnowledge(weakest) {
   state.weakestDay = weakest?.day ? Number(weakest.day) : null;
   state.masteryByDay = new Map((state.mastery?.lessons || []).map((item) => [Number(item.day), item]));
+  renderDayList();
   if (!els.weakestKnowledgeText) return;
   if (!weakest?.day) {
     els.weakestKnowledgeText.textContent = t("noWeakestKnowledge");
@@ -2108,25 +2138,51 @@ function renderWeakestKnowledge(weakest) {
   });
 }
 
-function renderPopQuizSchedule(schedule) {
+function renderPopQuizSchedule(schedule, policy = null, nextPopQuiz = null) {
   state.popQuizSchedule = Array.isArray(schedule) ? schedule : [];
+  state.nextPopQuiz = nextPopQuiz || state.popQuizSchedule[0] || null;
+  state.popQuizPolicy = policy;
+  state.popQuizDays = new Map();
+  for (const quiz of state.popQuizSchedule) {
+    const day = Number(quiz.day);
+    if (!day) continue;
+    const existing = state.popQuizDays.get(day);
+    const quizDueAt = new Date(quiz.dueAt || quiz.localDueAt || 0);
+    const existingDueAt = new Date(existing?.dueAt || existing?.localDueAt || 0);
+    if (!existing || (quiz.due && !existing.due) || quizDueAt < existingDueAt) {
+      state.popQuizDays.set(day, quiz);
+    }
+  }
   if (!els.popQuizList) return;
   els.popQuizList.innerHTML = "";
+  if (policy?.intervalDays?.length) {
+    const li = document.createElement("li");
+    li.className = "pop-quiz-policy";
+    li.textContent = t("popQuizPolicy", {
+      time: policy.fixedTime || "20:00",
+      intervals: policy.intervalDays.join(", "),
+    });
+    els.popQuizList.appendChild(li);
+  }
   if (!state.popQuizSchedule.length) {
     const li = document.createElement("li");
     li.textContent = t("noPopQuizSchedule");
     els.popQuizList.appendChild(li);
+    renderDayList();
     return;
   }
   for (const quiz of state.popQuizSchedule.slice(0, 6)) {
     const li = document.createElement("li");
+    li.className = quiz.due ? "pop-quiz-due" : "";
     li.textContent = t("quizDue", {
+      status: quiz.due ? t("popQuizDueNow") : t("popQuizTag"),
       date: `${quiz.date || ""} ${quiz.time || ""}`.trim(),
       day: padDay(quiz.day),
       interval: quiz.intervalDays ?? "",
     });
     els.popQuizList.appendChild(li);
   }
+  renderDayList();
 }
 
 function isLessonUnlocked(day) {
@@ -2417,17 +2473,24 @@ function renderDayList() {
     const done = checkedCount(lesson.day) === lesson.checklist.length;
     const submitted = hasSubmitted(lesson.day);
     const unlocked = isLessonUnlocked(lesson.day);
+    const quiz = state.popQuizDays.get(Number(lesson.day));
     const button = document.createElement("button");
     button.type = "button";
     button.disabled = !unlocked;
     button.title = unlocked ? "" : t("lessonLockedTitle", { day: padDay(lesson.day - 1) });
     const isWeakest = Number(state.weakestDay) === Number(lesson.day);
-    button.className = `day-card${lesson.day === state.activeDay ? " active" : ""}${!unlocked ? " locked" : ""}${isWeakest ? " weakest" : ""}`;
+    const hasQuiz = Boolean(quiz);
+    const isQuizDue = Boolean(quiz?.due);
+    const statusParts = [lesson.category];
+    if (submitted) statusParts.push(t("submitted"));
+    if (isWeakest) statusParts.push(t("reinforceTag"));
+    if (hasQuiz) statusParts.push(isQuizDue ? t("popQuizDueNow") : t("popQuizTag"));
+    button.className = `day-card${lesson.day === state.activeDay ? " active" : ""}${!unlocked ? " locked" : ""}${isWeakest ? " weakest" : ""}${hasQuiz ? " pop-quiz" : ""}${isQuizDue ? " quiz-due" : ""}`;
     button.innerHTML = `
       <span class="day-number">${padDay(lesson.day)}</span>
       <span>
         <strong>${lesson.title}</strong>
-        <span>${lesson.category}${submitted ? ` · ${t("submitted")}` : ""}${isWeakest ? ` · ${t("weakestKnowledge")}` : ""}</span>
+        <span>${statusParts.join(" · ")}</span>
       </span>
       <span class="done-dot${done || submitted ? " complete" : ""}" aria-hidden="true"></span>
     `;
@@ -2845,6 +2908,7 @@ async function loadGuidance() {
       target: state.target,
       base: state.baseLanguage || "cpp",
       uiLanguage: state.uiLanguage,
+      timeZone: browserTimeZone(),
     });
     const response = await fetch(`/api/guidance?${params.toString()}`, { headers: accessHeaders() });
     const data = await response.json();
@@ -2852,8 +2916,7 @@ async function loadGuidance() {
     const guidance = data.guidance || {};
     state.mastery = guidance.mastery || {};
     renderWeakestKnowledge(guidance.weakestKnowledge);
-    renderPopQuizSchedule(guidance.popQuizSchedule);
-    renderDayList();
+    renderPopQuizSchedule(guidance.popQuizSchedule, guidance.popQuizPolicy, guidance.nextPopQuiz);
     renderLesson();
     els.guidanceSummary.textContent = guidance.summary || t("noGuidance");
     renderGuidanceList(els.guidanceToday, guidance.today);
@@ -2863,7 +2926,7 @@ async function loadGuidance() {
   } catch (error) {
     els.guidanceSummary.textContent = error.message;
     renderWeakestKnowledge(null);
-    renderPopQuizSchedule([]);
+    renderPopQuizSchedule([], null, null);
     renderGuidanceList(els.guidanceToday, []);
     renderGuidanceList(els.guidanceHabits, []);
     renderGuidanceList(els.guidanceFocus, []);

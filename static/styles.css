@@ -331,12 +331,25 @@ form textarea:focus {
   box-shadow: inset 4px 0 0 var(--orange);
 }
 
-.day-card.weakest .day-number {
+.day-card.pop-quiz {
+  border-color: var(--orange-line);
+  background: #fffaf0;
+}
+
+.day-card.quiz-due {
+  border-color: var(--orange);
+  background: var(--orange-soft);
+  box-shadow: inset 4px 0 0 var(--orange);
+}
+
+.day-card.weakest .day-number,
+.day-card.quiz-due .day-number {
   background: var(--orange);
   color: white;
 }
 
-.day-card.weakest.active {
+.day-card.weakest.active,
+.day-card.quiz-due.active {
   border-color: var(--orange);
   background: #ffedd5;
 }
@@ -391,7 +404,8 @@ form textarea:focus {
   background: var(--green);
 }
 
-.day-card.weakest .done-dot {
+.day-card.weakest .done-dot,
+.day-card.quiz-due .done-dot {
   background: var(--orange);
 }
 
@@ -1271,6 +1285,20 @@ textarea {
 
 .guidance-section .rubric-list li {
   margin: 6px 0;
+}
+
+.guidance-section .rubric-list li.pop-quiz-policy {
+  border-left: 4px solid var(--orange-line);
+  padding-left: 10px;
+  color: #7c3d00;
+  font-weight: 700;
+}
+
+.guidance-section .rubric-list li.pop-quiz-due {
+  border-left: 4px solid var(--orange);
+  padding-left: 10px;
+  color: #7c3d00;
+  font-weight: 800;
 }
 
 #weakestKnowledgeText {

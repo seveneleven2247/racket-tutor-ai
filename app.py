@@ -10,6 +10,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 from pathlib import Path
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from dotenv import load_dotenv
 from flask import Flask, jsonify, make_response, redirect, request, send_from_directory
@@ -39,6 +40,8 @@ SESSION_TOUCH_SECONDS = 30
 SUPPORTED_UI_LANGUAGES = {"en", "zh", "ja", "ko", "fr"}
 POP_QUIZ_INTERVAL_DAYS = (1, 3, 7, 14, 30)
 POP_QUIZ_FIXED_TIME = "20:00"
+POP_QUIZ_MEMORY_CURVE = "1, 3, 7, 14, 30"
+DEFAULT_TIME_ZONE = "UTC"
 GUIDANCE_TEXT = {
     "en": {
         "no_homework": "No homework has been submitted in the {target_name} track yet. Start with Day {day:02d}, write HW Q1, HW Q2, and HW Q3 as separate programs, then submit once.",
@@ -59,6 +62,8 @@ GUIDANCE_TEXT = {
         "focus_output": "Clear output: every program should print labelled values and final result.",
         "weakest_focus": "Weakest knowledge: Day {day:02d} - {title} ({rating}/5, {label}). Reinforce this before new lessons.",
         "pop_quiz_due": "POP quiz due {date} at {time}: Day {day:02d} after {interval} day(s).",
+        "pop_quiz_plan": "POP quizzes run at {time} on memory-curve checkpoints: {curve} day(s) after each submitted homework.",
+        "pop_quiz_next": "Next POP quiz: {date} at {time}, Day {day:02d} - {title}.",
         "next_1": "First 10 minutes: read line-by-line notes and rewrite one sample line in your own words.",
         "next_2": "Next 25 minutes: build HW Q1, HW Q2, and HW Q3 separately. Do not merge them into one vague program.",
         "next_3": "Final 10 minutes: run code, check output, then submit with any question you want AI to focus on.",
@@ -83,6 +88,8 @@ GUIDANCE_TEXT = {
         "focus_output": "清晰输出：每个程序都应该打印带标签的值和最终结果。",
         "weakest_focus": "最薄弱知识点：第 {day:02d} 天 - {title}（{rating}/5，{label}）。继续学新课前请先加强这里。",
         "pop_quiz_due": "POP 小测：{date} {time}，复习第 {day:02d} 天，间隔 {interval} 天后。",
+        "pop_quiz_plan": "POP 小测固定在 {time}，按记忆曲线安排：每次提交作业后第 {curve} 天复习。",
+        "pop_quiz_next": "下一次 POP 小测：{date} {time}，第 {day:02d} 天 - {title}。",
         "next_1": "前 10 分钟：阅读逐行笔记，并用自己的话改写一行示例。",
         "next_2": "接下来 25 分钟：分别完成 HW Q1、HW Q2 和 HW Q3。不要合并成一个模糊程序。",
         "next_3": "最后 10 分钟：运行代码、检查输出，然后带着希望 AI 关注的问题提交。",
@@ -107,6 +114,8 @@ GUIDANCE_TEXT = {
         "focus_output": "明確な出力：すべてのプログラムでラベル付きの値と最終結果を出力してください。",
         "weakest_focus": "最も弱い知識：{day:02d}日目 - {title}（{rating}/5、{label}）。新しいレッスン前にここを補強してください。",
         "pop_quiz_due": "POP クイズ：{date} {time}、{interval} 日後に {day:02d}日目を復習。",
+        "pop_quiz_plan": "POP クイズは {time} 固定で、提出後 {curve} 日目の記憶曲線チェックポイントに沿って行います。",
+        "pop_quiz_next": "次の POP クイズ：{date} {time}、{day:02d}日目 - {title}。",
         "next_1": "最初の 10 分：行ごとのノートを読み、サンプル行を自分の言葉で書き直します。",
         "next_2": "次の 25 分：HW Q1、HW Q2、HW Q3 を別々に作ります。あいまいな 1 つのプログラムにまとめないでください。",
         "next_3": "最後の 10 分：コードを実行し、出力を確認し、AI に見てほしい質問と一緒に提出します。",
@@ -131,6 +140,8 @@ GUIDANCE_TEXT = {
         "focus_output": "명확한 출력: 모든 프로그램은 라벨이 있는 값과 최종 결과를 출력해야 합니다.",
         "weakest_focus": "가장 약한 지식: {day:02d}일차 - {title}({rating}/5, {label}). 새 수업 전에 이 부분을 강화하세요.",
         "pop_quiz_due": "POP 퀴즈: {date} {time}, {interval}일 후 {day:02d}일차 복습.",
+        "pop_quiz_plan": "POP 퀴즈는 {time}에 고정되며, 제출 후 {curve}일 기억 곡선 체크포인트에 맞춰 진행됩니다.",
+        "pop_quiz_next": "다음 POP 퀴즈: {date} {time}, {day:02d}일차 - {title}.",
         "next_1": "처음 10분: 줄별 노트를 읽고 예제 한 줄을 자신의 말로 다시 씁니다.",
         "next_2": "다음 25분: HW Q1, HW Q2, HW Q3를 각각 만듭니다. 하나의 모호한 프로그램으로 합치지 마세요.",
         "next_3": "마지막 10분: 코드를 실행하고 출력을 확인한 뒤 AI가 봐 주길 원하는 질문과 함께 제출하세요.",
@@ -155,6 +166,8 @@ GUIDANCE_TEXT = {
         "focus_output": "Sortie claire : chaque programme doit afficher des valeurs étiquetées et le résultat final.",
         "weakest_focus": "Point le plus faible : jour {day:02d} - {title} ({rating}/5, {label}). Renforcez-le avant les nouvelles leçons.",
         "pop_quiz_due": "Quiz POP prévu le {date} à {time} : jour {day:02d} après {interval} jour(s).",
+        "pop_quiz_plan": "Les quiz POP ont lieu à {time}, selon les points de la courbe de mémoire : {curve} jour(s) après chaque devoir soumis.",
+        "pop_quiz_next": "Prochain quiz POP : {date} à {time}, jour {day:02d} - {title}.",
         "next_1": "Premières 10 minutes : lisez les notes ligne par ligne et reformulez une ligne d'exemple.",
         "next_2": "25 minutes suivantes : construisez HW Q1, HW Q2 et HW Q3 séparément. Ne les fusionnez pas en un programme vague.",
         "next_3": "10 dernières minutes : exécutez le code, vérifiez la sortie, puis soumettez avec la question à poser à l'IA.",
@@ -288,9 +301,19 @@ def default_profile() -> dict:
         "languageExperienceChosen": False,
         "targetLanguage": "racket",
         "uiLanguage": "en",
+        "timeZone": DEFAULT_TIME_ZONE,
         "activeDay": 1,
         "checklists": {},
     }
+
+
+def normalize_time_zone(value: str | None) -> str:
+    zone = str(value or DEFAULT_TIME_ZONE).strip() or DEFAULT_TIME_ZONE
+    try:
+        ZoneInfo(zone)
+        return zone
+    except ZoneInfoNotFoundError:
+        return DEFAULT_TIME_ZONE
 
 
 def ensure_data_files() -> None:
@@ -450,6 +473,7 @@ def sanitize_profile(profile: dict | None) -> dict:
     ui_language = str(profile.get("uiLanguage") or "en").strip().lower()
     if ui_language not in SUPPORTED_UI_LANGUAGES:
         ui_language = "en"
+    time_zone = normalize_time_zone(profile.get("timeZone"))
     max_day = get_course_length(target)
     try:
         active_day = int(profile.get("activeDay", 1))
@@ -468,6 +492,7 @@ def sanitize_profile(profile: dict | None) -> dict:
         "languageExperienceChosen": language_experience_chosen,
         "targetLanguage": target,
         "uiLanguage": ui_language,
+        "timeZone": time_zone,
         "activeDay": max(1, min(active_day, max_day)),
         "checklists": checklists,
     }
@@ -1780,22 +1805,25 @@ def build_mastery_summary(mastery_records: list[dict]) -> dict:
     }
 
 
-def build_pop_quiz_schedule(mastery_records: list[dict]) -> list[dict]:
+def build_pop_quiz_schedule(mastery_records: list[dict], time_zone: str = DEFAULT_TIME_ZONE) -> list[dict]:
     schedule: list[dict] = []
     now = datetime.now(timezone.utc)
+    local_zone = ZoneInfo(normalize_time_zone(time_zone))
+    local_now = now.astimezone(local_zone)
     for item in mastery_records:
         submitted_at = parse_iso_datetime(item.get("submittedAt"))
         if submitted_at == datetime.min.replace(tzinfo=timezone.utc):
             continue
         rating = int(item.get("rating", 1))
-        if rating >= 5:
-            intervals = (7, 30)
-        elif rating >= 4:
-            intervals = (3, 7, 30)
-        else:
-            intervals = POP_QUIZ_INTERVAL_DAYS
-        for interval in intervals:
-            due_at = (submitted_at + timedelta(days=interval)).replace(hour=20, minute=0, second=0, microsecond=0)
+        for interval in POP_QUIZ_INTERVAL_DAYS:
+            local_submitted_at = submitted_at.astimezone(local_zone)
+            local_due_at = (local_submitted_at + timedelta(days=interval)).replace(
+                hour=20,
+                minute=0,
+                second=0,
+                microsecond=0,
+            )
+            due_at = local_due_at.astimezone(timezone.utc)
             if due_at < now - timedelta(days=1):
                 continue
             schedule.append({
@@ -1807,9 +1835,12 @@ def build_pop_quiz_schedule(mastery_records: list[dict]) -> list[dict]:
                 "score": item.get("score"),
                 "submittedAt": submitted_at.isoformat(),
                 "dueAt": due_at.isoformat(),
-                "date": due_at.date().isoformat(),
+                "localDueAt": local_due_at.isoformat(),
+                "date": local_due_at.date().isoformat(),
                 "time": POP_QUIZ_FIXED_TIME,
+                "timeZone": normalize_time_zone(time_zone),
                 "intervalDays": interval,
+                "due": local_due_at <= local_now,
             })
     return sorted(schedule, key=lambda item: (parse_iso_datetime(item.get("dueAt")), int(item.get("rating", 1)), int(item.get("day", 0))))[:12]
 
@@ -1823,6 +1854,7 @@ def user_learning_guidance(user: dict, profile_override: dict | None = None) -> 
     target = normalize_target_language(profile.get("targetLanguage", "racket"))
     base = normalize_base_language(profile.get("baseLanguage") or "cpp")
     ui_language = normalize_ui_language(profile.get("uiLanguage"))
+    time_zone = normalize_time_zone(profile.get("timeZone"))
     text = guidance_text(ui_language)
     active_day = int(profile.get("activeDay", 1))
     course_length = get_course_length(target)
@@ -1842,7 +1874,8 @@ def user_learning_guidance(user: dict, profile_override: dict | None = None) -> 
     mastery_records = build_mastery_records(records, target, base, ui_language)
     mastery_summary = build_mastery_summary(mastery_records)
     weakest_day = mastery_summary.get("weakestDay")
-    pop_quiz_schedule = build_pop_quiz_schedule(mastery_records)
+    pop_quiz_schedule = build_pop_quiz_schedule(mastery_records, time_zone)
+    next_pop_quiz = pop_quiz_schedule[0] if pop_quiz_schedule else None
 
     failed_counts: dict[str, int] = {}
     missing_label_count = 0
@@ -1932,7 +1965,17 @@ def user_learning_guidance(user: dict, profile_override: dict | None = None) -> 
         text["next_1"],
         text["next_2"],
         text["next_3"],
+        text["pop_quiz_plan"].format(time=POP_QUIZ_FIXED_TIME, curve=POP_QUIZ_MEMORY_CURVE),
     ]
+    if next_pop_quiz:
+        next_steps.append(
+            text["pop_quiz_next"].format(
+                date=next_pop_quiz.get("date"),
+                time=next_pop_quiz.get("time", POP_QUIZ_FIXED_TIME),
+                day=int(next_pop_quiz.get("day", 0)),
+                title=next_pop_quiz.get("title", ""),
+            )
+        )
     for quiz in pop_quiz_schedule[:3]:
         next_steps.append(
             text["pop_quiz_due"].format(
@@ -1956,6 +1999,7 @@ def user_learning_guidance(user: dict, profile_override: dict | None = None) -> 
             "averageMasteryRating": mastery_summary.get("averageRating"),
             "activeDay": active_day,
             "target": target,
+            "timeZone": time_zone,
         },
         "mastery": {
             "summary": mastery_summary,
@@ -1963,6 +2007,13 @@ def user_learning_guidance(user: dict, profile_override: dict | None = None) -> 
         },
         "weakestKnowledge": weakest_day,
         "popQuizSchedule": pop_quiz_schedule,
+        "nextPopQuiz": next_pop_quiz,
+        "popQuizPolicy": {
+            "fixedTime": POP_QUIZ_FIXED_TIME,
+            "intervalDays": list(POP_QUIZ_INTERVAL_DAYS),
+            "memoryCurve": POP_QUIZ_MEMORY_CURVE,
+            "timeZone": time_zone,
+        },
     }
 
 def build_feedback_prompt(
@@ -2318,6 +2369,8 @@ def learning_guidance():
         profile["languageExperienceChosen"] = True
     if request.args.get("uiLanguage"):
         profile["uiLanguage"] = normalize_ui_language(request.args.get("uiLanguage"))
+    if request.args.get("timeZone"):
+        profile["timeZone"] = normalize_time_zone(request.args.get("timeZone"))
     return jsonify({"guidance": user_learning_guidance(user, profile)})
 
 
