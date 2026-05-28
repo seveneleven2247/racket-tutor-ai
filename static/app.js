@@ -2515,8 +2515,8 @@ function renderLesson() {
 
   localStorage.setItem("racketTutor.activeDay", String(lesson.day));
   els.weekLabel.textContent = `${t("week")} ${lesson.week}`;
-  document.title = "CodeBridge";
-  document.querySelector(".brand h1").textContent = "CodeBridge";
+  document.title = "CODEBRIDGE";
+  document.querySelector(".brand h1").textContent = "CODEBRIDGE";
   if (els.brandSubtitle) {
     const dayCount = state.lessons.length || 56;
     els.brandSubtitle.textContent = isCppFoundationMode()

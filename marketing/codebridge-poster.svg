@@ -114,6 +114,6 @@
     <rect x="0" y="0" width="928" height="84" rx="22" fill="#17211d"/>
     <text class="sans white" x="34" y="53" font-size="29" font-weight="850">Start with CodeBridge today</text>
     <rect x="620" y="18" width="274" height="48" rx="14" fill="url(#purple)"/>
-    <text class="sans white" x="757" y="50" text-anchor="middle" font-size="20" font-weight="950">racket-tutor-ai.onrender.com</text>
+    <text class="sans white" x="757" y="50" text-anchor="middle" font-size="20" font-weight="950">codebridge.onrender.com</text>
   </g>
 </svg>
