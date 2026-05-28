@@ -246,7 +246,7 @@ def judge0_language_ids() -> dict[str, int]:
 def judge0_headers() -> dict[str, str]:
     headers = {
         "Content-Type": "application/json",
-        "User-Agent": "CodeBridge/1.0",
+        "User-Agent": "CODEBRIDGE/1.0",
     }
     api_key = os.getenv("JUDGE0_API_KEY", "").strip()
     rapidapi_host = os.getenv("JUDGE0_RAPIDAPI_HOST", "").strip()

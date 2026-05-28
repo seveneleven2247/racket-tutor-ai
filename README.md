@@ -1,4 +1,4 @@
-# CodeBridge
+# CODEBRIDGE
 
 A programming-learning website that uses one known language as a bridge to teach C++, C, Java, Python, Racket, and R. The core track has 56 days, and the R track adds 10 statistics-focused data-analysis days.
 
@@ -19,7 +19,7 @@ Features:
 ## Run Locally
 
 ```bash
-cd ~/Public/racket-tutor-ai
+cd ~/Public/codebridge
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -45,11 +45,11 @@ OPENAI_MODEL=gpt-5.4-mini
 ACCESS_CODE=share123
 ```
 
-Set at least one of `GEMINI_API_KEY` or `OPENAI_API_KEY`. If neither is configured, CodeBridge still gives local line-by-line feedback for short submissions, but deeper paragraph-level AI review is disabled.
+Set at least one of `GEMINI_API_KEY` or `OPENAI_API_KEY`. If neither is configured, CODEBRIDGE still gives local line-by-line feedback for short submissions, but deeper paragraph-level AI review is disabled.
 
 ## Configure Judge0 Code Runner
 
-CodeBridge can send submitted code to Judge0 before AI review. The run result is saved with the submission and shown in review history.
+CODEBRIDGE can send submitted code to Judge0 before AI review. The run result is saved with the submission and shown in review history.
 
 Default public endpoint:
 
@@ -144,7 +144,7 @@ Render setup:
 
 1. Push this repo to GitHub.
 2. In Render, choose **New +** → **Blueprint**.
-3. Connect `https://github.com/seveneleven2247/racket-tutor-ai`.
+3. Connect `https://github.com/seveneleven2247/codebridge`.
 4. Render will read `render.yaml`, create a web service, and mount a persistent disk at `/var/data`.
 5. Add real AI keys in Render environment variables if you want AI grading.
 
