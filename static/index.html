@@ -33,6 +33,17 @@
           <input id="searchInput" type="search" placeholder="Search day, topic, or category" />
         </div>
 
+        <div class="interface-language-picker">
+          <label for="interfaceLanguageSelect">Interface language</label>
+          <select id="interfaceLanguageSelect">
+            <option value="en">English</option>
+            <option value="zh">中文</option>
+            <option value="ja">日本語</option>
+            <option value="ko">한국어</option>
+            <option value="fr">Français</option>
+          </select>
+        </div>
+
         <div id="userPanel" class="user-panel" hidden>
           <strong id="userNameLabel"></strong>
           <span>Your progress is saved to this account.</span>
@@ -159,6 +170,10 @@
                 <div>
                   <span>Week</span>
                   <strong id="weekMetric">1</strong>
+                </div>
+                <div>
+                  <span>Mastery</span>
+                  <strong id="masteryMetric">--</strong>
                 </div>
               </div>
             </section>

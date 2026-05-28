@@ -163,6 +163,7 @@ button {
 }
 
 .search-box input,
+.interface-language-picker select,
 .language-picker select,
 form input,
 form textarea {
@@ -176,6 +177,7 @@ form textarea {
 }
 
 .search-box input:focus,
+.interface-language-picker select:focus,
 .language-picker select:focus,
 form input:focus,
 form textarea:focus {
@@ -183,18 +185,21 @@ form textarea:focus {
   box-shadow: 0 0 0 3px rgba(39, 116, 90, 0.14);
 }
 
+.interface-language-picker,
 .language-picker {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
+.interface-language-picker label,
 .language-picker label {
   color: var(--muted);
   font-size: 13px;
   font-weight: 800;
 }
 
+.interface-language-picker select,
 .language-picker select {
   appearance: none;
   background:
@@ -1433,6 +1438,34 @@ textarea {
 .submission-item span {
   color: var(--muted);
   font-size: 12px;
+}
+
+.submission-score-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.submission-score-row span {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+  border: 1px solid #c8ddd2;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: #f4faf6;
+  color: var(--green-dark);
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.submission-score-row b {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
 }
 
 .submission-item details {

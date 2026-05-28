@@ -28,6 +28,7 @@ FEEDBACK_FILE = DATA_DIR / "feedback.json"
 USER_SESSION_COOKIE = "code_tutor_session"
 ONLINE_WINDOW_SECONDS = 15 * 60
 SESSION_TOUCH_SECONDS = 30
+SUPPORTED_UI_LANGUAGES = {"en", "zh", "ja", "ko", "fr"}
 JUDGE0_DEFAULT_URL = "https://ce.judge0.com"
 JUDGE0_DEFAULT_LANGUAGE_IDS = {
     "c": 103,
@@ -156,6 +157,7 @@ def default_profile() -> dict:
         "baseLanguage": "",
         "languageExperienceChosen": False,
         "targetLanguage": "racket",
+        "uiLanguage": "en",
         "activeDay": 1,
         "checklists": {},
     }
@@ -315,6 +317,9 @@ def sanitize_profile(profile: dict | None) -> dict:
     if "languageExperienceChosen" not in profile and (known or raw_base in allowed_languages):
         language_experience_chosen = True
     target = normalize_target_language(profile.get("targetLanguage", "racket"))
+    ui_language = str(profile.get("uiLanguage") or "en").strip().lower()
+    if ui_language not in SUPPORTED_UI_LANGUAGES:
+        ui_language = "en"
     max_day = get_course_length(target)
     try:
         active_day = int(profile.get("activeDay", 1))
@@ -332,6 +337,7 @@ def sanitize_profile(profile: dict | None) -> dict:
         "baseLanguage": base_language,
         "languageExperienceChosen": language_experience_chosen,
         "targetLanguage": target,
+        "uiLanguage": ui_language,
         "activeDay": max(1, min(active_day, max_day)),
         "checklists": checklists,
     }
@@ -704,10 +710,13 @@ def analyze_code_submission(lesson: dict, content: str, execution: dict) -> dict
 
     passed_count = sum(1 for check in checks if check["passed"])
     score = round((passed_count / max(len(checks), 1)) * 10, 1)
+    mastery_rating = mastery_rating_from_score(score)
     fixes = [check["fix"] for check in checks if not check["passed"]][:6]
     strengths = [check["name"] for check in checks if check["passed"]][:6]
     return {
         "score": score,
+        "masteryRating": mastery_rating,
+        "masteryLabel": mastery_label(mastery_rating),
         "checks": checks,
         "strengths": strengths,
         "fixes": fixes,
@@ -716,10 +725,115 @@ def analyze_code_submission(lesson: dict, content: str, execution: dict) -> dict
     }
 
 
+def mastery_rating_from_score(score: float | int | None) -> int:
+    try:
+        numeric_score = float(score)
+    except (TypeError, ValueError):
+        numeric_score = 0.0
+    if numeric_score >= 9:
+        return 5
+    if numeric_score >= 7:
+        return 4
+    if numeric_score >= 5:
+        return 3
+    if numeric_score >= 3:
+        return 2
+    return 1
+
+
+def mastery_label(rating: int) -> str:
+    labels = {
+        1: "not mastered",
+        2: "weak",
+        3: "developing",
+        4: "mostly mastered",
+        5: "fully mastered",
+    }
+    return labels.get(max(1, min(int(rating or 1), 5)), "not mastered")
+
+
+def normalize_mastery_rating(report: dict | None) -> int:
+    if not report:
+        return 1
+    rating = report.get("masteryRating")
+    if isinstance(rating, (int, float)):
+        return max(1, min(int(round(rating)), 5))
+    return mastery_rating_from_score(report.get("score", 0))
+
+
+def normalize_assignment_score(record: dict) -> float | None:
+    score = record.get("assignmentScore")
+    if score is None:
+        score = record.get("score")
+    if score is None and isinstance(record.get("codeCheck"), dict):
+        score = record["codeCheck"].get("score")
+    if score is None:
+        return None
+    try:
+        numeric_score = float(score)
+    except (TypeError, ValueError):
+        return None
+    return round(max(0.0, min(numeric_score, 10.0)), 1)
+
+
+def inferred_legacy_code_check(record: dict) -> dict | None:
+    content = str(record.get("content") or record.get("contentPreview") or "").strip()
+    if not content:
+        return None
+    try:
+        day = int(record.get("day", 0))
+    except (TypeError, ValueError):
+        return None
+    target = normalize_target_language(record.get("target", "racket"))
+    base = normalize_base_language(record.get("base", "cpp"))
+    lesson = get_lesson(day, target, base)
+    if not lesson:
+        return None
+    execution = record.get("execution") if isinstance(record.get("execution"), dict) else None
+    if not execution:
+        execution = {
+            "available": False,
+            "status": "not_saved",
+            "message": (
+                f"Judge0 is not configured for {target}."
+                if target not in JUDGE0_DEFAULT_LANGUAGE_IDS
+                else "Judge0 result was not saved for this older submission."
+            ),
+        }
+    report = analyze_code_submission(lesson, content, execution)
+    report["legacyInferred"] = True
+    return report
+
+
+def scored_submission(record: dict) -> dict:
+    cleaned = english_safe_submission(record)
+    code_check = cleaned.get("codeCheck") if isinstance(cleaned.get("codeCheck"), dict) else {}
+    if not code_check:
+        code_check = inferred_legacy_code_check(cleaned) or {}
+        if code_check:
+            cleaned["codeCheck"] = code_check
+    assignment_score = normalize_assignment_score(cleaned)
+    mastery_rating = cleaned.get("masteryRating")
+    if not isinstance(mastery_rating, (int, float)):
+        mastery_rating = normalize_mastery_rating(code_check) if code_check else (
+            mastery_rating_from_score(assignment_score) if assignment_score is not None else None
+        )
+
+    if assignment_score is not None:
+        cleaned["assignmentScore"] = assignment_score
+        cleaned["assignmentScoreMax"] = 10
+        cleaned["assignmentScoreLabel"] = f"{assignment_score:g}/10"
+    if mastery_rating is not None:
+        cleaned["masteryRating"] = max(1, min(int(round(mastery_rating)), 5))
+        cleaned["masteryLabel"] = mastery_label(cleaned["masteryRating"])
+    return cleaned
+
+
 def format_code_check_report(report: dict) -> str:
     lines = [
         "Built-in code checker:",
         f"- Score: {report.get('score', 0)}/10",
+        f"- Mastery rating: {report.get('masteryRating', 1)}/5 ({report.get('masteryLabel', 'not mastered')})",
         f"- Non-empty lines: {report.get('nonEmptyLines', 0)}",
         f"- Homework labels found: {', '.join(report.get('programLabelsFound') or []) or 'none'}",
         "- Passed checks:",
@@ -737,6 +851,71 @@ def parse_iso_datetime(value: str | None) -> datetime:
         return datetime.fromisoformat(value.replace("Z", "+00:00"))
     except ValueError:
         return datetime.min.replace(tzinfo=timezone.utc)
+
+
+def latest_records_by_day(records: list[dict]) -> dict[int, dict]:
+    latest: dict[int, dict] = {}
+    for record in records:
+        try:
+            day = int(record.get("day", 0))
+        except (TypeError, ValueError):
+            continue
+        if day < 1:
+            continue
+        existing = latest.get(day)
+        if not existing or parse_iso_datetime(record.get("createdAt")) > parse_iso_datetime(existing.get("createdAt")):
+            latest[day] = record
+    return latest
+
+
+def build_mastery_records(records: list[dict], target: str, base: str = "cpp") -> list[dict]:
+    latest = latest_records_by_day(records)
+    mastery_records: list[dict] = []
+    for day in sorted(latest):
+        record = scored_submission(latest[day])
+        lesson = get_lesson(day, target, base)
+        code_check = record.get("codeCheck") or {}
+        rating = normalize_mastery_rating(code_check)
+        mastery_records.append({
+            "day": day,
+            "title": record.get("title") or (lesson.get("title") if lesson else f"Day {day:02d}"),
+            "category": record.get("category") or (lesson.get("category") if lesson else ""),
+            "rating": rating,
+            "label": mastery_label(rating),
+            "score": code_check.get("score"),
+            "submittedAt": record.get("createdAt"),
+            "target": record.get("target") or target,
+        })
+    return mastery_records
+
+
+def build_mastery_summary(mastery_records: list[dict]) -> dict:
+    if not mastery_records:
+        return {
+            "averageRating": None,
+            "ratedLessons": 0,
+            "ratings": {str(value): 0 for value in range(1, 6)},
+            "weakDays": [],
+            "strongDays": [],
+        }
+    ratings = [int(item.get("rating", 1)) for item in mastery_records]
+    counts = {str(value): ratings.count(value) for value in range(1, 6)}
+    weak_days = sorted(
+        (item for item in mastery_records if int(item.get("rating", 1)) <= 2),
+        key=lambda item: (int(item.get("rating", 1)), int(item.get("day", 0))),
+    )
+    strong_days = sorted(
+        (item for item in mastery_records if int(item.get("rating", 1)) >= 4),
+        key=lambda item: (-int(item.get("rating", 1)), int(item.get("day", 0))),
+    )
+    return {
+        "averageRating": round(sum(ratings) / len(ratings), 1),
+        "ratedLessons": len(ratings),
+        "ratings": counts,
+        "weakDays": weak_days[:8],
+        "strongDays": strong_days[:8],
+    }
+
 
 def user_learning_guidance(user: dict, profile_override: dict | None = None) -> dict:
     profile = sanitize_profile(profile_override or user.get("profile", {}))
@@ -757,6 +936,8 @@ def user_learning_guidance(user: dict, profile_override: dict | None = None) -> 
     checker_reports = [record.get("codeCheck") or {} for record in records if record.get("codeCheck")]
     scores = [float(report.get("score", 0)) for report in checker_reports if isinstance(report.get("score"), (int, float))]
     average_score = round(sum(scores) / len(scores), 1) if scores else None
+    mastery_records = build_mastery_records(records, target, base)
+    mastery_summary = build_mastery_summary(mastery_records)
 
     failed_counts: dict[str, int] = {}
     missing_label_count = 0
@@ -790,9 +971,14 @@ def user_learning_guidance(user: dict, profile_override: dict | None = None) -> 
         )
     else:
         score_text = f" Average checker score: {average_score}/10." if average_score is not None else ""
+        mastery_text = (
+            f" Average mastery: {mastery_summary['averageRating']}/5 across {mastery_summary['ratedLessons']} rated lesson(s)."
+            if mastery_summary.get("averageRating") is not None
+            else ""
+        )
         summary = (
             f"You have submitted {len(records)} homework record(s) across {len(submitted_days)} day(s) in {target_name}."
-            f"{score_text} Current checklist: {checklist_done}/{checklist_total}."
+            f"{score_text}{mastery_text} Current checklist: {checklist_done}/{checklist_total}."
         )
 
     today = [
@@ -839,8 +1025,13 @@ def user_learning_guidance(user: dict, profile_override: dict | None = None) -> 
             "submissions": len(records),
             "submittedDays": len(submitted_days),
             "averageCheckerScore": average_score,
+            "averageMasteryRating": mastery_summary.get("averageRating"),
             "activeDay": active_day,
             "target": target,
+        },
+        "mastery": {
+            "summary": mastery_summary,
+            "lessons": mastery_records,
         },
     }
 
@@ -903,7 +1094,7 @@ Built-in code checker result:
 ```
 
 Review in English. Use this exact structure:
-1. Overall score out of 10.
+1. Overall score out of 10 and mastery rating from 1 to 5, where 1 means not mastered and 5 means fully mastered.
 2. Correctness feedback.
 3. {target_language_name} style feedback, especially whether the code still follows {base_language_name} habits.
 4. At least 5 concrete improvement points.
@@ -912,6 +1103,7 @@ Review in English. Use this exact structure:
 7. Pick 3-6 important lines from the student's code and explain them line by line. For each selected line, explain important words or short phrases: keyword/function name, parentheses/braces/colon/semicolon, operators, values, variables, arguments, and result. Include the closest {base_language_name} comparison.
 8. A checklist the student must complete before tomorrow's lesson.
 Use the built-in code checker result as evidence. If the checker says HW labels, output, target syntax, or runner status failed, mention that directly.
+Use the mastery rating to decide whether the student should repeat the lesson, do targeted practice, or move forward.
 Important: short submissions still require concrete review. Explain what the existing lines do, what is correct, what is missing for a complete program, and how to improve them.
 Do not invent runtime results you did not observe. If tests need to be run, explain exactly how the student should run them.
 """
@@ -1050,6 +1242,7 @@ def me():
         "user": public_user(user),
         "profile": sanitize_profile(user.get("profile", {})),
         "openaiFeedbackEnabled": openai_feedback_enabled(),
+        "guidance": user_learning_guidance(user),
     })
 
 
@@ -1161,7 +1354,7 @@ def submissions():
     records = read_submissions()
     if user:
         records = [record for record in records if record.get("userId") == user["id"]]
-    return jsonify({"submissions": [english_safe_submission(item) for item in reversed(records)]})
+    return jsonify({"submissions": [scored_submission(item) for item in reversed(records)]})
 
 
 @app.get("/api/guidance")
@@ -1418,6 +1611,7 @@ def submit_assignment():
     execution = run_with_judge0(target, content, stdin)
     execution_summary = format_execution_result(execution)
     code_check = analyze_code_submission(lesson, content, execution)
+    mastery_rating = normalize_mastery_rating(code_check)
     code_check_summary = format_code_check_report(code_check)
     feedback = "\n\n".join([
         execution_summary,
@@ -1440,6 +1634,11 @@ def submit_assignment():
         "content": content,
         "execution": execution,
         "codeCheck": code_check,
+        "assignmentScore": code_check["score"],
+        "assignmentScoreMax": 10,
+        "assignmentScoreLabel": f"{code_check['score']:g}/10",
+        "masteryRating": mastery_rating,
+        "masteryLabel": mastery_label(mastery_rating),
         "feedback": feedback,
         "createdAt": datetime.now(timezone.utc).isoformat(),
     }
