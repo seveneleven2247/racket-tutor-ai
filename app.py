@@ -16,7 +16,15 @@ from flask import Flask, jsonify, make_response, redirect, request, send_from_di
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 
-from course_data import get_course_length, get_language_options, get_lesson, get_lessons, normalize_base_language, normalize_target_language
+from course_data import (
+    get_course_length,
+    get_language_options,
+    get_lesson,
+    get_lessons,
+    normalize_base_language,
+    normalize_target_language,
+    normalize_ui_language,
+)
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -1333,7 +1341,14 @@ def change_own_password():
 def course():
     target = normalize_target_language(request.args.get("target"))
     base = normalize_base_language(request.args.get("base"))
-    return jsonify({"languages": get_language_options(), "target": target, "base": base, "lessons": get_lessons(target, base)})
+    ui_language = normalize_ui_language(request.args.get("uiLanguage"))
+    return jsonify({
+        "languages": get_language_options(),
+        "target": target,
+        "base": base,
+        "uiLanguage": ui_language,
+        "lessons": get_lessons(target, base, ui_language),
+    })
 
 
 @app.get("/api/course/<int:day>")
@@ -1341,7 +1356,8 @@ def course():
 def lesson(day: int):
     target = normalize_target_language(request.args.get("target"))
     base = normalize_base_language(request.args.get("base"))
-    item = get_lesson(day, target, base)
+    ui_language = normalize_ui_language(request.args.get("uiLanguage"))
+    item = get_lesson(day, target, base, ui_language)
     if not item:
         return jsonify({"error": "lesson not found"}), 404
     return jsonify(item)

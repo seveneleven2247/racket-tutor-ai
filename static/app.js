@@ -1744,8 +1744,11 @@ function setUiLanguage(language) {
   applyStaticTranslations();
   renderAiReviewStatus();
   renderOnboarding();
-  if (state.lessons.length) {
-    renderLesson();
+  if (state.lessons.length) renderLesson();
+  if (hasExperienceProfile()) {
+    loadCourse().catch((error) => {
+      els.lessonTitle.textContent = error.message;
+    });
   }
   if (els.submissionList && els.submissionList.children.length) {
     loadSubmissions();
@@ -2645,7 +2648,12 @@ async function loadCourse() {
     state.target = chooseDefaultTarget();
     localStorage.setItem("racketTutor.targetLanguage", state.target);
   }
-  const response = await fetch(`/api/course?target=${encodeURIComponent(state.target)}&base=${encodeURIComponent(state.baseLanguage || "cpp")}`, { headers: accessHeaders() });
+  const params = new URLSearchParams({
+    target: state.target,
+    base: state.baseLanguage || "cpp",
+    uiLanguage: state.uiLanguage,
+  });
+  const response = await fetch(`/api/course?${params.toString()}`, { headers: accessHeaders() });
   if (response.status === 401) {
     window.location.href = "/";
     return;

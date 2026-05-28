@@ -1516,12 +1516,337 @@ def normalize_base_language(base: str | None) -> str:
     return value if value in TARGET_LANGUAGES else "cpp"
 
 
+def normalize_ui_language(language: str | None) -> str:
+    value = (language or "en").strip().lower()
+    return value if value in {"en", "zh", "ja", "ko", "fr"} else "en"
+
+
 def _docs_for(target: str) -> list[dict[str, str]]:
     return DOCS[target]
 
 
 def _summary(kind: str) -> str:
     return KIND_SUMMARIES.get(kind) or KIND_SUMMARIES.get(_base_kind(kind)) or DEFAULT_SUMMARY
+
+
+LOCALIZED_KIND_SUMMARIES = {
+    "zh": {
+        "output": "先从看得见的程序行为开始。先打印值，让后面每个主题都有快速反馈。",
+        "input": "先读取文本，然后在程序需要整数、布尔值、字符、小数或数组/列表时再转换。",
+        "math": "使用算术表达式处理总和、平均值、余数和分组计算。",
+        "variable": "把名字绑定到值，并分清语法中的类型、名称、值和初始化。",
+        "if_statement": "使用一个条件决定某个代码块或表达式是否运行。",
+        "else_if": "按顺序处理多个情况，而不是写一堆互不相关的 if。",
+        "error_check": "在主逻辑依赖输入之前，先拒绝无效输入。",
+        "while_loop": "当事先不知道确切次数时，只要条件仍为真就重复执行。",
+        "do_while": "先运行一次循环体，再检查是否需要继续。",
+        "random_number": "为游戏、测试和模拟生成不可预测的值。",
+        "for_loop": "用索引或序列重复执行已知次数。",
+        "nested_for": "把一个循环放进另一个循环，用来处理网格、表格和重复图案。",
+        "function_intro": "把函数理解成有名字、可复用、接收输入并返回输出的代码块。",
+        "create_function": "编写带参数、函数体和明确结果的自定义函数。",
+        "call_function": "通过传入参数来使用函数，并保存或打印返回值。",
+        "arrays_intro": "把多个相关值存到同一个名字下，并通过位置或序列访问元素。",
+        "array_kinds": "比较固定数组、动态数组、列表、向量以及不同语言的集合选择。",
+        "array_declare": "创建类似数组的集合，并填入初始值。",
+        "strings": "表示文本、连接文本，并检查字符或子字符串。",
+        "char_arrays": "当语言暴露底层表示时，把文本理解成字符序列。",
+        "classes": "把数据和行为组合成一个有名字的类型。",
+        "switch_statement": "从多个精确匹配的情况中选择一个分支。",
+        "multi_arrays": "用嵌套数组、向量或列表表示行和列。",
+        "vectors": "当元素数量会增长或缩小时，使用可调整大小的序列。",
+        "objects_classes": "从类定义创建对象值，并调用对象上的方法。",
+        "recursion": "通过把问题缩小成同类子问题来解决问题。",
+        "search_float": "搜索集合，并用浮点值表示测量值和平均值。",
+        "combined_if": "用 and、or、not 组合条件，让规则读起来清楚。",
+        "nested_if": "当一个决定依赖前一个决定时，把一个 if 放在另一个 if 里面。",
+        "for_arrays": "用 for 循环处理数组类集合中的每个元素。",
+        "nested_for_multi": "用嵌套循环访问多维结构中的每个单元格。",
+        "while_validation": "持续请求输入，直到值通过验证。",
+        "do_while_menu": "至少显示一次菜单，然后一直运行到用户选择停止。",
+        "default": "把前面学过的技能组合成一个小程序。保持代码简短、可测试，并且容易逐行解释。",
+    },
+    "ja": {
+        "output": "まず目に見えるプログラムの動作から始めます。最初に値を出力すると、後の各トピックで素早く確認できます。",
+        "input": "まずテキストを読み、整数、真偽値、文字、小数、配列/リストが必要なときに変換します。",
+        "math": "合計、平均、余り、まとまった計算には算術式を使います。",
+        "variable": "名前を値に結び付け、型、名前、値、初期化が構文のどこにあるかを学びます。",
+        "if_statement": "1 つの条件で、ブロックや式を実行するかどうかを選びます。",
+        "else_if": "複数のケースを順番に扱い、無関係な if を並べないようにします。",
+        "error_check": "主な処理が入力に依存する前に、無効な入力を拒否します。",
+        "while_loop": "正確な回数が事前に分からないとき、条件が真の間くり返します。",
+        "do_while": "本体を一度実行してから、もう一度くり返すかを確認します。",
+        "random_number": "ゲーム、テスト、シミュレーションのために予測できない値を生成します。",
+        "for_loop": "インデックスやシーケンスを使って、決まった回数くり返します。",
+        "nested_for": "ループの中にループを置き、グリッド、表、反復パターンを扱います。",
+        "function_intro": "関数を、入力を受け取り出力を返す、名前付きで再利用できるブロックとして理解します。",
+        "create_function": "引数、本体、明確な結果を持つ自分の関数を書きます。",
+        "call_function": "引数を渡して関数を使い、返された値を保存または出力します。",
+        "arrays_intro": "関連する複数の値を 1 つの名前の下に保存し、位置や順序で要素にアクセスします。",
+        "array_kinds": "固定配列、動的配列、リスト、ベクター、言語ごとのコレクションを比較します。",
+        "array_declare": "配列のようなコレクションを作り、初期値を入れます。",
+        "strings": "テキストを表し、結合し、文字や部分文字列を調べます。",
+        "char_arrays": "言語がその表現を見せる場合、テキストを文字の並びとして理解します。",
+        "classes": "データと動作を名前付きの型にまとめます。",
+        "switch_statement": "複数の完全一致ケースから 1 つの分岐を選びます。",
+        "multi_arrays": "行と列を、ネストした配列、ベクター、リストで表します。",
+        "vectors": "要素数が増減する場合は、サイズ変更できるシーケンスを使います。",
+        "objects_classes": "クラス定義からオブジェクト値を作り、そのメソッドを呼び出します。",
+        "recursion": "問題を同じ形の小さな問題に分解して解きます。",
+        "search_float": "コレクションを検索し、測定値や平均には浮動小数点値を使います。",
+        "combined_if": "and、or、not で条件を組み合わせ、ルールを読みやすくします。",
+        "nested_if": "ある判断が前の判断に依存する場合、if の中に if を置きます。",
+        "for_arrays": "for ループで配列のようなコレクションの全要素を処理します。",
+        "nested_for_multi": "ネストしたループで多次元構造の各セルを訪問します。",
+        "while_validation": "値が検証を通るまで入力を求め続けます。",
+        "do_while_menu": "メニューを少なくとも一度表示し、ユーザーが停止を選ぶまで続けます。",
+        "default": "これまでの技能を小さなプログラムにまとめます。コードは短く、テストしやすく、行ごとに説明しやすくします。",
+    },
+    "ko": {
+        "output": "먼저 눈에 보이는 프로그램 동작부터 시작합니다. 값을 먼저 출력하면 이후 모든 주제에서 빠르게 확인할 수 있습니다.",
+        "input": "먼저 텍스트를 읽고, 정수, 불리언, 문자, 소수, 배열/리스트가 필요할 때 변환합니다.",
+        "math": "합계, 평균, 나머지, 묶음 계산에는 산술식을 사용합니다.",
+        "variable": "이름을 값에 연결하고, 문법에서 타입, 이름, 값, 초기화가 어디에 있는지 배웁니다.",
+        "if_statement": "하나의 조건으로 블록이나 표현식이 실행될지 선택합니다.",
+        "else_if": "여러 경우를 순서대로 처리하고, 서로 관련 없는 if를 따로 쓰지 않습니다.",
+        "error_check": "주요 로직이 입력에 의존하기 전에 잘못된 입력을 거부합니다.",
+        "while_loop": "정확한 반복 횟수를 모를 때 조건이 참인 동안 반복합니다.",
+        "do_while": "본문을 한 번 실행한 뒤 다시 반복할지 확인합니다.",
+        "random_number": "게임, 테스트, 시뮬레이션에 사용할 예측하기 어려운 값을 생성합니다.",
+        "for_loop": "인덱스나 시퀀스로 정해진 횟수만큼 반복합니다.",
+        "nested_for": "반복문 안에 반복문을 넣어 격자, 표, 반복 패턴을 다룹니다.",
+        "function_intro": "함수를 입력을 받고 출력을 반환하는 이름 있는 재사용 블록으로 이해합니다.",
+        "create_function": "매개변수, 본문, 명확한 결과가 있는 직접 만든 함수를 작성합니다.",
+        "call_function": "인수를 전달해 함수를 사용하고 반환값을 저장하거나 출력합니다.",
+        "arrays_intro": "관련된 여러 값을 하나의 이름 아래 저장하고 위치나 순서로 요소에 접근합니다.",
+        "array_kinds": "고정 배열, 동적 배열, 리스트, 벡터, 언어별 컬렉션 선택을 비교합니다.",
+        "array_declare": "배열 같은 컬렉션을 만들고 시작 값을 채웁니다.",
+        "strings": "텍스트를 표현하고 연결하며 문자나 부분 문자열을 검사합니다.",
+        "char_arrays": "언어가 그 표현을 드러낼 때 텍스트를 문자들의 순서로 이해합니다.",
+        "classes": "데이터와 동작을 이름 있는 타입으로 묶습니다.",
+        "switch_statement": "정확히 일치하는 여러 경우 중 하나의 분기를 선택합니다.",
+        "multi_arrays": "중첩 배열, 벡터, 리스트로 행과 열을 표현합니다.",
+        "vectors": "요소 개수가 늘거나 줄 수 있을 때 크기 조절 가능한 시퀀스를 사용합니다.",
+        "objects_classes": "클래스 정의에서 객체 값을 만들고 그 객체의 메서드를 호출합니다.",
+        "recursion": "문제를 더 작은 같은 형태의 문제로 줄여 해결합니다.",
+        "search_float": "컬렉션을 검색하고 측정값과 평균에는 부동소수점 값을 사용합니다.",
+        "combined_if": "and, or, not으로 조건을 조합해 규칙을 명확하게 읽히게 합니다.",
+        "nested_if": "한 결정이 이전 결정에 의존할 때 if 안에 if를 넣습니다.",
+        "for_arrays": "for 반복문으로 배열 같은 컬렉션의 모든 요소를 처리합니다.",
+        "nested_for_multi": "중첩 반복문으로 다차원 구조의 모든 칸을 방문합니다.",
+        "while_validation": "값이 검증을 통과할 때까지 입력을 계속 요청합니다.",
+        "do_while_menu": "메뉴를 최소 한 번 보여준 뒤 사용자가 중지를 선택할 때까지 계속합니다.",
+        "default": "이전에 배운 기술을 작은 프로그램으로 결합합니다. 코드는 짧고 테스트 가능하며 줄별로 설명하기 쉽게 유지합니다.",
+    },
+    "fr": {
+        "output": "Commencez par un comportement visible du programme. Afficher des valeurs donne une boucle de retour rapide pour tous les sujets suivants.",
+        "input": "Lisez d'abord du texte, puis convertissez-le quand le programme a besoin d'un nombre, d'un booléen, d'un caractère, d'un décimal ou d'un tableau/liste.",
+        "math": "Utilisez des expressions arithmétiques pour les totaux, moyennes, restes et calculs groupés.",
+        "variable": "Associez un nom à une valeur et repérez dans la syntaxe le type, le nom, la valeur et l'initialisation.",
+        "if_statement": "Utilisez une condition pour choisir si un bloc ou une expression doit s'exécuter.",
+        "else_if": "Traitez plusieurs cas ordonnés sans écrire des if séparés sans lien.",
+        "error_check": "Rejetez les entrées invalides avant que la logique principale en dépende.",
+        "while_loop": "Répétez tant qu'une condition reste vraie, surtout quand le nombre exact de répétitions n'est pas connu.",
+        "do_while": "Exécutez le corps une fois avant de vérifier si une autre itération est nécessaire.",
+        "random_number": "Générez des valeurs imprévisibles pour les jeux, tests et simulations.",
+        "for_loop": "Répétez un nombre connu de fois avec un index ou une séquence.",
+        "nested_for": "Placez une boucle dans une autre pour travailler avec des grilles, tableaux et motifs répétés.",
+        "function_intro": "Comprenez une fonction comme un bloc nommé et réutilisable qui accepte une entrée et renvoie une sortie.",
+        "create_function": "Écrivez votre propre fonction avec des paramètres, un corps et un résultat clair.",
+        "call_function": "Utilisez une fonction en passant des arguments, puis stockez ou affichez la valeur renvoyée.",
+        "arrays_intro": "Stockez plusieurs valeurs liées sous un même nom et accédez aux éléments par position ou séquence.",
+        "array_kinds": "Comparez tableaux fixes, tableaux dynamiques, listes, vecteurs et choix propres à chaque langage.",
+        "array_declare": "Créez une collection de type tableau et remplissez-la avec des valeurs initiales.",
+        "strings": "Représentez du texte, combinez du texte et inspectez des caractères ou sous-chaînes.",
+        "char_arrays": "Comprenez le texte comme une séquence de caractères quand un langage expose cette représentation.",
+        "classes": "Regroupez données et comportements dans un type nommé.",
+        "switch_statement": "Choisissez une branche parmi plusieurs cas à correspondance exacte.",
+        "multi_arrays": "Représentez lignes et colonnes avec des tableaux, vecteurs ou listes imbriqués.",
+        "vectors": "Utilisez une séquence redimensionnable quand le nombre d'éléments peut changer.",
+        "objects_classes": "Créez des objets à partir de définitions de classes et appelez leurs méthodes.",
+        "recursion": "Résolvez un problème en le ramenant à une version plus petite de lui-même.",
+        "search_float": "Recherchez dans des collections et utilisez des nombres flottants pour mesures et moyennes.",
+        "combined_if": "Combinez les conditions avec and, or et not pour que les règles restent lisibles.",
+        "nested_if": "Placez un if dans un autre quand une décision dépend d'une décision précédente.",
+        "for_arrays": "Utilisez des boucles for pour traiter chaque élément d'une collection de type tableau.",
+        "nested_for_multi": "Utilisez des boucles imbriquées pour visiter chaque cellule d'une structure multidimensionnelle.",
+        "while_validation": "Redemandez l'entrée jusqu'à ce que la valeur passe la validation.",
+        "do_while_menu": "Affichez un menu au moins une fois, puis continuez jusqu'à ce que l'utilisateur choisisse d'arrêter.",
+        "default": "Combinez les compétences précédentes dans un petit programme. Gardez le code court, testable et facile à expliquer ligne par ligne.",
+    },
+}
+
+
+LOCALIZED_INPUT_DETAILS = {
+    "zh": {
+        "cpp": "C++ 使用 `std::cin >> variable` 读取简单输入。变量类型决定文本如何解释：`int` 读取整数，`double` 读取小数，启用 `std::boolalpha` 时 `bool` 读取 `true` 或 `false`，`char` 读取一个字符，`std::string` 读取一个单词。数组或 vector 输入通常一次读取一个元素，例如 `scores[0]`、`scores[1]`、`scores[2]`。输出带变量的句子时，用 `<<` 串接文本和值。注意：`std::cin >> name` 会在空白处停止；以后需要整句时再用 `std::getline`。",
+        "python": "Python 的 `input()` 总是返回字符串。需要时再转换：整数用 `int(input(...))`，小数用 `float(input(...))`，布尔值可用 `input(...).lower() == \"true\"`，字符可用 `input(...)[0]`，数字列表可用 `[int(x) for x in input(...).split()]`。输出带变量的句子时，f-string 通常最清晰，例如 `f\"{name} is {age}\"`。注意：无效数字文本会导致转换错误，空字符串上使用 `[0]` 会失败。",
+        "c": "C 使用 `scanf` 和格式说明符。`%d` 读取整数，`%lf` 读取 double，`%c` 读取一个字符，`%s` 读取一个单词到字符数组，数组元素通常用 `&scores[0]` 这样的地址逐个读取。C 没有适合初学者的内置布尔输入，所以可用 `int member`，1 表示 true，0 表示 false。输出带变量的句子时，使用匹配的 `printf` 占位符。注意：除字符数组外，多数 `scanf` 目标需要 `&`，而 `scanf(\" %c\", &initial)` 前面的空格用于跳过旧空白。",
+        "java": "Java 常用 `Scanner`。整数用 `nextInt()`，小数用 `nextDouble()`，布尔值用 `nextBoolean()`，一个字符用 `next().charAt(0)`，一个单词字符串用 `next()`，数组元素用 `int[] scores` 加多次 `nextInt()` 读取。输出带变量的句子时，用 `+` 连接文本和值，或使用 `System.out.printf`。注意：以后混用 `nextLine()` 和 `nextInt()` 时，残留换行可能被意外读取。",
+        "r": "R 初学输入常用 `readline()`，它返回文本。整数用 `as.integer(...)`，小数用 `as.numeric(...)`，布尔值可用 `tolower(...) == \"true\"`，一个字符可用 `substr(text, 1, 1)`，整数向量可用 `scan(text = readline(), what = integer(), quiet = TRUE)`。输出带变量的句子时，用 `cat(sprintf(...))` 或 `paste(...)`。注意：R 的向量从 1 开始索引，所以第一个元素是 `scores[1]`，不是 `scores[0]`。",
+    },
+    "ja": {
+        "cpp": "C++ は単純な入力に `std::cin >> variable` を使います。変数の型がテキストの解釈を決めます。`int` は整数、`double` は小数、`std::boolalpha` を使うと `bool` は `true` または `false`、`char` は 1 文字、`std::string` は 1 単語を読みます。配列や vector の入力は `scores[0]`、`scores[1]`、`scores[2]` のように 1 要素ずつ読みます。変数を含む文を出力するときは、`<<` でテキストと値をつなぎます。注意: `std::cin >> name` は空白で止まります。文全体が必要なときは後で `std::getline` を使います。",
+        "python": "Python の `input()` は常に文字列を返します。必要に応じて変換します。整数は `int(input(...))`、小数は `float(input(...))`、真偽値は `input(...).lower() == \"true\"`、文字は `input(...)[0]`、数値リストは `[int(x) for x in input(...).split()]` です。変数を含む文の出力には f-string が分かりやすく、例は `f\"{name} is {age}\"` です。注意: 数値でない文字列は変換エラーになり、空文字列で `[0]` を使うと失敗します。",
+        "c": "C は `scanf` と書式指定子を使います。`%d` は整数、`%lf` は double、`%c` は 1 文字、`%s` は文字配列に 1 単語を読み、配列は `&scores[0]` のようなアドレスで 1 要素ずつ読みます。C には初心者向けの組み込み真偽値入力がないので、`int member` を使い、1 を true、0 を false とします。変数を含む文は対応する `printf` プレースホルダーで出力します。注意: 文字配列以外の多くの `scanf` 先には `&` が必要で、`scanf(\" %c\", &initial)` の先頭空白は古い空白を飛ばします。",
+        "java": "Java ではよく `Scanner` を使います。整数は `nextInt()`、小数は `nextDouble()`、真偽値は `nextBoolean()`、1 文字は `next().charAt(0)`、1 単語の文字列は `next()`、配列要素は `int[] scores` に対して複数回 `nextInt()` で読みます。変数を含む文は `+` で連結するか、`System.out.printf` を使います。注意: 後で `nextLine()` と `nextInt()` を混ぜると、残った改行が意図せず読まれることがあります。",
+        "r": "R の初学者向け入力では `readline()` をよく使い、これはテキストを返します。整数は `as.integer(...)`、小数は `as.numeric(...)`、真偽値は `tolower(...) == \"true\"`、1 文字は `substr(text, 1, 1)`、整数ベクターは `scan(text = readline(), what = integer(), quiet = TRUE)` に変換します。変数を含む文は `cat(sprintf(...))` または `paste(...)` で出力します。注意: R のベクターは 1 始まりなので、最初の要素は `scores[1]` であり `scores[0]` ではありません。",
+    },
+    "ko": {
+        "cpp": "C++는 간단한 입력에 `std::cin >> variable`을 사용합니다. 변수 타입이 텍스트 해석 방식을 결정합니다. `int`는 정수, `double`은 소수, `std::boolalpha`를 사용한 `bool`은 `true` 또는 `false`, `char`는 한 문자, `std::string`은 한 단어를 읽습니다. 배열/vector 입력은 `scores[0]`, `scores[1]`, `scores[2]`처럼 한 요소씩 읽습니다. 변수가 포함된 문장을 출력할 때는 `<<`로 텍스트와 값을 연결합니다. 주의: `std::cin >> name`은 공백에서 멈추므로, 전체 문장이 필요할 때는 나중에 `std::getline`을 사용합니다.",
+        "python": "Python의 `input()`은 항상 문자열을 반환합니다. 필요할 때 변환합니다. 정수는 `int(input(...))`, 소수는 `float(input(...))`, 불리언은 `input(...).lower() == \"true\"`, 문자는 `input(...)[0]`, 숫자 리스트는 `[int(x) for x in input(...).split()]`를 사용합니다. 변수가 포함된 문장을 출력할 때는 f-string이 가장 명확하며 예시는 `f\"{name} is {age}\"`입니다. 주의: 잘못된 숫자 텍스트는 변환 오류를 만들고, 빈 문자열에서 `[0]`은 실패합니다.",
+        "c": "C는 `scanf`와 형식 지정자를 사용합니다. `%d`는 정수, `%lf`는 double, `%c`는 한 문자, `%s`는 문자 배열에 한 단어를 읽고, 배열은 `&scores[0]` 같은 주소로 한 요소씩 읽습니다. C에는 초보자에게 쉬운 내장 불리언 입력이 없으므로 `int member`를 사용해 1은 true, 0은 false로 둡니다. 변수가 포함된 문장은 맞는 `printf` 자리표시자로 출력합니다. 주의: 문자 배열을 제외한 대부분의 `scanf` 대상에는 `&`가 필요하고, `scanf(\" %c\", &initial)`의 앞 공백은 이전 공백을 건너뜁니다.",
+        "java": "Java는 보통 `Scanner`를 사용합니다. 정수는 `nextInt()`, 소수는 `nextDouble()`, 불리언은 `nextBoolean()`, 한 문자는 `next().charAt(0)`, 한 단어 문자열은 `next()`, 배열 요소는 `int[] scores`와 여러 번의 `nextInt()`로 읽습니다. 변수가 포함된 문장은 `+`로 연결하거나 `System.out.printf`를 사용합니다. 주의: 나중에 `nextLine()`과 `nextInt()`를 섞으면 남은 줄바꿈이 실수로 읽힐 수 있습니다.",
+        "r": "R은 초보자 입력에 `readline()`을 자주 사용하며, 이것은 텍스트를 반환합니다. 정수는 `as.integer(...)`, 소수는 `as.numeric(...)`, 불리언은 `tolower(...) == \"true\"`, 한 문자는 `substr(text, 1, 1)`, 정수 벡터는 `scan(text = readline(), what = integer(), quiet = TRUE)`로 변환합니다. 변수가 포함된 문장은 `cat(sprintf(...))` 또는 `paste(...)`로 출력합니다. 주의: R 벡터는 1부터 인덱싱하므로 첫 항목은 `scores[1]`이지 `scores[0]`이 아닙니다.",
+    },
+    "fr": {
+        "cpp": "C++ utilise `std::cin >> variable` pour les entrées simples. Le type de la variable détermine comment le texte est interprété : `int` lit un entier, `double` lit un décimal, `bool` lit `true` ou `false` avec `std::boolalpha`, `char` lit un caractère et `std::string` lit un mot. Pour un tableau/vector, lisez un élément à la fois, par exemple `scores[0]`, `scores[1]` et `scores[2]`. Pour afficher une phrase avec des variables, enchaînez texte et valeurs avec `<<`. Attention : `std::cin >> name` s'arrête aux espaces ; utilisez plus tard `std::getline` quand vous aurez besoin d'une phrase complète.",
+        "python": "En Python, `input()` renvoie toujours une chaîne. Convertissez-la au besoin : `int(input(...))` pour les entiers, `float(input(...))` pour les décimaux, `input(...).lower() == \"true\"` pour un booléen, `input(...)[0]` pour un caractère et `[int(x) for x in input(...).split()]` pour une liste de nombres. Pour afficher une phrase avec des variables, une f-string est souvent la plus claire, par exemple `f\"{name} is {age}\"`. Attention : un texte numérique invalide provoque une erreur de conversion, et `[0]` échoue sur une chaîne vide.",
+        "c": "C utilise `scanf` avec des spécificateurs de format. `%d` lit un entier, `%lf` lit un double, `%c` lit un caractère, `%s` lit un mot dans un tableau de caractères, et les tableaux se lisent élément par élément avec des adresses comme `&scores[0]`. C n'a pas d'entrée booléenne simple pour débutants, donc utilisez `int member` avec 1 pour true et 0 pour false. Pour afficher une phrase avec des variables, utilisez les bons espaces réservés `printf`. Attention : presque toutes les cibles `scanf`, sauf les tableaux de caractères, ont besoin de `&`, et `scanf(\" %c\", &initial)` utilise l'espace initial pour ignorer les anciens espaces.",
+        "java": "Java utilise souvent `Scanner`. Utilisez `nextInt()` pour les entiers, `nextDouble()` pour les décimaux, `nextBoolean()` pour les booléens, `next().charAt(0)` pour un caractère, `next()` pour un mot, et `int[] scores` avec plusieurs appels `nextInt()` pour les éléments de tableau. Pour afficher une phrase avec des variables, joignez texte et valeurs avec `+` ou utilisez `System.out.printf`. Attention en mélangeant plus tard `nextLine()` avec `nextInt()` : les retours à la ligne restants peuvent être lus par accident.",
+        "r": "R lit souvent les entrées débutantes avec `readline()`, qui renvoie du texte. Convertissez avec `as.integer(...)` pour les entiers, `as.numeric(...)` pour les décimaux, `tolower(...) == \"true\"` pour les booléens, `substr(text, 1, 1)` pour un caractère et `scan(text = readline(), what = integer(), quiet = TRUE)` pour un vecteur d'entiers. Pour afficher une phrase avec des variables, utilisez `cat(sprintf(...))` ou `paste(...)`. Attention : les vecteurs R sont indexés à partir de 1, donc le premier élément est `scores[1]`, pas `scores[0]`.",
+    },
+}
+
+
+LOCALIZED_RACKET_DETAILS = {
+    "zh": {
+        "output": "`displayln` 是初学 Racket 程序最常用的输出函数。`display` 表示显示一个值，`ln` 表示输出后换行。`(displayln 42)` 的意思是：调用 `displayln`，把数字 `42` 作为参数，打印 `42`，然后移动到下一行。括号是必须的，因为 Racket 使用前缀表达式语法：`(` 后面的第一项是函数或操作，后面的项是参数。这取代了 C++ 中 `std::cout << 42 << std::endl;` 的习惯。`#lang racket` 也必须放在文件顶部，因为它告诉 Racket 用哪套语言规则读取文件。",
+        "input": "Racket 详情：`display` 打印提示但不换行，`read-line` 等待用户输入文本并按 Enter。`(define name (read-line))` 会运行 `read-line`，然后把输入文本绑定到 `name`。数字通常先读文本，再用 `string->number` 转换。布尔值可以比较输入文本，例如 `(equal? answer \"true\")`。字符可以先读字符串，再用 `string-ref` 取第一个字符。数组类输入可以读一整行，用 `string-split` 切开，再用 `map string->number` 转换。注意：`read-line` 返回字符串，`string->number` 在坏输入时可能返回 `#f`，空字符串上使用 `string-ref` 会失败。",
+        "math": "Racket 用前缀形式写算术：`(+ subtotal tax)` 表示 `subtotal + tax`。运算符放在前面，然后是数字或名字。括号是必须的，因为它们标记了准确的表达式和参数。",
+        "variable": "`define` 把名字绑定到值。对初学者来说，可以把 `(define count 3)` 读成 C++ 里的 `const auto count = 3;`。Racket 通常构造新值，而不是反复修改同一个变量。",
+        "default": "Racket 程序由表达式组成。在带括号的表达式中，第一项决定动作，后面的项是这个动作的输入。读每一行时先问：最前面的函数或特殊形式是什么，传入了哪些值，会产生什么结果或效果？",
+    },
+    "ja": {
+        "output": "`displayln` は初心者向け Racket プログラムの基本的な出力関数です。`display` は値を表示すること、`ln` はその後に改行することを意味します。`(displayln 42)` は、数値 `42` を引数として `displayln` を呼び出し、`42` を出力して次の行へ移るという意味です。Racket は前置式の構文を使うため、括弧が必要です。`(` の直後の最初の項目が関数または操作で、続く項目が引数です。これは C++ の `std::cout << 42 << std::endl;` という習慣を置き換えます。`#lang racket` もファイル先頭に必要で、Racket にどの言語規則でファイルを読むかを伝えます。",
+        "input": "Racket の詳細: `display` は改行せずにプロンプトを表示し、`read-line` はユーザーがテキストを入力して Enter を押すのを待ちます。`(define name (read-line))` は `read-line` を実行し、入力されたテキストを `name` に結び付けます。数値は通常、まずテキストとして読み、`string->number` で変換します。真偽値は `(equal? answer \"true\")` のように入力テキストを比較できます。文字は文字列を読んで `string-ref` で最初の文字を取ります。配列のような入力は 1 行を読み、`string-split` で分割し、`map string->number` で変換します。注意: `read-line` は文字列を返し、`string->number` は不正入力で `#f` を返すことがあり、空文字列で `string-ref` を使うと失敗します。",
+        "math": "Racket は算術を前置形式で書きます。`(+ subtotal tax)` は `subtotal + tax` を意味します。演算子が先に来て、その後に数値や名前が続きます。括弧は式と引数の範囲を正確に示すため必須です。",
+        "variable": "`define` は名前を値に結び付けます。初心者は `(define count 3)` を C++ の `const auto count = 3;` のように読むと分かりやすいです。Racket は同じ変数を何度も変更するより、新しい値を作ることが多いです。",
+        "default": "Racket プログラムは式で構成されます。括弧付きの式では、最初の項目が動作を決め、残りの項目がその動作への入力です。各行を読むときは、最初の関数または特殊形式は何か、どの値が渡されるか、どんな結果や効果が起きるかを確認します。",
+    },
+    "ko": {
+        "output": "`displayln`은 초보 Racket 프로그램의 기본 출력 함수입니다. `display`는 값을 보여 준다는 뜻이고, `ln`은 출력 뒤에 줄바꿈을 추가한다는 뜻입니다. `(displayln 42)`는 숫자 `42`를 인수로 `displayln`을 호출해 `42`를 출력하고 다음 줄로 이동한다는 의미입니다. Racket은 전위 표현식 문법을 사용하므로 괄호가 필요합니다. `(` 바로 뒤의 첫 항목이 함수나 연산이고, 뒤따르는 항목들이 인수입니다. 이는 C++의 `std::cout << 42 << std::endl;` 습관을 대체합니다. `#lang racket`도 파일 맨 위에 필요하며, Racket에게 어떤 언어 규칙으로 파일을 읽을지 알려 줍니다.",
+        "input": "Racket 세부사항: `display`는 줄바꿈 없이 프롬프트를 출력하고, `read-line`은 사용자가 텍스트를 입력하고 Enter를 누를 때까지 기다립니다. `(define name (read-line))`은 `read-line`을 실행한 뒤 입력 텍스트를 `name`에 바인딩합니다. 숫자는 보통 먼저 텍스트로 읽고 `string->number`로 변환합니다. 불리언은 `(equal? answer \"true\")`처럼 입력 텍스트를 비교할 수 있습니다. 문자는 문자열을 읽고 `string-ref`로 첫 문자를 가져옵니다. 배열 같은 입력은 한 줄을 읽고 `string-split`으로 나눈 뒤 `map string->number`로 변환합니다. 주의: `read-line`은 문자열을 반환하고, `string->number`는 잘못된 입력에서 `#f`를 반환할 수 있으며, 빈 문자열에서 `string-ref`는 실패합니다.",
+        "math": "Racket은 산술을 전위 형태로 씁니다. `(+ subtotal tax)`는 `subtotal + tax`를 의미합니다. 연산자가 먼저 오고 그 뒤에 숫자나 이름이 옵니다. 괄호는 정확한 표현식과 인수 범위를 표시하므로 필수입니다.",
+        "variable": "`define`은 이름을 값에 연결합니다. 초보자는 `(define count 3)`을 C++의 `const auto count = 3;`처럼 읽으면 좋습니다. Racket은 같은 변수를 반복해서 바꾸기보다 새 값을 만드는 경우가 많습니다.",
+        "default": "Racket 프로그램은 표현식으로 만들어집니다. 괄호가 있는 표현식에서는 첫 항목이 동작을 결정하고 나머지 항목은 그 동작의 입력입니다. 각 줄을 읽을 때는 첫 함수나 특수 형식이 무엇인지, 어떤 값이 전달되는지, 어떤 결과나 효과가 생기는지 확인합니다.",
+    },
+    "fr": {
+        "output": "`displayln` est la fonction de sortie de base pour les programmes Racket débutants. `display` signifie afficher une valeur, et `ln` ajoute un retour à la ligne après. `(displayln 42)` signifie : appeler `displayln` avec la valeur numérique `42`, afficher `42`, puis passer à la ligne suivante. Les parenthèses sont obligatoires parce que Racket utilise une syntaxe préfixe : le premier élément après `(` est la fonction ou l'opération, et les éléments suivants sont les arguments. Cela remplace l'habitude C++ `std::cout << 42 << std::endl;`. `#lang racket` est aussi requis en haut du fichier, car il indique à Racket quelles règles de langage utiliser pour lire le fichier.",
+        "input": "Détail Racket : `display` affiche une invite sans passer à la ligne. `read-line` attend que l'utilisateur saisisse du texte puis appuie sur Entrée. `(define name (read-line))` exécute `read-line`, puis associe le texte saisi à `name`. Pour les nombres, Racket lit souvent du texte puis le convertit avec `string->number`. Pour un booléen, comparez le texte saisi, par exemple `(equal? answer \"true\")`. Pour un caractère, lisez une chaîne puis prenez le premier caractère avec `string-ref`. Pour une entrée de type tableau, lisez une ligne, découpez-la avec `string-split`, puis convertissez chaque élément avec `map string->number`. Attention : `read-line` donne une chaîne, `string->number` peut renvoyer `#f` pour une mauvaise entrée, et `string-ref` échoue sur une chaîne vide.",
+        "math": "Racket écrit l'arithmétique en forme préfixe : `(+ subtotal tax)` signifie `subtotal + tax`. L'opérateur vient d'abord, puis les nombres ou les noms. Les parenthèses sont obligatoires car elles délimitent exactement l'expression et ses arguments.",
+        "variable": "`define` associe un nom à une valeur. Pour débuter, lisez `(define count 3)` comme `const auto count = 3;` en C++. Racket construit souvent de nouvelles valeurs au lieu de modifier plusieurs fois la même variable.",
+        "default": "Les programmes Racket sont construits avec des expressions. Dans une expression entre parenthèses, le premier élément décide de l'action et les autres éléments sont les entrées de cette action. Pour lire chaque ligne, demandez-vous quelle fonction ou forme spéciale vient d'abord, quelles valeurs sont passées et quel résultat ou effet se produit.",
+    },
+}
+
+
+LOCALIZED_EXPLANATION_TEMPLATES = {
+    "zh": {
+        "foundation": "{summary} 这个预备课程先教 {base_language} 版本。重点关注每一行做什么、语法边界在哪里，以及编译器如何读取程序。这个基础熟练后，其他语言课程就可以直接和它对比。{extra}",
+        "racket": "{summary} 先从 {base_language} 代码片段出发，再把 Racket 代码读成表达式，而不是 C++ 语句。{detail} 之后，把每一行 Racket 和最接近的 {base_language} 行对比，这样语法会形成连接，而不是死记硬背。",
+        "target": "{summary} 在本课中，先阅读 {base_language} 片段并说出它表达的准确思想。然后逐行学习 {language} 代码。解释保持简短：这一行做什么、用了什么语法、对应或替代了哪个 {base_language} 习惯。{extra}",
+        "r_stats": "{summary} 这是 56 天编程核心之后的 R 统计扩展。重点练习完整分析习惯：检查数据，选择统计量或图表，运行 R 函数，然后用清楚的中文解释结果。",
+    },
+    "ja": {
+        "foundation": "{summary} この前提トラックでは、まず {base_language} 版を学びます。各行が何をするか、構文の境界がどこか、コンパイラがプログラムをどう読むかに集中してください。この基礎に慣れると、他の言語トラックを直接比較できます。{extra}",
+        "racket": "{summary} まず {base_language} のスニペットから始め、Racket のコードを C++ の文ではなく式として読みます。{detail} その後、各 Racket 行を最も近い {base_language} 行と比べることで、構文を丸暗記ではなく関連付けて理解できます。",
+        "target": "{summary} このレッスンでは、まず {base_language} のスニペットを読み、その正確な考え方に名前を付けます。次に {language} のコードを 1 行ずつ学びます。説明は短く保ち、この行が何をするか、どの構文を使うか、どの {base_language} の習慣に対応または置き換わるかを確認します。{extra}",
+        "r_stats": "{summary} これは 56 日間のプログラミング基礎の後に続く R 統計拡張です。データを確認し、統計量やグラフを選び、R 関数を実行し、結果を分かりやすい日本語で説明するという分析の流れに集中します。",
+    },
+    "ko": {
+        "foundation": "{summary} 이 선수 트랙은 먼저 {base_language} 버전을 가르칩니다. 각 줄이 무엇을 하는지, 문법 경계가 어디인지, 컴파일러가 프로그램을 어떻게 읽는지에 집중하세요. 이 기초가 편해지면 다른 언어 트랙을 직접 비교할 수 있습니다.{extra}",
+        "racket": "{summary} 먼저 {base_language} 코드 조각에서 시작한 뒤, Racket 코드를 C++ 문장이 아니라 표현식으로 읽습니다. {detail} 그런 다음 각 Racket 줄을 가장 가까운 {base_language} 줄과 비교하면 문법을 암기하는 대신 연결해서 이해할 수 있습니다.",
+        "target": "{summary} 이 수업에서는 먼저 {base_language} 코드 조각을 읽고 정확한 아이디어에 이름을 붙입니다. 그런 다음 {language} 코드를 한 줄씩 공부합니다. 설명은 짧게 유지하세요. 그 줄이 무엇을 하는지, 어떤 문법을 쓰는지, 어떤 {base_language} 습관과 대응되거나 대체되는지 확인합니다.{extra}",
+        "r_stats": "{summary} 이것은 56일 프로그래밍 핵심 과정 뒤의 R 통계 확장입니다. 데이터를 점검하고, 통계량이나 그래프를 선택하고, R 함수를 실행한 뒤, 결과를 쉬운 한국어로 설명하는 전체 분석 습관에 집중하세요.",
+    },
+    "fr": {
+        "foundation": "{summary} Ce parcours préalable enseigne d'abord la version {base_language}. Concentrez-vous sur ce que fait chaque ligne, où se trouvent les limites syntaxiques et comment le compilateur lit le programme. Une fois cette base confortable, les autres parcours de langue peuvent s'y comparer directement. {extra}",
+        "racket": "{summary} Partez d'abord de l'extrait {base_language}, puis lisez le code Racket comme des expressions plutôt que comme des instructions C++. {detail} Ensuite, comparez chaque ligne Racket avec la ligne {base_language} la plus proche afin que la syntaxe soit reliée à ce que vous connaissez, pas simplement mémorisée.",
+        "target": "{summary} Dans cette leçon, lisez d'abord l'extrait {base_language} et nommez l'idée exacte. Étudiez ensuite le code {language} ligne par ligne. Gardez l'explication courte : ce que fait la ligne, quelle syntaxe elle utilise et quelle habitude {base_language} elle reprend ou remplace. {extra}",
+        "r_stats": "{summary} Cette leçon fait partie de l'extension statistique R après le noyau de programmation de 56 jours. Concentrez-vous sur l'habitude complète d'analyse : inspecter les données, choisir la statistique ou le graphique, lancer la fonction R, puis expliquer le résultat en français clair.",
+    },
+}
+
+
+LOCALIZED_R_STATS_SUMMARIES = {
+    "zh": {
+        "r_data_frame": "先把观测放进行，把变量放进列，用数据框开始统计分析，并在计算前检查数据。",
+        "r_missing_types": "真实统计数据经常有缺失值和错误类型；在计算均值、检验或模型前先清理它们。",
+        "r_descriptive_stats": "描述性统计先用中心、离散程度和范围概括一个变量，再进入正式推断。",
+        "r_grouped_summary": "统计常常比较不同组；先用分组汇总和列联表观察模式，再做正式检验。",
+        "r_graphics": "统计图帮助你在正式检验前看清分布、异常值和组间差异。",
+        "r_distribution_sim": "概率分布和模拟可以用随机样本展示不确定性和长期模式。",
+        "r_confidence_interval": "置信区间用样本估计总体值，并表达估计的不确定性。",
+        "r_t_test": "t 检验比较均值，并判断观察到的差异是否可能来自随机波动。",
+        "r_regression": "相关和线性回归描述两个数值变量之间的关系。",
+        "r_chi_square_report": "卡方检验用计数表检查两个分类变量是否有关联。",
+    },
+    "ja": {
+        "r_data_frame": "観測を行に、変数を列に置き、計算前にデータを確認することから統計分析を始めます。",
+        "r_missing_types": "実際の統計データには欠損値や誤った型がよくあるため、平均、検定、モデルの前に整理します。",
+        "r_descriptive_stats": "記述統計は、正式な推測の前に中心、ばらつき、範囲で 1 つの変数を要約します。",
+        "r_grouped_summary": "統計ではグループ比較が多いため、正式な検定の前にグループ集計や表で傾向を確認します。",
+        "r_graphics": "統計グラフは、正式な検定の前に分布、外れ値、グループ差を見つける助けになります。",
+        "r_distribution_sim": "確率分布とシミュレーションは、ランダムサンプルで不確実性と長期的なパターンを示します。",
+        "r_confidence_interval": "信頼区間は標本から母集団の値を推定し、その不確実性を表します。",
+        "r_t_test": "t 検定は平均を比較し、観察された差が偶然の変動で説明できるかを調べます。",
+        "r_regression": "相関と線形回帰は、2 つの数値変数の関係を説明します。",
+        "r_chi_square_report": "カイ二乗検定は、度数表を使って 2 つのカテゴリ変数に関連があるかを調べます。",
+    },
+    "ko": {
+        "r_data_frame": "관측값은 행에, 변수는 열에 두고 계산 전에 데이터를 점검하며 데이터 프레임으로 통계 분석을 시작합니다.",
+        "r_missing_types": "실제 통계 데이터에는 결측값과 잘못된 타입이 자주 있으므로 평균, 검정, 모델 계산 전에 정리합니다.",
+        "r_descriptive_stats": "기술통계는 공식 추론 전에 중심, 퍼짐, 범위로 한 변수를 요약합니다.",
+        "r_grouped_summary": "통계는 집단 비교가 많으므로 공식 검정 전에 그룹 요약과 표로 패턴을 확인합니다.",
+        "r_graphics": "통계 그래프는 공식 검정 전에 분포, 이상값, 집단 차이를 보는 데 도움이 됩니다.",
+        "r_distribution_sim": "확률분포와 시뮬레이션은 무작위 표본으로 불확실성과 장기 패턴을 보여 줍니다.",
+        "r_confidence_interval": "신뢰구간은 표본으로 모집단 값을 추정하고 그 불확실성을 표현합니다.",
+        "r_t_test": "t 검정은 평균을 비교하고 관찰된 차이가 무작위 변동으로 설명될 수 있는지 판단합니다.",
+        "r_regression": "상관과 선형회귀는 두 수치 변수 사이의 관계를 설명합니다.",
+        "r_chi_square_report": "카이제곱 검정은 빈도표를 사용해 두 범주형 변수가 관련되는지 확인합니다.",
+    },
+    "fr": {
+        "r_data_frame": "Commencez l'analyse statistique avec des data frames : observations en lignes, variables en colonnes, puis inspection avant tout calcul.",
+        "r_missing_types": "Les vraies données statistiques contiennent souvent des valeurs manquantes et des types incorrects ; nettoyez-les avant les moyennes, tests ou modèles.",
+        "r_descriptive_stats": "Les statistiques descriptives résument une variable par le centre, la dispersion et l'étendue avant toute inférence formelle.",
+        "r_grouped_summary": "La statistique compare souvent des groupes ; utilisez d'abord des résumés groupés et des tableaux pour repérer les motifs.",
+        "r_graphics": "Les graphiques statistiques aident à voir distributions, valeurs atypiques et différences entre groupes avant les tests formels.",
+        "r_distribution_sim": "Les distributions de probabilité et les simulations montrent l'incertitude et les tendances à long terme avec des échantillons aléatoires.",
+        "r_confidence_interval": "Un intervalle de confiance estime une valeur de population à partir d'un échantillon et exprime l'incertitude.",
+        "r_t_test": "Un test t compare des moyennes et évalue si une différence observée peut venir de la variation aléatoire.",
+        "r_regression": "La corrélation et la régression linéaire décrivent la relation entre deux variables numériques.",
+        "r_chi_square_report": "Le test du chi carré utilise un tableau de comptes pour vérifier si deux variables catégorielles sont liées.",
+    },
+}
+
+
+def _localized_summary(kind: str, ui_language: str = "en") -> str:
+    language = normalize_ui_language(ui_language)
+    if language == "en":
+        return _summary(kind)
+    summaries = LOCALIZED_KIND_SUMMARIES.get(language, {})
+    base_kind = _base_kind(kind)
+    return summaries.get(kind) or summaries.get(base_kind) or summaries.get("default") or _summary(kind)
+
+
+def _localized_input_detail(target: str, ui_language: str = "en") -> str:
+    language = normalize_ui_language(ui_language)
+    if language == "en":
+        return INPUT_TYPE_DETAILS.get(target, "")
+    return LOCALIZED_INPUT_DETAILS.get(language, {}).get(target, INPUT_TYPE_DETAILS.get(target, ""))
+
+
+def _localized_racket_detail(base_kind: str, ui_language: str = "en") -> str:
+    language = normalize_ui_language(ui_language)
+    if language == "en":
+        return RACKET_KIND_DETAILS.get(
+            base_kind,
+            "Racket programs are built from expressions. In a parenthesized expression, the first item decides the action and the remaining items are inputs to that action. "
+            "Read each line by asking: what function or special form is first, what values are passed in, and what result or effect happens?"
+        )
+    details = LOCALIZED_RACKET_DETAILS.get(language, {})
+    return details.get(base_kind) or details.get("default") or _localized_racket_detail(base_kind, "en")
 
 
 def _code(kind: str, target: str) -> str:
@@ -1721,10 +2046,28 @@ def _goal(title: str, target: str, base: str = "cpp") -> str:
     return f"Learn {title.lower()} in {language} by comparing it directly with the {base_language} version you already understand."
 
 
-def _explanation(title: str, kind: str, target: str, base: str = "cpp") -> str:
+def _explanation(title: str, kind: str, target: str, base: str = "cpp", ui_language: str = "en") -> str:
+    ui_language = normalize_ui_language(ui_language)
     language = TARGET_LANGUAGES[target]["name"]
     base_language = TARGET_LANGUAGES[base]["name"]
     base_kind = _base_kind(kind)
+    if ui_language != "en":
+        templates = LOCALIZED_EXPLANATION_TEMPLATES[ui_language]
+        summary = _localized_summary(kind, ui_language)
+        if target == base:
+            extra = f" {_localized_input_detail(target, ui_language)}" if base_kind == "input" else ""
+            return templates["foundation"].format(summary=summary, base_language=base_language, extra=extra).strip()
+        if target == "racket":
+            detail = _localized_racket_detail(base_kind, ui_language)
+            return templates["racket"].format(summary=summary, base_language=base_language, detail=detail).strip()
+        extra = _localized_input_detail(target, ui_language) if base_kind == "input" else ""
+        return templates["target"].format(
+            summary=summary,
+            base_language=base_language,
+            language=language,
+            extra=extra,
+        ).strip()
+
     if target == base:
         extra = f" {INPUT_TYPE_DETAILS[target]}" if base_kind == "input" else ""
         return (
@@ -2183,13 +2526,21 @@ def _r_statistics_assignment(day: int, title: str, base: str) -> str:
     )
 
 
-def _r_statistics_lesson(day: int, base: str = "cpp") -> dict:
+def _r_statistics_lesson(day: int, base: str = "cpp", ui_language: str = "en") -> dict:
+    ui_language = normalize_ui_language(ui_language)
     topic = R_STATISTICS_TOPICS[day - len(TOPICS) - 1]
     title = topic["title"]
     kind = topic["kind"]
     base_language = TARGET_LANGUAGES[base]["name"]
     code = topic["code"]
     bridge = _r_statistics_bridge(day, topic, base)
+    explanation = (
+        f"{topic['summary']} This is part of the R statistics extension after the 56-day programming core. "
+        "Focus on the full analysis habit: inspect the data, choose the statistic or graph, run the R function, then explain the result in plain English."
+    )
+    if ui_language != "en":
+        summary = LOCALIZED_R_STATS_SUMMARIES.get(ui_language, {}).get(kind, topic["summary"])
+        explanation = LOCALIZED_EXPLANATION_TEMPLATES[ui_language]["r_stats"].format(summary=summary)
     lesson = Lesson(
         day=day,
         category=f"Day {day:02d} - {title}",
@@ -2200,10 +2551,7 @@ def _r_statistics_lesson(day: int, base: str = "cpp") -> dict:
             f"Use your {base_language} programming foundation for variables, functions, loops, and arrays. "
             "Then let R handle the statistics workflow with data frames, vectors, formulas, models, tests, and clear interpretation."
         ),
-        explanation=(
-            f"{topic['summary']} This is part of the R statistics extension after the 56-day programming core. "
-            "Focus on the full analysis habit: inspect the data, choose the statistic or graph, run the R function, then explain the result in plain English."
-        ),
+        explanation=explanation,
         syntax_bridge=bridge,
         official_docs=bridge["docs"],
         racket_focus=[
@@ -2890,7 +3238,8 @@ def _line_notes(code: str, target: str, base: str = "cpp") -> list[dict]:
     ]
 
 
-def _lesson(day: int, target: str, base: str = "cpp") -> dict:
+def _lesson(day: int, target: str, base: str = "cpp", ui_language: str = "en") -> dict:
+    ui_language = normalize_ui_language(ui_language)
     title, kind = TOPICS[day - 1]
     language = TARGET_LANGUAGES[target]["name"]
     base_language = TARGET_LANGUAGES[base]["name"]
@@ -2908,7 +3257,7 @@ def _lesson(day: int, target: str, base: str = "cpp") -> dict:
             else f"Use the {base_language} snippet as the familiar baseline. Then compare how {language} expresses "
             "the same idea through its own syntax, naming, and standard library."
         ),
-        explanation=_explanation(title, kind, target, base),
+        explanation=_explanation(title, kind, target, base, ui_language),
         syntax_bridge=bridge,
         official_docs=bridge["docs"],
         racket_focus=_focus(title, kind, target, base),
@@ -2929,17 +3278,18 @@ def _lesson(day: int, target: str, base: str = "cpp") -> dict:
     return data
 
 
-def get_lessons(target_language: str | None = None, base_language: str | None = None) -> list[dict]:
+def get_lessons(target_language: str | None = None, base_language: str | None = None, ui_language: str | None = None) -> list[dict]:
     target = normalize_target_language(target_language)
     base = normalize_base_language(base_language)
-    lessons = [_lesson(day, target, base) for day in range(1, len(TOPICS) + 1)]
+    ui_language = normalize_ui_language(ui_language)
+    lessons = [_lesson(day, target, base, ui_language) for day in range(1, len(TOPICS) + 1)]
     if target == "r":
-        lessons.extend(_r_statistics_lesson(day, base) for day in range(len(TOPICS) + 1, get_course_length(target) + 1))
+        lessons.extend(_r_statistics_lesson(day, base, ui_language) for day in range(len(TOPICS) + 1, get_course_length(target) + 1))
     return lessons
 
 
-def get_lesson(day: int, target_language: str | None = None, base_language: str | None = None) -> dict | None:
-    lessons = get_lessons(target_language, base_language)
+def get_lesson(day: int, target_language: str | None = None, base_language: str | None = None, ui_language: str | None = None) -> dict | None:
+    lessons = get_lessons(target_language, base_language, ui_language)
     if 1 <= day <= len(lessons):
         return lessons[day - 1]
     return None
